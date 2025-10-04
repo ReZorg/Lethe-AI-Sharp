@@ -11,7 +11,8 @@ namespace LetheAISharp
 {
     public static class TokenTools
     {
-        public static GptEncoding Encoding { get; private set; } = GptEncoding.GetEncoding("cl100k_base");
+        private static GptEncoding encoding = GptEncoding.GetEncoding("cl100k_base");
+        public static GptEncoding Encoding { get => encoding; private set => encoding = value; }
 
         public static void SetEncoding(string encoding)
         {
