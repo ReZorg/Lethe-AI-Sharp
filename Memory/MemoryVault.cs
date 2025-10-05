@@ -11,6 +11,25 @@ using System.Threading.Tasks;
 
 namespace LetheAISharp.Memory
 {
+    /// <summary>
+    /// RAG selection method
+    /// </summary>
+    public enum RAGSelectionHeuristic
+    {
+        /// <summary>
+        /// Uses SmallWorld vector DB simple graph building: fast, but slightly less accurate.
+        /// </summary>
+        SelectSimple,
+        /// <summary>
+        /// Uses SmallWorld vector DB heuristic graph building: better choice for large datasets and varied types of data.
+        /// </summary>
+        SelectHeuristic,
+        /// <summary>
+        /// Uses exact distance calculation for all entries: best accuracy but slightly slower.
+        /// </summary>
+        SelectExact
+    }
+
     public class VaultResult(MemoryUnit memory, float dist)
     {
         public MemoryUnit Memory { get; set; } = memory;
@@ -67,15 +86,15 @@ namespace LetheAISharp.Memory
 
         public async Task<List<VaultResult>> Search(string search, int maxRes, float? maxDist = null)
         {
-            if (Count == 0 || !RAGEngine.Enabled)
+            if (Count == 0 || !LLMEngine.Settings.RAGEnabled)
                 return [];
-            var emb = await RAGEngine.EmbeddingText(search).ConfigureAwait(false);
+            var emb = await EmbedTools.EmbeddingText(search).ConfigureAwait(false);
             return Search(emb, maxRes, maxDist);
         }
 
         public List<VaultResult> Search(float[] search, int maxCount, float? maxDist = null)
         {
-            if (Count == 0 || !RAGEngine.Enabled)
+            if (Count == 0 || !LLMEngine.Settings.RAGEnabled)
                 return [];
 
             if (LLMEngine.Settings.RAGHeuristic == RAGSelectionHeuristic.SelectExact)
@@ -115,7 +134,7 @@ namespace LetheAISharp.Memory
             var res = new List<VaultResult>();
             foreach (var item in LookupDB)
             {
-                var dist = RAGEngine.GetDistance(search, item.Value.EmbedSummary);
+                var dist = EmbedTools.GetDistance(search, item.Value.EmbedSummary);
                 if (maxDist is not null && dist > maxDist)
                     continue;
                 res.Add(new VaultResult(item.Value, dist));

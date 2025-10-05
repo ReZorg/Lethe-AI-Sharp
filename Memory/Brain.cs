@@ -80,7 +80,10 @@ namespace LetheAISharp.Memory
         [JsonProperty] protected List<UserReturnInsert> Inserts { get; set; } = [];
 
         public List<TopicSearch> RecentSearches { get; set; } = [];
+
         [JsonIgnore] protected List<MemoryUnit> Eurekas { get; set; } = [];
+
+        [JsonIgnore] protected MemoryVault MindPalace { get; set; } = new MemoryVault();
 
         public virtual MoodState Mood { get; set; } = new MoodState();
 
@@ -99,7 +102,7 @@ namespace LetheAISharp.Memory
         /// </summary>
         public virtual void Close()
         {
-
+            MindPalace.Clear();
         }
 
         public virtual async Task ProcessPreviousSession()
@@ -190,11 +193,11 @@ namespace LetheAISharp.Memory
                 return true;
             }
 
-            if (RAGEngine.Enabled)
+            if (LLMEngine.Settings.RAGEnabled)
             {
                 foreach (var item in RecentSearches)
                 {
-                    if (await RAGEngine.GetDistanceAsync(item.Topic, topic) < maxDistance)
+                    if (await EmbedTools.GetDistanceAsync(item.Topic, topic) < maxDistance)
                     {
                         return true;
                     }
@@ -221,6 +224,50 @@ namespace LetheAISharp.Memory
 
         #region *** LTM - Memory Management ***
 
+        public void ReloadMemories()
+        {
+            MindPalace = new MemoryVault();
+            if (!LLMEngine.Settings.RAGEnabled)
+                return;
+            var log = Owner.History;
+            if (log.Sessions.Count == 0 && Owner.MyWorlds.Count == 0)
+                return;
+            var vectors = new List<MemoryUnit>();
+            for (int i = 0; i < log.Sessions.Count; i++)
+            {
+                var session = log.Sessions[i];
+                if (session.EmbedSummary.Length == 0)
+                    continue;
+                vectors.Add(session);
+            }
+
+            var brainmemories = Memories.FindAll(m => m.Insertion == MemoryInsertion.Trigger && m.EmbedSummary.Length > 0 && !DisableRAG.Contains(m.Category));
+            foreach (var doc in brainmemories)
+            {
+                vectors.Add(doc);
+            }
+
+            foreach (var world in Owner.MyWorlds)
+            {
+                if (!world.DoEmbeds)
+                    continue;
+                foreach (var entry in world.Entries)
+                {
+                    if (entry.Enabled && entry.EmbedSummary?.Length > 0)
+                        vectors.Add(entry);
+                }
+            }
+
+            try
+            {
+                MindPalace.AddMemories(vectors);
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Error adding items to the VectorDB", e);
+            }
+        }
+
         /// <summary>
         /// Checks for RAG entries and refreshes the textual inserts.
         /// </summary>
@@ -236,9 +283,9 @@ namespace LetheAISharp.Memory
                 (Owner.History.GetLastFromInSession(AuthorRole.User)?.Message ?? string.Empty) : searchstring;
             searchmessage = Owner.ReplaceMacros(searchmessage);
 
-            if (RAGEngine.Enabled)
+            if (LLMEngine.Settings.RAGEnabled)
             {
-                var search = await RAGEngine.Search(searchmessage, ragResCount, ragDistance).ConfigureAwait(false);
+                var search = await Search(searchmessage, ragResCount, ragDistance).ConfigureAwait(false);
                 target.AddMemories(search);
             }
 
@@ -384,7 +431,7 @@ namespace LetheAISharp.Memory
 
             foreach (var item in comparelist)
             {
-                var dist = RAGEngine.GetDistance(item, mem);
+                var dist = EmbedTools.GetDistance(item, mem);
                 if (dist < mindist)
                 {
                     mindist = dist;
@@ -428,9 +475,74 @@ namespace LetheAISharp.Memory
             return Memories.FindAll(m => category == null || m.Category == category);
         }
 
-        internal List<MemoryUnit> GetMemoriesForRAG()
+        public virtual List<VaultResult> Search(float[] embed, int count, float maxDist)
         {
-            return Memories.FindAll(m => m.Insertion == MemoryInsertion.Trigger && m.EmbedSummary.Length > 0 && !DisableRAG.Contains(m.Category));
+            if (MindPalace is null || MindPalace.Count == 0)
+            {
+                ReloadMemories();
+                if (MindPalace!.Count == 0)
+                    return [];
+            }
+            return MindPalace.Search(embed, count, maxDist);
+        }
+
+        public virtual async Task<List<VaultResult>> Search(string message, int maxRes, float maxDist)
+        {
+            if (!LLMEngine.Settings.RAGEnabled)
+                return [];
+            if (MindPalace is null || MindPalace.Count == 0)
+            {
+                ReloadMemories();
+            }
+
+            var toretrieve = maxRes * 2 + 5;
+            if (toretrieve < 30)
+                toretrieve = 30;
+
+            // Check if message contains the words RP or roleplay
+            var requestIsAboutRoleplay = message.Contains(" RP", StringComparison.OrdinalIgnoreCase) || message.Contains(" roleplay", StringComparison.OrdinalIgnoreCase) || message.Contains(" role play", StringComparison.OrdinalIgnoreCase);
+
+            var found = await MindPalace!.Search(
+                LLMEngine.Settings.RAGConvertTo3rdPerson ? message.ConvertToThirdPerson() : message,
+                toretrieve,
+                maxDist).ConfigureAwait(false);
+
+            foreach (var item in found)
+            {
+                if (item.Memory.Category == MemoryType.ChatSession && item.Memory is Files.ChatSession session)
+                {
+
+                    if (session.MetaData.IsRoleplaySession)
+                    {
+                        if (requestIsAboutRoleplay)
+                            item.Distance -= 0.015f; // Boost RP sessions
+                        else
+                            item.Distance += 0.015f; // Decay RP sessions
+                    }
+                    // Mark sticky as not wanted because they are handled with different insertion method
+                    if (session.Sticky && LLMEngine.Settings.SessionMemorySystem)
+                        item.Distance += 2f;
+                }
+                var embedhelpers = MemoryUnit.EmbedHelpers[item.Memory.Category];
+                if (embedhelpers?.Count > 0)
+                {
+                    foreach (var kw in embedhelpers)
+                    {
+                        if (message.ContainsWholeWord(kw, StringComparison.OrdinalIgnoreCase))
+                        {
+                            item.Distance -= 0.015f; // Boost if the message contains one of the embed helpers for this category
+                            break;
+                        }
+                    }
+                }
+            }
+            // Remove entries with distance above limit
+            found.RemoveAll(e => e.Distance > maxDist);
+            found.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+            // If we have too many results, trim the list to maxRes
+            if (found.Count > maxRes)
+                found = found.GetRange(0, maxRes);
+            return found;
         }
 
         #endregion
@@ -446,7 +558,7 @@ namespace LetheAISharp.Memory
         /// <returns>A <see cref="MemoryUnit"/> representing the most relevant Eureka if one is found within the specified distance; otherwise null.</returns>
         protected virtual async Task<MemoryUnit?> GetRelevantEureka(string userinput, float maxDistance = 0.085f)
         {
-            if (!RAGEngine.Enabled)
+            if (!LLMEngine.Settings.RAGEnabled)
                 return null;
 
             foreach (var item in Eurekas)
@@ -459,7 +571,7 @@ namespace LetheAISharp.Memory
                 var inputWords = userinput.ToLowerInvariant().Split([' ', '\t', '\n', '\r', '.', ',', '!', '?', ';', ':'], StringSplitOptions.RemoveEmptyEntries);
                 var commonWordCount = itemWords.Intersect(inputWords).Count();
                
-                var dist = await RAGEngine.GetDistanceAsync(userinput, item).ConfigureAwait(false);
+                var dist = await EmbedTools.GetDistanceAsync(userinput, item).ConfigureAwait(false);
                 dist -= commonWordCount * 0.02f; // each common word reduces distance by 0.02
                 if (item.Insertion == MemoryInsertion.NaturalForced)
                     dist -= 0.02f;

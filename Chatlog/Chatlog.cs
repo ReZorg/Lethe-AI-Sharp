@@ -536,7 +536,7 @@ namespace LetheAISharp.Files
         /// <returns></returns>
         public async Task EmbedChatSessions()
         {
-            if (!RAGEngine.Enabled)
+            if (!LLMEngine.Settings.RAGEnabled)
                 return;
             // Embed all the messages in the chatlog
             foreach (var session in Sessions)

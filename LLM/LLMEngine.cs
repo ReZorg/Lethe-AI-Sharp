@@ -730,8 +730,7 @@ namespace LetheAISharp.LLM
             OnBotChanged?.Invoke(null, bot);
 
             bot.BeginChat();
-
-            RAGEngine.VectorizeChatBot(Bot);
+            Bot.Brain?.ReloadMemories();
             // if first time interaction, display welcome message from bot
             if (History.Sessions.Count == 0)
             {

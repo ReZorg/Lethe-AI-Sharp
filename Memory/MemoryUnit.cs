@@ -171,7 +171,7 @@ namespace LetheAISharp.Memory
 
         public virtual async Task EmbedText()
         {
-            if (!RAGEngine.Enabled)
+            if (!LLMEngine.Settings.RAGEnabled)
                 return;
             var mixedcat = new HashSet<MemoryType>() 
             { 
@@ -179,12 +179,12 @@ namespace LetheAISharp.Memory
             };
             if (!mixedcat.Contains(Category))
             {
-                EmbedSummary = await RAGEngine.EmbeddingText(LLMEngine.Bot.ReplaceMacros(Content)).ConfigureAwait(false);
+                EmbedSummary = await EmbedTools.EmbeddingText(LLMEngine.Bot.ReplaceMacros(Content)).ConfigureAwait(false);
                 return;
             }
-            var titleembed = await RAGEngine.EmbeddingText(Name).ConfigureAwait(false);
-            var sumembed = await RAGEngine.EmbeddingText(LLMEngine.Bot.ReplaceMacros(Content)).ConfigureAwait(false);
-            EmbedSummary = RAGEngine.MergeEmbeddings(titleembed, sumembed);
+            var titleembed = await EmbedTools.EmbeddingText(Name).ConfigureAwait(false);
+            var sumembed = await EmbedTools.EmbeddingText(LLMEngine.Bot.ReplaceMacros(Content)).ConfigureAwait(false);
+            EmbedSummary = EmbedTools.MergeEmbeddings(titleembed, sumembed);
         }
 
         /// <summary>

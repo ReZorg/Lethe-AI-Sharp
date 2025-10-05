@@ -7,63 +7,24 @@ using LetheAISharp.Memory;
 
 namespace LetheAISharp.LLM
 {
-    /// <summary>
-    /// RAG selection method
-    /// </summary>
-    public enum RAGSelectionHeuristic
-    {
-        /// <summary>
-        /// Uses SmallWorld vector DB simple graph building: fast, but slightly less accurate.
-        /// </summary>
-        SelectSimple,
-        /// <summary>
-        /// Uses SmallWorld vector DB heuristic graph building: better choice for large datasets and varied types of data.
-        /// </summary>
-        SelectHeuristic,
-        /// <summary>
-        /// Uses exact distance calculation for all entries: best accuracy but slightly slower.
-        /// </summary>
-        SelectExact
-    }
+
 
 
     /// <summary>
-    /// Retrieval Augmented Generation System
+    /// Embedding and Distance Evaluation tools
     /// </summary>
-    public static class RAGEngine
+    public static class EmbedTools
     {
         /// <summary> Called when the system embedded a session </summary>
         public static event EventHandler<string>? OnEmbedText;
 
         private static void RaiseOnEmbedText(string toembed) => OnEmbedText?.Invoke(null, toembed);
 
-        /// <summary> Toggle RAG functionalities on/off </summary>
-        public static bool Enabled
-        {
-            get => LLMEngine.Settings.RAGEnabled;
-            set
-            {
-                LLMEngine.Settings.RAGEnabled = value;
-                if (!LLMEngine.Settings.RAGEnabled)
-                    UnloadEmbedder();
-            }
-        }
-
         // Embedding model's weights and params
         private static ModelParams? EmbedSettings = null;
         private static LLamaWeights? EmbedWeights = null;
         private static LLamaEmbedder? Embedder = null;
-        // Memory vault
-        private static MemoryVault? Vault = null;
 
-        public static void ApplySettings()
-        {
-            if (!Enabled)
-                return;
-            Vault = new MemoryVault();
-            if (LLMEngine.History != null)
-                VectorizeChatBot(LLMEngine.Bot);
-        }
 
         #region *** Embedding Functions ***
 
@@ -78,7 +39,7 @@ namespace LetheAISharp.LLM
             if (!File.Exists(LLMEngine.Settings.RAGModelPath))
             {
                 EmbedSettings = null;
-                Enabled = false;
+                LLMEngine.Settings.RAGEnabled = false;
                 LLMEngine.Logger?.LogError("Embedding model not found: {path}", LLMEngine.Settings.RAGModelPath);
             }
             EmbedSettings = new ModelParams(LLMEngine.Settings.RAGModelPath)
@@ -114,7 +75,7 @@ namespace LetheAISharp.LLM
         /// <returns></returns>
         public static async Task<float[]> EmbeddingText(string textToEmbed)
         {
-            if (!Enabled)
+            if (!LLMEngine.Settings.RAGEnabled)
                 return [];
             var embed = Embedder ?? LoadEmbedder();
             var emb = textToEmbed;
@@ -132,125 +93,6 @@ namespace LetheAISharp.LLM
 
         #endregion
 
-        #region *** SmallWorld's Vector Similarity Functions ***
-
-        public static void VectorizeChatBot(BasePersona persona)
-        {
-            if (!Enabled)
-                return;
-            Vault = new MemoryVault();
-            var log = persona.History;
-            if (log.Sessions.Count == 0 && persona.MyWorlds.Count == 0)
-                return;
-
-            var vectors = new List<MemoryUnit>();
-            for (int i = 0; i < log.Sessions.Count; i++)
-            {
-                var session = log.Sessions[i];
-                if (session.EmbedSummary.Length == 0)
-                    continue;
-                vectors.Add(session);
-            }
-
-            var brainmemories = LLMEngine.Bot.Brain.GetMemoriesForRAG();
-            foreach (var doc in brainmemories)
-            {
-                vectors.Add(doc);
-            }
-
-            foreach (var world in persona.MyWorlds)
-            {
-                if (!world.DoEmbeds)
-                    continue;
-                foreach (var entry in world.Entries)
-                {
-                    if (entry.Enabled && entry.EmbedSummary?.Length > 0)
-                        vectors.Add(entry);
-                }
-            }   
-
-            try
-            {
-                Vault?.AddMemories(vectors);
-            }
-            catch (Exception e)
-            {
-                throw new Exception("Error adding items to the VectorDB", e);
-            }
-        }
-
-        public static async Task<List<VaultResult>> Search(string message, int maxRes, float maxDist)
-        {
-            if (!Enabled)
-                return [];
-            if (Vault is null || Vault.Count == 0)
-            {
-                VectorizeChatBot(LLMEngine.Bot);
-            }
-
-            var toretrieve = maxRes * 2 + 5;
-            if (toretrieve < 30)
-                toretrieve = 30;
-
-            // Check if message contains the words RP or roleplay
-            var requestIsAboutRoleplay = message.Contains(" RP", StringComparison.OrdinalIgnoreCase) || message.Contains(" roleplay", StringComparison.OrdinalIgnoreCase) || message.Contains(" role play", StringComparison.OrdinalIgnoreCase);
-
-            var found = await Vault!.Search(
-                LLMEngine.Settings.RAGConvertTo3rdPerson ? message.ConvertToThirdPerson() : message, 
-                toretrieve, 
-                maxDist).ConfigureAwait(false);
-
-            foreach (var item in found)
-            {
-                if (item.Memory.Category == MemoryType.ChatSession && item.Memory is Files.ChatSession session)
-                {
-
-                    if (session.MetaData.IsRoleplaySession)
-                    {
-                        if (requestIsAboutRoleplay)
-                            item.Distance -= 0.015f; // Boost RP sessions
-                        else
-                            item.Distance += 0.015f; // Decay RP sessions
-                    }
-                    // Mark sticky as not wanted because they are handled with different insertion method
-                    if (session.Sticky && LLMEngine.Settings.SessionMemorySystem)
-                        item.Distance += 2f;
-                }
-                var embedhelpers = MemoryUnit.EmbedHelpers[item.Memory.Category];
-                if (embedhelpers?.Count > 0)
-                {
-                    foreach (var kw in embedhelpers)
-                    {
-                        if (message.ContainsWholeWord(kw, StringComparison.OrdinalIgnoreCase))
-                        {
-                            item.Distance -= 0.015f; // Boost if the message contains one of the embed helpers for this category
-                            break;
-                        }
-                    }
-                }
-            }
-            // Remove entries with distance above limit
-            found.RemoveAll(e => e.Distance > maxDist);
-            found.Sort((a, b) => a.Distance.CompareTo(b.Distance));
-            // If we have too many results, trim the list to maxRes
-            if (found.Count > maxRes)
-                found = found.GetRange(0, maxRes);
-            return found;
-        }
-
-        public static List<VaultResult> Search(float[] embed, int count, float maxDist)
-        {
-            if (Vault is null || Vault.Count == 0)
-            {
-                VectorizeChatBot(LLMEngine.Bot);
-                if (Vault!.Count == 0)
-                    return [];
-            }
-            return Vault.Search(embed, count, maxDist);
-        }
-
-        #endregion
-
         #region *** Self contained string similarity check ***
 
         /// <summary>
@@ -259,7 +101,7 @@ namespace LetheAISharp.LLM
         /// </summary>
         public static async Task<float> GetDistanceAsync(string a, string b)
         {
-            if (!Enabled)
+            if (!LLMEngine.Settings.RAGEnabled)
                 return 2f;
 
             var ea = await EmbeddingText(a).ConfigureAwait(false);
@@ -277,7 +119,7 @@ namespace LetheAISharp.LLM
         /// </summary>
         public static async Task<float> GetDistanceAsync(string a, IEmbed b)
         {
-            if (!Enabled)
+            if (!LLMEngine.Settings.RAGEnabled)
                 return 2f;
 
             var ea = await EmbeddingText(a).ConfigureAwait(false);
