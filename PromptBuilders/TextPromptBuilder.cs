@@ -85,7 +85,7 @@ namespace LetheAISharp
             grammar = string.Empty;
         }
 
-        public object PromptToQuery(AuthorRole responserole, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null)
+        public object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null)
         {
             var fullquery = (string)GetFullPrompt();
 

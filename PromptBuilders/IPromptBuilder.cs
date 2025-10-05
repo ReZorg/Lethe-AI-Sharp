@@ -57,7 +57,7 @@ namespace LetheAISharp
         /// <param name="responseoverride">Override the maximum response size</param>
         /// <param name="overridePrefill">Override the prefill setting for CoT models (null = keep as is, otherwise use this as setting)</param>
         /// <returns></returns>
-        object PromptToQuery(AuthorRole responserole, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null);
+        object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null);
 
         /// <summary>
         /// Converts the current prompt into its textual representation.

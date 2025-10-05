@@ -52,7 +52,7 @@ namespace LetheAISharp
             return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
         }
 
-        public object PromptToQuery(AuthorRole responserole, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null)
+        public object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null)
         {
             if (imagefilepath.Count > 0)
             {
