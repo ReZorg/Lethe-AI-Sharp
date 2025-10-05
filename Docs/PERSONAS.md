@@ -40,7 +40,7 @@ A persona represents either the user or the bot (NPC/agent) in a conversation. T
 
 ## Essential Lifecycle Management
 
-**Critical**: `BasePersona.BeginChat()` and `BasePersona.EndChat()` handles essential initialization and cleanup when switching persona or closing the application. Setting the `LLMEngine.Bot` property to persona will make those calls automatically using `EndChat()` on the previous one, if any, and using `BeginChat()` on the new one. However, the library doesn't intercepts the application being closed, so, if you want to make sure that the chatlog, and other information is being correctly saved, you *must* manually call `EndChat()` on the currently loaded persona before exiting.
+**Critical**: `BasePersona.BeginChat()` and `BasePersona.EndChat()` handles essential initialization and cleanup when switching persona or closing the application. Setting the `LLMEngine.Bot` property to persona will make those calls automatically using `EndChat()` on the previous one (if any), and using `BeginChat()` on the new one. However, the library doesn't intercepts the application being closed. So, if you want to make sure that the chatlog, and other information is being correctly saved, you *must* manually call `EndChat()` on the currently loaded persona before exiting.
 
 ```csharp
 var persona = new BasePersona
@@ -54,14 +54,15 @@ var persona = new BasePersona
 LLMEngine.Bot = persona;
 ```
 
-### EndChat() - Required when closing the application
+**EndChat()** - Required when closing the application
+
 ```csharp
 // REQUIRED: Cleanup when switching personas or closing app
 persona.EndChat(backup: true); // backup = true saves .bak files
 ```
 
 **What these methods do:**
-- `BeginChat()`: Loads brain/memory, initializes agent system, loads chat history, sets up plugins
+- `BeginChat()`: Loads brain/memory, initializes agent system, loads chat history, setup plugins
 - `EndChat()`: Saves chat history, saves brain/memory, shuts down agent system, creates backups
 
 ## Basic Usage Example

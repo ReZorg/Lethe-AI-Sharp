@@ -1,6 +1,6 @@
 # Memory Systems Documentation
 
-This document explains the different memory systems used by the LetheAISharp library to extend the persona's memory and knowledge. All memory systems are unified under the `MemoryUnit` format and can be triggered either manually through keywords or automatically through the RAGEngine's embedding similarity search.
+This document explains the different memory systems used by the LetheAISharp library to extend the persona's memory and knowledge. All memory systems are unified under the `MemoryUnit` format and can be triggered either manually through keywords or automatically through the embedding similarity search.
 
 Note that most, if not all those systems are automatically handled by the library when in full chat mode. This is mostly to explain how things behave internally, especially as many classes and functions can be overriden to add more functionalities.
 
@@ -14,13 +14,15 @@ The LetheAISharp library employs three primary memory systems that work together
 
 All memory types are stored using the unified `MemoryUnit` format, which provides consistent handling, embedding, and retrieval across the entire system.
 
+The persona's `Brain` class provides methods to manage memories, including adding new entries, forgetting old ones, and retrieving relevant information based on user input.
+
 ## Table of Contents
 
 1. [MemoryUnit Format](#memoryunit-format)
 2. [Chat Session Summaries](#chat-session-summaries)
 3. [WorldInfo System](#worldinfo-system)
-4. [Brain/Agent System](#brainagent-system)
-5. [RAGEngine Integration](#ragengine-integration)
+4. [Agent System](#agent-system)
+5. [RAG Integration](#rag-integration)
 6. [Memory Insertion Strategies](#memory-insertion-strategies)
 
 ## MemoryUnit Format
@@ -50,16 +52,16 @@ The `MemoryUnit` class is the unified format for all memory and knowledge storag
 - **Image**, **File** - Media and document references
 - **Location**, **Event**, **Person**, **Goal** - Categorized memories for specific types
 
+This library makes use of WorldInfo, WebSearch, and ChatSession types. The remaining types can be used by your app when you want to feed the 
+persona with external information. The type doesn't have to 1:1 match the function.
+
 ### Memory Insertion Modes
 
 - **Trigger** - Memory is activated by RAG similarity in user input. It stays in the prompt for "Duration" (unless it's a chat session, which is always 1)
 - **Natural** - Automatically inserted when relevant just before the user input message, it behaves like a normal message and scrolls until it gets out of the context window. It's converted to Trigger after use.
-- **NaturalForced** - Same as natural but is forcefully inserted into the discussion after a while if no relevant entry point present itself.
 - **None** - Disabled memory
 
 ## Chat Session Summaries
-
-The chat session memory system automatically summarizes and embeds past conversations, making them searchable through the RAGEngine. There are 2 different insertion methods. 
 
 ### Recent Past Sessions 
 
@@ -92,7 +94,7 @@ the library processes the chat to turn it into useful data:
 
 2. **Embedding Creation**: The summary is converted to vector embeddings for similarity search
 
-3. **RAG Activation**: When users or personas mention topics related to past conversations, the RAGEngine automatically retrieves relevant session summaries
+3. **RAG Activation**: When users or personas mention topics related to past conversations, the persona's `Brain` automatically retrieves relevant session summaries
 
 ### Session Summary Process
 
@@ -111,7 +113,7 @@ Instead when the user or app decides that a chat session has ended, call:
 ````csharp
 LLMSystem.Bot.History.StartNewChatSession()
 ````
-It'll automatically process, and archive the current one before starting a new empty session.
+It'll automatically process and archive the current session before starting a new empty session.
 
 ### Memory Storage
 
@@ -161,9 +163,9 @@ Each WorldInfo entry is a `MemoryUnit` with additional keyword settings:
 - **Or**: Requires keywords from either Main or Secondary lists  
 - **Not**: Requires Main keywords but not Secondary keywords
 
-## Brain/Agent System
+## Agent System
 
-The Brain/Agent system provides dynamic memory creation and research capabilities through autonomous agent tasks. For comprehensive documentation on the agent system, see [AGENTS.md](AGENTS.md).
+The Agent system provides dynamic memory creation and research capabilities through autonomous agent tasks. For comprehensive documentation on the agent system, see [AGENTS.md](AGENTS.md).
 
 ### How It Works
 
@@ -173,7 +175,6 @@ The Brain/Agent system provides dynamic memory creation and research capabilitie
    - Performs web searches on unfamiliar topics
    - Merges search results into coherent summaries
    - Stores findings as new memories
-
 3. **Memory Integration**: Research results are automatically added to the persona's memory with appropriate categorization
 
 ### Agent Memory Creation
@@ -200,17 +201,14 @@ owner.Brain.Memorize(mem);
 - **ActiveResearchTask**: Performs real-time research during active conversations
 - Both tasks create memories with `MemoryType.WebSearch` category
 
-### Brain Memory Management
+## RAG Integration
 
-The `Brain` class provides memory management functionality:
+The persona's `Brain` class provides memory management and RAG functionalities:
 - **Memorize()**: Add new memories with duplicate checking. This is particularly useful if your app intends to feed the persona with external information.
 - **Forget()**: Remove specific memories
-- **GetMemoriesForRAG()**: Retrieve memories available for similarity search
-- **UpdateRagAndInserts()**: Refresh active memory insertions
-
-## RAGEngine Integration
-
-The RAGEngine (Retrieval-Augmented Generation) provides the core similarity search functionality that unifies all memory systems.
+- **ReloadMemories()**: Rebuild the RAG index from current memories (to be called after adding or forgetting many memories)
+- **GetRAGandInserts()**: Get a list of RAG and WorldInfo inserts that would be triggered by a given message
+- **Search()**: Perform RAG similarity search on stored memories
 
 ### How RAG Works
 
@@ -219,17 +217,15 @@ The RAGEngine (Retrieval-Augmented Generation) provides the core similarity sear
    - Embeds the current message
    - Searches for similar memories using vector distance
    - Returns the most relevant memories within a distance threshold
-
 3. **Automatic Insertion**: Retrieved memories are automatically inserted into the conversation context
 
 ### RAG Search Process
 
 ```csharp
-// RAG search in Brain.UpdateRagAndInserts()
-if (RAGEngine.Enabled)
+if (LLMEngine.Settings.Enabled)
 {
-    var search = await RAGEngine.Search(searchmessage, ragResCount, ragDistance);
-    target.AddMemories(search);
+    var searchresults = await LLMEngine.Bot.Brain.Search(searchmessage, ragResCount, ragDistance);
+    // results is a list of VaultResult (containing each a MemoryUnit and a distance value)
 }
 ```
 
@@ -239,6 +235,11 @@ Memories participate in RAG search when:
 - `Insertion` is set to `MemoryInsertion.Trigger`
 - `EmbedSummary` contains valid embedding data
 - `Enabled` is true
+
+By default, this includes:
+- Summaries of past chat sessions
+- WorldInfo entries with `DoEmbeds` property enabled
+- Research results from agent tasks after they've been inserted into conversation
 
 ## Memory Insertion Strategies
 
@@ -254,14 +255,7 @@ The library supports multiple strategies for inserting memories into conversatio
 
 - **Activation**: Memories are automatically evaluated for relevance during conversation
 - **Conversion**: After being used once, Natural memories become Trigger memories
-- **Use Case**: Fresh insights or temporary information, 
-- **Behavior**: Inserted like a system message (just above the last user message), scrolls out of context over time
-
-### Forced Natural Insertion
-
-- **Activation**: Always considered for insertion when relevant
-- **Conversion**: After being used once, those memories become Trigger memories
-- **Use Case**: Critical information that the user needs to know even if talking about something else.
+- **Use Case**: Fresh insights or temporary information 
 - **Behavior**: Inserted like a system message (just above the last user message), scrolls out of context over time
 
 ### Memory Lifecycle
@@ -333,22 +327,12 @@ Here the `Brain` class found that the user's query was very close to one of the 
 
 ## Best Practices
 
-### For Developers
-
-- Use appropriate `MemoryType` categories for better organization
 - Set realistic `Priority` levels to control memory retention (0 priority means that a natural memory will be pruned immediately after use)
-- Configure `Duration` appropriately for WorldInfo entries
+- Configure `Duration` appropriately for WorldInfo entries (2-5 turns is typical)
 - Enable `DoEmbeds` for WorldInfo when RAG integration is desired
-
-### For Memory Design
-
-- Write clear, concise `Content` that provides context without being verbose, always aim for less than 1024 tokens (512 is optimal)
+- Write clear, concise `Content` that provides context without being verbose, aim for less than 1024 tokens (only first 1024 tokens are considered for RAG)
 - Use descriptive `Name` fields for better identification
 - The `Reason` information is optional, and mostly used for more natural intertion into the prompt
 - Choose appropriate `Insertion` strategies based on memory importance and usage patterns
-
-### Performance Considerations
-
 - While extremely optimized, RAG searches are computationally expensive, going over >100k entries might take several seconds.
-- Regular memory cleanup helps maintain system responsiveness
 - WorldInfo keyword matching is faster than RAG similarity search for specific triggers
