@@ -59,7 +59,7 @@ namespace LetheAISharp.Examples
                     Bio = "A helpful and friendly AI assistant",
                     IsUser = false,
                     Scenario = "You are a helpful AI assistant. Be conversational and engaging.",
-                    FirstMessage = new() { "Hi there! I'm your AI assistant. How can I help you today?" }
+                    FirstMessage = ["Hi there! I'm your AI assistant. How can I help you today?"]
                 };
                 
                 var user = new BasePersona

@@ -153,8 +153,8 @@ namespace LetheAISharp.LLM
         private static LLamaEmbedder? embedder;
         private static bool headLoaded;
         private static float[]? PerLabelThresholds;
-        private static float TargetNorm = 18.0f; // rough BERT pooled magnitude
-        private static bool ScaleLlamaEmbedding = true; // diagnostic toggle
+        private static readonly float TargetNorm = 18.0f; // BERT pooled magnitude (avg)
+        private static readonly bool ScaleLlamaEmbedding = true; // diagnostic toggle
 
         internal static string ModelPath =>LLMEngine.Settings.SentimentModelPath;
         internal static string HeadPath => LLMEngine.Settings.SentimentGoEmotionHeadPath;

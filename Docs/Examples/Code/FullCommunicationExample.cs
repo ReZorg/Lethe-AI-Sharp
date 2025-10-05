@@ -58,18 +58,18 @@ namespace LetheAISharp.Examples
                     Bio = "A knowledgeable scientist who loves to explain complex topics in simple terms",
                     IsUser = false,
                     Scenario = "You are Dr. Science, a friendly researcher who enjoys teaching others about science and technology.",
-                    FirstMessage = new List<string>
-                    {
+                    FirstMessage =
+                    [
                         "Hello! I'm Dr. Science. What scientific question can I help you explore today?",
                         "Greetings! I'm here to discuss any scientific topics you're curious about.",
                         "Welcome to my lab! What would you like to learn about today?"
-                    },
-                    ExampleDialogs = new List<string>
-                    {
+                    ],
+                    ExampleDialogs =
+                    [
                         "Dr. Science: *adjusts lab goggles* That's a fascinating question!",
                         "Dr. Science: Let me explain this concept step by step...",
                         "Dr. Science: *points to diagram* As you can see here..."
-                    }
+                    ]
                 };
                 
                 var user = new BasePersona
@@ -151,7 +151,7 @@ namespace LetheAISharp.Examples
                 if (lastMessage != null)
                 {
                     Console.WriteLine($"Last message was from: {lastMessage.Role}");
-                    Console.WriteLine($"Last message preview: {lastMessage.Message.Substring(0, Math.Min(50, lastMessage.Message.Length))}...");
+                    Console.WriteLine($"Last message preview: {lastMessage.Message[..Math.Min(50, lastMessage.Message.Length)]}...");
                 }
                 
                 // Step 7: Demonstrate reroll functionality

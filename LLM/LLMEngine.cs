@@ -819,7 +819,7 @@ namespace LetheAISharp.LLM
             }
 
             // update the RAG, world info, and summary stuff
-            await Bot.Brain.UpdateRagAndInserts(dataInserts, newMessage, Settings.RAGMaxEntries, Settings.RAGDistanceCutOff).ConfigureAwait(false);
+            await Bot.Brain.GetRAGandInserts(dataInserts, newMessage, Settings.RAGMaxEntries, Settings.RAGDistanceCutOff).ConfigureAwait(false);
 
             // Prepare the full system prompt and count the tokens used
             var rawprompt = GenerateSystemPromptContent(newMessage);

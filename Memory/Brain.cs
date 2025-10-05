@@ -94,7 +94,7 @@ namespace LetheAISharp.Memory
         public virtual void Init(BasePersona owner)
         {
             Owner = owner;
-            RefreshMemories();
+            LocalMemoryMaintenance();
         }
 
         /// <summary>
@@ -110,14 +110,13 @@ namespace LetheAISharp.Memory
             await Task.Delay(1).ConfigureAwait(false);
             CurrentDelay = 0;
             LastInsertTime = DateTime.Now;
-            RefreshMemories();
+            LocalMemoryMaintenance();
         }
-
 
         /// <summary>
         /// Move memories to to their proper slot, delete old stuff.
         /// </summary>
-        protected void RefreshMemories()
+        protected void LocalMemoryMaintenance()
         {
             MemoryDecay();
             // Select all natural memories within the cutoff period, order by Added descending, and enqueue them
@@ -157,7 +156,7 @@ namespace LetheAISharp.Memory
                 return;
             }
 
-            RefreshMemories();
+            LocalMemoryMaintenance();
             if (Eurekas.Count == 0 || DisableEurekas)
                 return;
             CurrentDelay++;
@@ -224,7 +223,7 @@ namespace LetheAISharp.Memory
 
         #region *** LTM - Memory Management ***
 
-        public void ReloadMemories()
+        public virtual void ReloadMemories()
         {
             MindPalace = new MemoryVault();
             if (!LLMEngine.Settings.RAGEnabled)
@@ -274,7 +273,7 @@ namespace LetheAISharp.Memory
         /// <param name="MsgSender"></param>
         /// <param name="searchstring"></param>
         /// <returns></returns>
-        public virtual async Task UpdateRagAndInserts(PromptInserts target, string searchstring, int ragResCount, float ragDistance)
+        public virtual async Task GetRAGandInserts(PromptInserts target, string searchstring, int ragResCount, float ragDistance)
         {
             // Check for RAG entries and refresh the textual inserts
             target.DecreaseDuration();
@@ -332,16 +331,6 @@ namespace LetheAISharp.Memory
                 }
             }
 
-        }
-
-        /// <summary>
-        /// Retrieves a local embed object with the specified unique identifier.
-        /// </summary>
-        /// <param name="iD">The unique identifier of the embed to retrieve.</param>
-        /// <returns>The embed object with the specified identifier, or <see langword="null"/> if no matching embed is found.</returns>
-        internal MemoryUnit? GetLocalMemoryByID(Guid iD)
-        {
-            return Memories.FirstOrDefault(m => m.Guid == iD);
         }
 
         /// <summary>
@@ -475,6 +464,16 @@ namespace LetheAISharp.Memory
             return Memories.FindAll(m => category == null || m.Category == category);
         }
 
+        /// <summary>
+        /// Searches the memory vault for the closest matches to the specified embedding.
+        /// </summary>
+        /// <remarks>If the memory vault is uninitialized or empty, it will be reloaded before performing
+        /// the search.</remarks>
+        /// <param name="embed">An array of floating-point values representing the embedding to search for.</param>
+        /// <param name="count">The maximum number of results to return. Must be greater than zero.</param>
+        /// <param name="maxDist">The maximum allowable distance for a result to be considered a match.</param>
+        /// <returns>A list of <see cref="VaultResult"/> objects representing the closest matches to the specified embedding. 
+        /// Returns an empty list if no matches are found or if the memory vault is empty.</returns>
         public virtual List<VaultResult> Search(float[] embed, int count, float maxDist)
         {
             if (MindPalace is null || MindPalace.Count == 0)
@@ -486,63 +485,25 @@ namespace LetheAISharp.Memory
             return MindPalace.Search(embed, count, maxDist);
         }
 
+        /// <summary>
+        /// Searches the memory vault for results that match the specified message, within the given constraints.
+        /// </summary>
+        /// <remarks>The search functionality depends on the RAG (Retrieval-Augmented Generation) feature
+        /// being enabled in the settings. If RAG is disabled, the method returns an empty list. If the memory vault is
+        /// uninitialized or empty, it will be reloaded before performing the search.</remarks>
+        /// <param name="message">The input message to search for. This can be converted to third-person format based on the current settings.</param>
+        /// <param name="maxRes">The maximum number of results to return.</param>
+        /// <param name="maxDist">The maximum allowable distance for a result to be considered a match.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a list of <see
+        /// cref="VaultResult"/> objects that match the search criteria. The list will be empty if no matches are found
+        /// or if the search feature is disabled.</returns>
         public virtual async Task<List<VaultResult>> Search(string message, int maxRes, float maxDist)
         {
             if (!LLMEngine.Settings.RAGEnabled)
                 return [];
             if (MindPalace is null || MindPalace.Count == 0)
-            {
                 ReloadMemories();
-            }
-
-            var toretrieve = maxRes * 2 + 5;
-            if (toretrieve < 30)
-                toretrieve = 30;
-
-            // Check if message contains the words RP or roleplay
-            var requestIsAboutRoleplay = message.Contains(" RP", StringComparison.OrdinalIgnoreCase) || message.Contains(" roleplay", StringComparison.OrdinalIgnoreCase) || message.Contains(" role play", StringComparison.OrdinalIgnoreCase);
-
-            var found = await MindPalace!.Search(
-                LLMEngine.Settings.RAGConvertTo3rdPerson ? message.ConvertToThirdPerson() : message,
-                toretrieve,
-                maxDist).ConfigureAwait(false);
-
-            foreach (var item in found)
-            {
-                if (item.Memory.Category == MemoryType.ChatSession && item.Memory is Files.ChatSession session)
-                {
-
-                    if (session.MetaData.IsRoleplaySession)
-                    {
-                        if (requestIsAboutRoleplay)
-                            item.Distance -= 0.015f; // Boost RP sessions
-                        else
-                            item.Distance += 0.015f; // Decay RP sessions
-                    }
-                    // Mark sticky as not wanted because they are handled with different insertion method
-                    if (session.Sticky && LLMEngine.Settings.SessionMemorySystem)
-                        item.Distance += 2f;
-                }
-                var embedhelpers = MemoryUnit.EmbedHelpers[item.Memory.Category];
-                if (embedhelpers?.Count > 0)
-                {
-                    foreach (var kw in embedhelpers)
-                    {
-                        if (message.ContainsWholeWord(kw, StringComparison.OrdinalIgnoreCase))
-                        {
-                            item.Distance -= 0.015f; // Boost if the message contains one of the embed helpers for this category
-                            break;
-                        }
-                    }
-                }
-            }
-            // Remove entries with distance above limit
-            found.RemoveAll(e => e.Distance > maxDist);
-            found.Sort((a, b) => a.Distance.CompareTo(b.Distance));
-            // If we have too many results, trim the list to maxRes
-            if (found.Count > maxRes)
-                found = found.GetRange(0, maxRes);
-            return found;
+            return await MindPalace!.Search(LLMEngine.Settings.RAGConvertTo3rdPerson ? message.ConvertToThirdPerson() : message, maxRes, maxDist).ConfigureAwait(false);
         }
 
         #endregion

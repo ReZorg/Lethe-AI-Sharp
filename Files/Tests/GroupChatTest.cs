@@ -34,7 +34,7 @@ namespace LetheAISharp.Files.Tests
             };
 
             // Set up LLMSystem.LoadedPersonas for the test
-            LLMEngine.LoadPersonas(new List<BasePersona> { alice, bob });
+            LLMEngine.LoadPersonas([alice, bob]);
 
             // Create group persona
             var groupPersona = new GroupPersona
@@ -282,9 +282,7 @@ namespace LetheAISharp.Files.Tests
                 if (!LLMEngine.IsGroupConversation)
                     throw new Exception("LLMSystem should detect group conversation");
 
-                var detectedGroup = LLMEngine.GetGroupPersona();
-                if (detectedGroup == null)
-                    throw new Exception("Should be able to get group persona from LLMSystem");
+                var detectedGroup = LLMEngine.GetGroupPersona() ?? throw new Exception("Should be able to get group persona from LLMSystem");
 
                 // Test getting group bots
                 var groupBots = LLMEngine.GetGroupBots();

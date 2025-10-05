@@ -36,7 +36,7 @@ namespace LetheAISharp.Agent.Actions
                 }
             }
             // remove duplicates based on URL
-            allResults = allResults.GroupBy(r => r.Url).Select(g => g.First()).ToList();
+            allResults = [.. allResults.GroupBy(r => r.Url).Select(g => g.First())];
 
 
             return allResults;
