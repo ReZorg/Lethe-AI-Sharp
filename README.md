@@ -23,7 +23,7 @@ if (LLMEngine.Status != SystemStatus.Ready)
 var pb = LLMEngine.GetPromptBuilder();
 pb.AddMessage(AuthorRole.SysPrompt, "You're an helpful and friendly bot!");
 pb.AddMessage(AuthorRole.User, "Explain gravity in one friendly paragraph.");
-var query = pb.PromptToQuery(AuthorRole.Assistant);
+var query = pb.PromptToQuery();
 var reply = await LLMEngine.SimpleQuery(query);
 Console.WriteLine(reply.Text);
 
