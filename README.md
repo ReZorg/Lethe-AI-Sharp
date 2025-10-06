@@ -104,6 +104,7 @@ Place them into `data/classifiers/` (configure their *build action* to “Copy i
 For comprehensive documentation, check the `Docs/` folder:
 - [LLM System Documentation](Docs/LLMSYSTEM.md) - Core LLMEngine functionality, personas, and chat management
 - [Instruction Format Guide](Docs/INSTRUCTFORMAT.md) - Configuring message formatting for different models
+- [Personas](Docs/PERSONAS.md) - Create and customize personas
 - [Memory System](Docs/MEMORY.md) - Understand the various memory systems and how they interact
 - [Examples](Docs/Examples/) - Working code samples and tutorials
 
