@@ -110,7 +110,7 @@ class Program
                 await Task.Delay(50);
         }
         // End chat session and save log
-        LLMEngine.Bot.Endhat();
+        LLMEngine.Bot.EndChat();
 
     }
 }
