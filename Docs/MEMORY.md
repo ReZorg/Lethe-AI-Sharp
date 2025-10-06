@@ -222,7 +222,7 @@ The persona's `Brain` class provides memory management and RAG functionalities:
 ### RAG Search Process
 
 ```csharp
-if (LLMEngine.Settings.Enabled)
+if (LLMEngine.Settings.RAGEnabled)
 {
     var searchresults = await LLMEngine.Bot.Brain.Search(searchmessage, ragResCount, ragDistance);
     // results is a list of VaultResult (containing each a MemoryUnit and a distance value)
