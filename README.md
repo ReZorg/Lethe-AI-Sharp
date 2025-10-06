@@ -56,16 +56,15 @@ Remote endpoints should work but primary focus remains local / LAN latency.
 
 ## ⭐ Core Features
 
-- Prompt + Persona system (bot & user role objects, instruction formats)
-- Session chatlog with automated summarization
+- Prompt + Persona system (bot & user role objects, custom prompts, instruction formats)
+- Session-based chatlog with automated summarization
 - LLM message streaming support
 - Long‑term memory system + world info triggers
 - RAG with vector search (HNSW) + embeddings
-- Extensible background “agentic tasks” (search, summarization)
+- Extensible background “agentic tasks” (search the web, summarization)
 - Structured output (GBNF / JSON schema) for tool pipelines
 - Web search integration (DuckDuckGo, Brave API)
-- Text utilities (token counting, segmentation, summarization helpers)
-- Experimental group chat (multi‑AI personas)
+- Text utilities (token counting, segmentation, and manipulation helpers)
 - Visual language model support (depending on the back-end)
 
 ## 📝 Long Term Memory and RAG
@@ -79,7 +78,7 @@ Remote endpoints should work but primary focus remains local / LAN latency.
 - Includes 2 default tasks that run relevant web searches and mention results in following chat session
 - Write your own tasks easily to boost your bot's abilities
 
-## 🛠️ Advanced Features (Work in progress / experimental)
+## 🛠️ Experimental Features (work in progress)
 - Group chat functionalities (one user and multiple AI characters)
 - Sentiment analysis
 
