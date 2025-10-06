@@ -44,10 +44,9 @@ Remote endpoints should work but primary focus remains local / LAN latency.
 | Basic text generation | ✅ | ✅ |
 | Streaming | ✅ | ✅ |
 | Structured output | ✅ GBNF Grammar | ✅ JSON Schema |
-| CoT / “thinking” prompts | ✅ | ✅ |
+| CoT / “thinking” models | ✅ | ✅ |
 | Personas & chat sessions | ✅ | ✅ |
-| Memory summaries | ✅ | ✅ |
-| RAG integration | ✅ | ✅ |
+| RAG / Memory integration | ✅ | ✅ |
 | Web search integration | ✅ | ✅ |
 | Text To Speech | ✅ (if loaded) | ❌ |
 | VLM (image input)* | ✅ (if loaded) | ✅ |
