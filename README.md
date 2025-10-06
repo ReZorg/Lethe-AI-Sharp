@@ -6,7 +6,7 @@ Lethe AI Sharp is a modular, object‑oriented C# library that connects local or
 
 It unifies: chat personas, conversation/session management, streaming inference, long‑term memory, RAG (retrieval augmented generation), background agentic tasks, web search tools, TTS, and structured output generation.
 
-It is extensible, documented and written 100% in C#.
+It is extensible, documented, backend-agnostic (you write the same code no matter which backend is being used), and written 100% in C#.
 
 ## 🔥 Minimal Example
 
