@@ -676,7 +676,7 @@ Console.WriteLine($"Tokens remaining: {remaining}");
 
 ```csharp
 // For backends that support GBNF grammar (KoboldAPI only)
-if (LLMEngine.SupportsGrammar)
+if (LLMEngine.SupportsSchema)
 {
     // Define a class for structured output
     public class ResponseFormat
