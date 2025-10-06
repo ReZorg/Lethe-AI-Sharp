@@ -157,7 +157,21 @@ namespace LetheAISharp.LLM
         private static SystemStatus status = SystemStatus.NotInit;
         private static string StreamingTextProgress = string.Empty;
         private static int maxContextLength = 8192;
-        private static InstructFormat instruct = new();
+        private static InstructFormat instruct = new() 
+        { 
+            AddNamesToPrompt = false,
+            SysPromptStart = "### Instruction:" + NewLine,
+            SysPromptEnd = "",
+            SystemStart = "### Instruction:" + NewLine,
+            SystemEnd = "",
+            UserStart = "### Input:" + NewLine,
+            UserEnd = "",
+            BotStart = "### Response:" + NewLine,
+            BotEnd = "",
+            NewLinesBetweenMessages = true,
+            StopStrings = [ "### Instruction:", "### Input:", "### Response:" ],
+        };
+
         private static ILogger? logger = null;
         private static BasePersona bot = new() { IsUser = false, Name = "Bot", Bio = "You are an helpful AI assistant whose goal is to answer questions and complete tasks.", UniqueName = string.Empty };
         private static BasePersona user = new() { IsUser = true, Name = "User", UniqueName = string.Empty };
