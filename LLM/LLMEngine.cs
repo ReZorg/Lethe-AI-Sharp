@@ -73,7 +73,7 @@ namespace LetheAISharp.LLM
         public static event EventHandler<string>? OnInferenceEnded;
         /// <summary> Called when the system changes states (no init, busy, ready) </summary>
         public static event EventHandler<SystemStatus>? OnStatusChanged;
-        /// <summary> Called when the bot persona is changed, returns the new bot </summary>
+        /// <summary> Called when the bot persona is changed, returns the new bot (sender is always null) </summary>
         public static event EventHandler<BasePersona>? OnBotChanged;
 
         /// <summary> Set to true if the backend supports text-to-speech </summary>

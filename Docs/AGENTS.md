@@ -568,7 +568,7 @@ public class MoodAnalysisTask : IAgentTask
     public async Task<bool> Observe(BasePersona owner, AgentTaskSetting cfg, CancellationToken ct)
     {
         // Basic system checks
-        if (LLMEngine.Status != SystemStatus.Ready || !LLMEngine.SupportsGrammar)
+        if (LLMEngine.Status != SystemStatus.Ready || !LLMEngine.SupportsSchema)
             return false;
 
         // Check timing

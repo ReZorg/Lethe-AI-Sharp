@@ -124,10 +124,6 @@ namespace LetheAISharp.Files
         protected virtual async Task<SessionMetaInfo> GetSessionInfo()
         {
             var session = new SessionMetaInfo();
-            //var grammar = await session.GetGrammar().ConfigureAwait(false);
-            //if (string.IsNullOrWhiteSpace(grammar))
-            //    throw new Exception("Something went wrong when building summary grammar and json format.");
-
             LLMEngine.NamesInPromptOverride = false;
             var prefill = LLMEngine.Instruct.PrefillThinking;
             LLMEngine.Instruct.PrefillThinking = false;
@@ -157,12 +153,7 @@ namespace LetheAISharp.Files
             promptbuild.AddMessage(AuthorRole.SysPrompt, sysprompt + docs);
             promptbuild.AddMessage(AuthorRole.User, requestedTask);
             await promptbuild.SetStructuredOutput(session);
-
             var ct = promptbuild.PromptToQuery(AuthorRole.Assistant, (LLMEngine.Sampler.Temperature > 0.75) ? 0.75 : LLMEngine.Sampler.Temperature, replyln);
-            //if (ct is GenerationInput input)
-            //{
-            //    input.Grammar = grammar;
-            //}
             var finalstr = await LLMEngine.SimpleQuery(ct).ConfigureAwait(false);
             session = JsonConvert.DeserializeObject<SessionMetaInfo>(finalstr);
             session?.ClampRelevance();

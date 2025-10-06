@@ -672,26 +672,59 @@ var remaining = maxTokens - currentUsage;
 Console.WriteLine($"Tokens remaining: {remaining}");
 ```
 
-### Grammar and Structured Output
+### Structured Output
+
+One of the most powerful way to use a model is through structured output. This forces the LLM to respond in a specific format, which can then be parsed easily by code. This is especially useful for applications like Q&A bots, data extraction, or any scenario where you want the model to return data in a predictable structure.
 
 ```csharp
-// For backends that support GBNF grammar (KoboldAPI only)
 if (LLMEngine.SupportsSchema)
 {
-    // Define a class for structured output
-    public class ResponseFormat
+    // Define a class for structured output (note that the class has to be kinda simple, see official Kobold and OpenAI docs)
+    public class StructuredAnswer
     {
         public string answer { get; set; }
         public int confidence { get; set; }
-        public string[] sources { get; set; }
+        public List<string> sources { get; set; }
     }
+    var structuredAnswer = new StructuredAnswer();
+
+    // Build a prompt basic prompt, this is obviously kind of a silly example:
+    var builder = LLMEngine.GetPromptBuilder();
+    builder.AddMessage(AuthorRole.SysPrompt, "You are an useful bot, you respond in JSON.");
+    builder.AddMessage(AuthorRole.User, "Hello, what is the weather like today?");
     
-    // Generate grammar from class
-    var grammar = await LLMEngine.Client.SchemaToGrammar(typeof(ResponseFormat));
-    
-    // Use in query (implementation depends on backend)
+    // forces the bot to respond in the specified structured format
+    builder.SetStructuredOutput(structuredAnswer);
+
+    // Convert to query
+    var query = builder.PromptToQuery();
+
+    // Await the response
+    var response = await LLMEngine.SimpleQuery(query, ct).ConfigureAwait(false);
+    try
+    {
+        // Parse the structured response
+        structuredAnswer = JsonConvert.DeserializeObject<StructuredAnswer>(response);
+    }
+    except
+    {
+        // something went wrong. LLM can be finicky, and it might not respond in the correct format on extremely rare occasions
+        // so it should be handled properly.
+        Console.WriteLine("Failed to parse structured response.");
+    }
+   
+    // Use the result
+    ...
 }
 ```
+
+The types supported for structured output are depend on the backend, but generally speaking, safe types are:
+- bool
+- int, float, double
+- string
+- List<T> where T is a safe type
+
+Beyond that, you'll need to experiment and consult the backend documentation.
 
 ## Examples
 
