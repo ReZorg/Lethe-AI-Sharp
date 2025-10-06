@@ -53,7 +53,7 @@ var chatmlThinking = new InstructFormat
 
 ### Presets
 
-You can find presets for most of the [commonly used instruction formats here](Docs/Examples/InstructFormat).
+You can find presets for most of the [commonly used instruction formats here](Examples/InstructFormat).
 
 ## Key Properties
 
