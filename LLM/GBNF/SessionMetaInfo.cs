@@ -13,7 +13,7 @@ namespace LetheAISharp.GBNF
 
     public class SessionMetaInfo : LLMExtractableBase<SessionMetaInfo>
     {
-        [JsonIgnore] protected static string Schema = string.Empty;
+        [JsonIgnore] protected static string Schema { get; set; } = string.Empty;
 
 
         [Required][Description("A title for this chat session.")]

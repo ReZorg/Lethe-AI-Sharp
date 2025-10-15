@@ -40,6 +40,10 @@ namespace LetheAISharp.Files
             this(role, DateTime.Now, mess, LLMEngine.Bot.UniqueName, LLMEngine.User.UniqueName, false, string.Empty)
         { }
 
+        public SingleMessage() : this(AuthorRole.User, DateTime.Now, "", "", "", false, "")
+        {
+        }
+
         public string ToTextCompletion()
         {
             return LLMEngine.Instruct.FormatSingleMessage(this);
