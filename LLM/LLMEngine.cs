@@ -924,7 +924,7 @@ namespace LetheAISharp.LLM
             SingleMessage? singlemsg = null;
             if (!string.IsNullOrEmpty(userInput))
             {
-                singlemsg = new SingleMessage(MsgSender, DateTime.Now, userInput, Bot.UniqueName, User.UniqueName);
+                singlemsg = new SingleMessage(MsgSender, userInput);
                 if (setGuid is not null)
                     singlemsg.Guid = (Guid)setGuid;
             }

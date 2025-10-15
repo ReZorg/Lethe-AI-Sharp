@@ -36,6 +36,10 @@ namespace LetheAISharp.Files
         [JsonIgnore] public BasePersona? Sender => 
             Role == AuthorRole.User? User : Role == AuthorRole.Assistant ? Bot : null;
 
+        public SingleMessage(AuthorRole role, string mess) :
+            this(role, DateTime.Now, mess, LLMEngine.Bot.UniqueName, LLMEngine.User.UniqueName, false, string.Empty)
+        { }
+
         public string ToTextCompletion()
         {
             return LLMEngine.Instruct.FormatSingleMessage(this);
