@@ -14,7 +14,7 @@ using Message = OpenAI.Chat.Message;
 namespace LetheAISharp.LLM
 {
     public enum SystemStatus { NotInit, Ready, Busy }
-    public enum BackendAPI { KoboldAPI, OpenAI }
+    public enum BackendAPI { KoboldAPI, OpenAI, LlamaSharp }
 
     /// <summary>
     /// System to handle communications with language models. 
@@ -38,12 +38,12 @@ namespace LetheAISharp.LLM
 
         /// <summary> Total token context window the model can handle </summary>
         public static int MaxContextLength { 
-            get => maxContextLength;
+            get => Settings.MaxTotalTokens;
             set 
             {
-                if (value != maxContextLength) 
+                if (value != Settings.MaxTotalTokens) 
                     InvalidatePromptCache();
-                maxContextLength = value;
+                Settings.MaxTotalTokens = value;
             }
         }
 
@@ -156,7 +156,6 @@ namespace LetheAISharp.LLM
 
         private static SystemStatus status = SystemStatus.NotInit;
         private static string StreamingTextProgress = string.Empty;
-        private static int maxContextLength = 8192;
         private static InstructFormat instruct = new() 
         { 
             AddNamesToPrompt = false,
@@ -220,6 +219,7 @@ namespace LetheAISharp.LLM
             {
                 BackendAPI.KoboldAPI => new KoboldCppAdapter(httpClient),
                 BackendAPI.OpenAI => new OpenAIAdapter(httpClient),
+                BackendAPI.LlamaSharp => new LlamaSharpAdapter(Settings.BackendUrl),
                 _ => throw new NotSupportedException($"Backend {Settings.BackendAPI} is not supported")
             };
             // Subscribe to the TokenReceived event

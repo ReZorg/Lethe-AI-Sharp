@@ -64,7 +64,6 @@ namespace LetheAISharp.API
         // Optional capabilities (may not be supported by all backends)
         Task<byte[]> TextToSpeech(string text, string voice);
         Task<string> WebSearch(string query);
-        Task<string> ImageCaption(byte[] imageData);
         Task<string> SchemaToGrammar(Type jsonclass);
 
         void UpdateSearchProvider();

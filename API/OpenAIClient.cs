@@ -117,10 +117,10 @@ namespace LetheAISharp.API
             LLMEngine.Logger?.LogInformation("[OpenAI API] Final response: {CumulativeDelta}", cumulativeDelta);
         }
 
-        public virtual async Task<Choice> ChatCompletion(ChatRequest request, CancellationToken cancellationToken = default)
+        public virtual async Task<Choice?> ChatCompletion(ChatRequest request, CancellationToken cancellationToken = default)
         {
             var response = await API.ChatEndpoint.GetCompletionAsync(request, cancellationToken).ConfigureAwait(false);
-            return response.FirstChoice;
+            return response?.FirstChoice;
         }
 
         /// <summary>

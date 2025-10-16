@@ -9,13 +9,15 @@ namespace LetheAISharp.API
     /// <summary>
     /// Adapter for OpenAI-compatible backends (we'll see later)
     /// </summary>
-    public class OpenAIAdapter : ILLMServiceClient
+    public class OpenAIAdapter : ILLMServiceClient, IDisposable
     {
         public event EventHandler<LLMTokenStreamingEventArgs>? TokenReceived;
 
         private readonly OpenAI_APIClient _client;
         private readonly HttpClient _httpClient;
         private readonly WebSearchAPI webSearchClient;
+        private CancellationTokenSource? cts;
+        private readonly object _ctsLock = new object();
 
         public CompletionType CompletionType => CompletionType.Chat;
 
@@ -78,16 +80,30 @@ namespace LetheAISharp.API
         {
             if (parameters is not ChatRequest input)
                 throw new ArgumentException("Parameters must be of type ChatRequest");
-            var result = await _client.ChatCompletion(input).ConfigureAwait(false);
-            var res = result.Message.Content.ToString();
-            return res;
+            CancellationToken token;
+            lock (_ctsLock)
+            {
+                cts?.Dispose(); // Dispose old token source
+                cts = new CancellationTokenSource();
+                token = cts.Token;
+            }
+            var result = await _client.ChatCompletion(input, token).ConfigureAwait(false);
+            var res = result?.Message.Content.ToString();
+            return res ?? string.Empty;
         }
 
         public async Task GenerateTextStreaming(object parameters)
         {
             if (parameters is not ChatRequest input)
                 throw new ArgumentException("Parameters must be of type ChatRequest");
-            await _client.StreamChatCompletion(input).ConfigureAwait(false);
+            CancellationToken token;
+            lock (_ctsLock)
+            {
+                cts?.Dispose(); // Dispose old token source
+                cts = new CancellationTokenSource();
+                token = cts.Token;
+            }
+            await _client.StreamChatCompletion(input, token).ConfigureAwait(false);
         }
 
         public IPromptBuilder GetPromptBuilder()
@@ -96,14 +112,22 @@ namespace LetheAISharp.API
         }
 
 
-        public Task<bool> AbortGeneration()
+        public async Task<bool> AbortGeneration()
         {
-            throw new NotImplementedException();
+            return await Task.FromResult(AbortGenerationSync());
         }
 
         public bool AbortGenerationSync()
         {
-            throw new NotImplementedException();
+            lock (_ctsLock)
+            {
+                if (cts != null && !cts.IsCancellationRequested)
+                {
+                    cts.Cancel();
+                    return true;
+                }
+                return false;
+            }
         }
 
         public async Task<int> CountTokens(string text)
@@ -129,11 +153,6 @@ namespace LetheAISharp.API
             var res = await webSearchClient.SearchAndEnrichAsync(query, 3, LLMEngine.Settings.WebSearchDetailedResults).ConfigureAwait(false);
             // Convert results to a common format
             return JsonConvert.SerializeObject(res);
-        }
-
-        public Task<string> ImageCaption(byte[] imageData)
-        {
-            throw new NotImplementedException();
         }
 
         public async Task<bool> CheckBackend()
@@ -173,6 +192,11 @@ namespace LetheAISharp.API
             return await Task.FromResult(res!).ConfigureAwait(false);
         }
 
+        public void Dispose()
+        {
+            cts?.Dispose();
+            GC.SuppressFinalize(this);
+        }
 
         public bool SupportsStreaming => true;
         public bool SupportsTTS => false;  // TODO
