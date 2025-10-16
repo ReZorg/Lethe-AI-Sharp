@@ -31,7 +31,10 @@ namespace LetheAISharp.API
         public string BaseUrl
         {
             get => LLMEngine.Settings.BackendUrl;
-            set => LLMEngine.Settings.BackendUrl = value;
+            set
+            {
+                LLMEngine.Settings.BackendUrl = value;
+            }
         }
 
         public CompletionType CompletionType => CompletionType.Text;

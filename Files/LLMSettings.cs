@@ -22,7 +22,7 @@ namespace LetheAISharp.Files
 
         #region *** Backend Connection ***
 
-        /// <summary> URL of the backend server (KoboldAPI, OpenAI, etc.) </summary>
+        /// <summary> URL of the backend server (KoboldAPI, OpenAI) or location of GGUF (LLamaSharp) </summary>
         public string BackendUrl { get; set; } = "http://localhost:5001";
 
         /// <summary> API of the backend server, KoboldAPI (text completion) and OpenAI (chat completion) are both handled </summary>

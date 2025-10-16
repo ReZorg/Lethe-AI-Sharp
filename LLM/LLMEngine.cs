@@ -209,7 +209,7 @@ namespace LetheAISharp.LLM
 
         #region *** Initialization and Loading ***
 
-        public static void Init()
+        private static void LoadBackendClient()
         {
             if (Status != SystemStatus.NotInit)
                 return;
@@ -282,7 +282,7 @@ namespace LetheAISharp.LLM
             Settings.BackendUrl = url;
             Settings.BackendAPI = backend;
             Settings.OpenAIKey = key ?? "123";
-            Init();
+            LoadBackendClient();
         }
 
         /// <summary>
@@ -301,7 +301,7 @@ namespace LetheAISharp.LLM
         /// </summary>
         public static async Task Connect()
         {
-            Init();
+            LoadBackendClient();
             if (Client == null)
             {
                 MaxContextLength = 4096;
