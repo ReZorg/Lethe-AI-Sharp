@@ -17,7 +17,7 @@ namespace LetheAISharp.API
         private readonly HttpClient _httpClient;
         private readonly WebSearchAPI webSearchClient;
         private CancellationTokenSource? cts;
-        private readonly object _ctsLock = new object();
+        private readonly object _ctsLock = new();
 
         public CompletionType CompletionType => CompletionType.Chat;
 

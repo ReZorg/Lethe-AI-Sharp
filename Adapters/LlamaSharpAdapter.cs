@@ -114,7 +114,7 @@ namespace LetheAISharp.API
             return Context.Tokenize(text).Length;
         }
 
-        private InferenceParams MakeParams(GenerationInput input)
+        private static InferenceParams MakeParams(GenerationInput input)
         {
             var pipeline = new DefaultSamplingPipeline()
             {
@@ -133,7 +133,7 @@ namespace LetheAISharp.API
             var sett = new InferenceParams()
             {
                 MaxTokens = input.Max_length,
-                AntiPrompts = input.Stop_sequence?.ToArray() ?? Array.Empty<string>(),
+                AntiPrompts = input.Stop_sequence?.ToArray() ?? [],
                 SamplingPipeline = pipeline
             };
             return sett;
@@ -206,27 +206,28 @@ namespace LetheAISharp.API
             return new TextPromptBuilder();
         }
 
-        public async Task<bool> LoadKVState(int value)
+        public Task<bool> LoadKVState(int value)
         {
             throw new NotSupportedException("Internal API does not support KV cache manipulation");
         }
 
-        public async Task<bool> SaveKVState(int value)
+        public Task<bool> SaveKVState(int value)
         {
             throw new NotSupportedException("Internal API does not support KV cache manipulation");
         }
 
-        public async Task<bool> ClearKVStates()
+        public Task<bool> ClearKVStates()
         {
             throw new NotSupportedException("Internal API does not support KV cache manipulation");
         }
 
         public async Task<string> SchemaToGrammar(Type jsonclass)
         {
-            throw new NotSupportedException("Internal API does not support Grammar");
+            var gram = GbnfConverter.Convert(jsonclass);
+            return await Task.FromResult(gram);
         }
 
-        public async Task<byte[]> TextToSpeech(string text, string voice)
+        public Task<byte[]> TextToSpeech(string text, string voice)
         {
             throw new NotSupportedException("Internal API does not support TTS");
         }
