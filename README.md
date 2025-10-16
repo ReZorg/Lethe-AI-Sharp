@@ -12,7 +12,7 @@ It is extensible, documented, backend-agnostic (you write the same code no matte
 
 ```csharp
 // 1. Setup (choose backend style)
-LLMEngine.Setup("http://localhost:1234", BackendAPI.OpenAICompatible);
+LLMEngine.Setup("http://localhost:1234", BackendAPI.OpenAI);
 
 // 2. Connect
 await LLMEngine.Connect();
@@ -58,7 +58,7 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 
 ## ⭐ Core Features
 
-- Prompt + Persona system (bot & user role objects, custom prompts, instruction formats)
+- Persona system (bot & user role objects, custom prompts, instruction formats)
 - Session-based chatlog with automated summarization
 - LLM message streaming support
 - Long‑term memory system + world info triggers
@@ -66,8 +66,8 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 - Extensible background “agentic tasks” (search the web, summarization)
 - Structured output (GBNF / JSON schema) for tool pipelines
 - Web search integration (DuckDuckGo, Brave API)
-- Text utilities (token counting, segmentation, and manipulation helpers)
-- Visual language model support (depending on the back-end)
+- Useful LLM related tools (token counting, GBNF grammar, text manipulation helpers)
+- Visual language model support
 
 ## 📝 Long Term Memory and RAG
 - Summaries of recent chat sessions into the system prompt
