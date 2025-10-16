@@ -34,22 +34,25 @@ await LLMEngine.SimpleQueryStreaming(query, cts.Token);
 ```
 
 ## 🧩 Compatible Backends
-- **Kobold API:** Used by [KoboldCpp](https://github.com/LostRuins/koboldcpp).
-- **OpenAI API:** Used by [LM Studio](https://lmstudio.ai/), [Text Generation WebUI](https://github.com/oobabooga/text-generation-webui), and many more.
+- **Kobold API:** Powerful text completion API, used by [KoboldCpp](https://github.com/LostRuins/koboldcpp).
+- **OpenAI API:** Industry standard chat completion API, used by [LM Studio](https://lmstudio.ai/), [Text Generation WebUI](https://github.com/oobabooga/text-generation-webui), and many more.
 
-Remote endpoints should work but primary focus remains local / LAN latency.
+Remote endpoints should work but primary focus remains local / LAN latency. 
 
-| Capability | Kobold API | OpenAI-Compatible |
-|------------|------------|-------------------|
-| Basic text generation | ✅ | ✅ |
-| Streaming | ✅ | ✅ |
-| Structured output | ✅ GBNF Grammar | ✅ JSON Schema |
-| CoT / “thinking” models | ✅ | ✅ |
-| Personas & chat sessions | ✅ | ✅ |
-| RAG / Memory integration | ✅ | ✅ |
-| Web search integration | ✅ | ✅ |
-| Text To Speech | ✅ (if loaded) | ❌ |
-| VLM (image input)* | ✅ (if loaded) | ✅ |
+Alternatively, if running an external backend is too much, **Lethe AI** also comes with its internal "backend" to load local models (in the GGUF format) directly from your application. It uses [LLamaSharp](https://github.com/SciSharp/LLamaSharp) as a base, a C# port of LLama.cpp.
+
+
+| Capability | Kobold API | OpenAI-Compatible | LlamaSharp (internal) |
+|------------|------------|-------------------|-----------------------|
+| Basic text generation | ✅ | ✅ | ✅ |
+| Streaming | ✅ | ✅ | ✅ |
+| Structured output | ✅ GBNF Grammar | ✅ JSON Schema | ✅ GBNF Grammar |
+| CoT / “thinking” models | ✅ | ✅ | ✅ |
+| Personas & chat sessions | ✅ | ✅ | ✅ |
+| RAG / Memory integration | ✅ | ✅ | ✅ |
+| Web search integration | ✅ | ✅ | ✅ |
+| Text To Speech | ✅ (if loaded) | ❌ | ❌ |
+| VLM (image input)* | ✅ (if loaded) | ✅ | ❌ |
 
 \* VLM support depends entirely on underlying server and LLM capabilities. KoboldAPI has notoriously bad image input support.
 
