@@ -2,7 +2,7 @@
 
 ## 🚀 What Is It?
 
-Lethe AI Sharp is a modular, object‑oriented C# library that connects local or remote Large Language Model (LLM) backends to your applications (desktop tools, game engines, services).
+Lethe AI Sharp is a modular, object‑oriented C# library that connects local or remote Large Language Model (LLM) backends to your applications (desktop tools, game engines, services). It also comes with its own light backend, allowing you to run a local LLM in the GGUF format directly without even having to rely on anything else.
 
 It unifies: chat personas, conversation/session management, streaming inference, long‑term memory, RAG (retrieval augmented generation), background agentic tasks, web search tools, TTS, and structured output generation.
 
