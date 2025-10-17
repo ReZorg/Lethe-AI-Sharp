@@ -9,7 +9,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Text;
 using static LetheAISharp.SearchAPI.WebSearchAPI;
-using Message = OpenAI.Chat.Message;
+
 
 namespace LetheAISharp.LLM
 {

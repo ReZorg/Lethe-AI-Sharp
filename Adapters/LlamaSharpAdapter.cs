@@ -1,12 +1,9 @@
-﻿using LetheAISharp.API;
-using LetheAISharp.LLM;
+﻿using LetheAISharp.LLM;
 using LetheAISharp.SearchAPI;
 using LLama;
 using LLama.Common;
 using LLama.Sampling;
 using Newtonsoft.Json;
-using OpenAI.Files;
-using OpenAI.Responses;
 using System;
 using System.Collections.Generic;
 using System.Linq;

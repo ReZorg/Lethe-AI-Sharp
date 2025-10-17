@@ -256,7 +256,7 @@ namespace LetheAISharp.API
                         using var bufferTopK = MemoryOwner<LLamaTokenData>.Allocate(safeTopK);
 
                         // Copy only the TopK tokens from the existing candidate pool to the new buffer
-                        nativeAll.Data.Slice(0, safeTopK).CopyTo(bufferTopK.Span);
+                        nativeAll.Data[..safeTopK].CopyTo(bufferTopK.Span);
 
                         // Create a native array with the TopK tokens
                         using (LLamaTokenDataArrayNative.Create(new LLamaTokenDataArray(bufferTopK.Memory, true), out var nativeTopK))
