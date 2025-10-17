@@ -46,7 +46,7 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 |------------|------------|-------------------|-----------------------|
 | Basic text generation | ✅ | ✅ | ✅ |
 | Streaming | ✅ | ✅ | ✅ |
-| Structured output | ✅ GBNF Grammar | ✅ JSON Schema | ⚠️ GBNF Grammar (WIP) |
+| Structured output | ✅ GBNF Grammar | ✅ JSON Schema | ✅ GBNF Grammar |
 | CoT / “thinking” models | ✅ | ✅ | ✅ |
 | Personas & chat sessions | ✅ | ✅ | ✅ |
 | RAG / Memory integration | ✅ | ✅ | ✅ |
