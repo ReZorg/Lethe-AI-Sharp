@@ -8,7 +8,7 @@ The `LLMEngine` is the core component of the LetheAISharp library that provides 
 
 ## Key Features
 
-- **Backend Compatibility**: Supports KoboldAPI and OpenAI API
+- **Backend Compatibility**: Supports KoboldAPI and OpenAI API. Also comes with its own internal backend.
 - **Simple Queries**: Direct text queries with streaming and non-streaming options
 - **Full Communication**: Complete chat system with personas, history, and context
 - **Persona Management**: Bot and user personas with customizable attributes
@@ -48,6 +48,10 @@ LLMEngine.Setup("http://localhost:5001", BackendAPI.KoboldAPI);
 
 // Or setup connection to OpenAI-compatible API
 LLMEngine.Setup("http://localhost:1234", BackendAPI.OpenAI, "your-api-key");
+
+// Or for a local GGUF file, you can use the internal backend LlamaSharp (in this case, you app is 100% self contained, and need no external program)
+LLMEngine.Setup("C:\\Path\\To\\mymodel.gguf", BackendAPI.LlamaSharp);
+
 ```
 
 ### Step 2: Connect to the Backend
