@@ -119,7 +119,8 @@ namespace LetheAISharp.API
 
         private static InferenceParams MakeParams(GenerationInput input)
         {
-            var pipeline = new DefaultSamplingPipeline()
+            var gram = string.IsNullOrWhiteSpace(input.Grammar) ? null : new Grammar(input.Grammar, "root");
+            var pipeline = new CustomSamplingPipeline()
             {
                 Temperature = (float)input.Temperature,
                 TopP = (float)input.Top_p,
@@ -127,8 +128,9 @@ namespace LetheAISharp.API
                 TypicalP = (float)input.Typical,
                 MinP = (float)input.Min_p,
                 RepeatPenalty = (float)input.Rep_pen,
+                GrammarOptimization = CustomSamplingPipeline.GrammarOptimizationMode.Extended,
                 PenaltyCount = input.Rep_pen_range,
-                Grammar = string.IsNullOrWhiteSpace(input.Grammar) ? null : new Grammar(input.Grammar, "root"),
+                Grammar = gram,
                 PenalizeNewline = false,
                 PreventEOS = input.Bypass_eos,
                 Seed = input.Sampler_seed <= 0 ? 0 : (uint)input.Sampler_seed
@@ -155,11 +157,19 @@ namespace LetheAISharp.API
                 token = cts.Token;
             }
             string response = string.Empty;
-            await foreach (var text in Executor.InferAsync(input.Prompt, MakeParams(input), token))
+            var x = MakeParams(input);
+            try
             {
-                if (token.IsCancellationRequested)
-                    break;
-                response += text;
+                await foreach (var text in Executor.InferAsync(input.Prompt, x, token))
+                {
+                    if (token.IsCancellationRequested)
+                        break;
+                    response += text;
+                }
+            }
+            catch (Exception e)
+            {
+                throw;
             }
             return response;
         }

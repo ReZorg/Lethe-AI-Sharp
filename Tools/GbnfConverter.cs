@@ -347,14 +347,13 @@ namespace LetheAISharp
             if (!_definedRules.Contains("space"))
             {
                 _output.AppendLine();
-                _output.AppendLine("# Utility rules");
                 _output.AppendLine("char ::= [^\"\\\\\\x7F\\x00-\\x1F] | [\\\\] ([\"\\\\bfnrt] | \"u\" [0-9a-fA-F]{4})");
                 _output.AppendLine("integer ::= (\"-\"? integral-part) space");
                 _output.AppendLine("integral-part ::= [0] | [1-9] [0-9]{0,15}");
                 _output.AppendLine("null ::= \"null\" space");
                 _output.AppendLine("number ::= (\"-\"? integral-part) (\".\" [0-9]+)? ([eE] [-+]? [0-9]+)? space");
                 _output.AppendLine("space ::= | \" \" | \"\\n\"{1,2} [ \\t]{0,20}");
-                _output.AppendLine("string ::= \"\\\"\" char* \"\\\"\" space");
+                _output.Append("string ::= \"\\\"\" char* \"\\\"\" space");
             }
         }
 
