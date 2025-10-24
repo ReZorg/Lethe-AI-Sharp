@@ -12,6 +12,19 @@ It unifies: chat personas, conversation/session management, streaming inference,
 
 It is extensible, documented, backend-agnostic (you write the same code no matter which backend is being used), and written 100% in C#.
 
+### No Python Dependencies
+Pure C# implementation. No Python runtime, no conda environments, no pip hell.
+
+### Self-Contained
+Built-in LlamaSharp backend means you can distribute a **single executable** 
+that runs LLMs locally. No external server required, but external servers are supported too.
+
+### Production-Ready
+- Proper async/await patterns
+- Configurable error handling
+- Logging integration
+- Thread-safe semaphore locking
+
 ## 🎯 Use Cases
 - **Game NPCs** - Create dynamic, memory-enabled characters for NPC
 - **Chatbots** - Build context-aware assistants with RAG
