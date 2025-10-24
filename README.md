@@ -12,6 +12,12 @@ It unifies: chat personas, conversation/session management, streaming inference,
 
 It is extensible, documented, backend-agnostic (you write the same code no matter which backend is being used), and written 100% in C#.
 
+## 🎯 Use Cases
+- **Game NPCs** - Create dynamic, memory-enabled characters for NPC
+- **Chatbots** - Build context-aware assistants with RAG
+- **Research Tools** - Combine web search with LLM analysis
+- **Content Generation** - Structured output for automation pipelines
+
 ## 🔥 Minimal Example
 
 ```csharp
