@@ -278,6 +278,8 @@ namespace LetheAISharp.LLM
         /// <param name="key"></param>
         public static void Setup(string url, BackendAPI backend, string? key = null)
         {
+            if (string.IsNullOrWhiteSpace(url))
+                throw new ArgumentException("Backend URL cannot be null or empty", nameof(url));
             Status = SystemStatus.NotInit;
             Settings.BackendUrl = url;
             Settings.BackendAPI = backend;
@@ -483,7 +485,8 @@ namespace LetheAISharp.LLM
         public static async Task<string> SimpleQuery(object chatlog, CancellationToken ctx = default)
         {
             if (Client == null)
-                return string.Empty;
+                throw new InvalidOperationException("LLMEngine not initialized. Call Setup() and Connect() first.");
+
             using var _ = await AcquireModelSlotAsync(ctx).ConfigureAwait(false);
             var oldst = status;
             Status = SystemStatus.Busy;
@@ -500,7 +503,8 @@ namespace LetheAISharp.LLM
         public static async Task SimpleQueryStreaming(object chatlog, CancellationToken ctx = default)
         {
             if (Client == null)
-                return;
+                throw new InvalidOperationException("LLMEngine not initialized. Call Setup() and Connect() first.");
+
             using var _ = await AcquireModelSlotAsync(ctx).ConfigureAwait(false);
             Status = SystemStatus.Busy;
             await Client.GenerateTextStreaming(chatlog).ConfigureAwait(false);
@@ -599,8 +603,10 @@ namespace LetheAISharp.LLM
         /// occurs.</returns>
         public static async Task<string> GetGrammar<ClassToConvert>()
         {
+            if (Client == null)
+                throw new InvalidOperationException("LLMEngine not initialized. Call Setup() and Connect() first.");
             var res = string.Empty;
-            if (Client == null || !SupportsSchema)
+            if (!SupportsSchema)
             {
                 Logger?.LogError("Grammar extraction is not supported by the current backend.");
                 return res;
@@ -738,7 +744,7 @@ namespace LetheAISharp.LLM
             InvalidatePromptCache();
             bot.EndChat(backup: true);
             if (!string.IsNullOrEmpty(bot.UniqueName))
-                (bot as IFile).SaveToFile("data/chars/" + bot.UniqueName + ".json");
+                (bot as IFile).SaveToFile(LLMEngine.Settings.DataPath + bot.UniqueName + ".json");
             bot = newbot;
 
             OnBotChanged?.Invoke(null, bot);

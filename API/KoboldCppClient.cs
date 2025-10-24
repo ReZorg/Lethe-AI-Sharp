@@ -17,6 +17,7 @@ using static LetheAISharp.SearchAPI.WebSearchAPI;
 
 namespace LetheAISharp.API
 {
+    /// I know the code is kinda cancer, but that's swagger generated code for you. And I fixed some parts.
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.1.0.0 (NJsonSchema v11.0.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public class KoboldCppClient 
     {

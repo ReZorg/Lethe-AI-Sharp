@@ -228,7 +228,7 @@ namespace LetheAISharp.Files
         public virtual void EndChat(bool backup = false)
         {
             SaveChatHistory(backup);
-            SaveBrain("data/chars/", backup);
+            SaveBrain(LLMEngine.Settings.DataPath, backup);
             AgentSystem?.CloseSync();
             AgentSystem = null;
         }

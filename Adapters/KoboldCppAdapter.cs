@@ -8,7 +8,7 @@ using System;
 
 namespace LetheAISharp.API
 {
-    
+
     /// <summary>
     /// Adapter for KoboldCpp backend
     /// </summary>
