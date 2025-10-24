@@ -1,5 +1,9 @@
 # Lethe AI - A C# Middleware LLM Library
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/)
+![GitHub Stars](https://img.shields.io/github/stars/SerialKicked/Lethe-AI-Sharp)
+
 ## 🚀 What Is It?
 
 Lethe AI Sharp is a modular, object‑oriented C# library that connects local or remote Large Language Model (LLM) backends to your applications (desktop tools, game engines, services). It also comes with its own light backend, allowing you to run a local LLM in the GGUF format directly without even having to rely on anything else.
@@ -7,6 +11,25 @@ Lethe AI Sharp is a modular, object‑oriented C# library that connects local or
 It unifies: chat personas, conversation/session management, streaming inference, long‑term memory, RAG (retrieval augmented generation), background agentic tasks, web search tools, TTS, and structured output generation.
 
 It is extensible, documented, backend-agnostic (you write the same code no matter which backend is being used), and written 100% in C#.
+
+### No Python Dependencies
+Pure C# implementation. No Python runtime, no conda environments, no pip hell.
+
+### Self-Contained
+Built-in LlamaSharp backend means you can distribute a **single executable** 
+that runs LLMs locally. No external server required, but external servers are supported too.
+
+### Production-Ready
+- Proper async/await patterns
+- Configurable error handling
+- Logging integration
+- Thread-safe semaphore locking
+
+## 🎯 Use Cases
+- **Game NPCs** - Create dynamic, memory-enabled characters for NPC
+- **Chatbots** - Build context-aware assistants with RAG
+- **Research Tools** - Combine web search with LLM analysis
+- **Content Generation** - Structured output for automation pipelines
 
 ## 🔥 Minimal Example
 
@@ -92,13 +115,17 @@ To demonstrate how powerful **Lethe AI** can be, check out [Lethe AI Chat](https
 
 Right now, the best way to use the library is to add this repo as a submodule or project reference in your C# solution. NuGet package coming soon.
 
-**Optional Models & Data Files**
+### Install via Git Submodule
+```bash
+git submodule add https://github.com/SerialKicked/Lethe-AI-Sharp.git
+````
+
+### Optional Models & Data Files
 Place them into `data/classifiers/` (configure their *build action* to “Copy if newer”):
 | File | Purpose | Required? |
 |---------|------|-----------|
 | [gte-large.Q6_K.gguf](https://huggingface.co/SerialKicked/Lethe-AI-Repo/resolve/main/gte-large.Q6_K.gguf?download=true) | Embeddings for RAG & Memory similarity | Yes for everything memory or RAG related |
 | [emotion-bert-classifier.gguf](https://huggingface.co/SerialKicked/Lethe-AI-Repo/resolve/main/emotion-bert-classifier.gguf?download=true) | Sentiment / emotion (experimental) | No |
-
 
 ## 🔎 Usage and Documentation
 
