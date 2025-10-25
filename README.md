@@ -10,20 +10,14 @@ Lethe AI Sharp is a modular, object‑oriented C# library that connects local or
 
 It unifies: chat personas, conversation/session management, streaming inference, long‑term memory, RAG (retrieval augmented generation), background agentic tasks, web search tools, TTS, and structured output generation.
 
-It is extensible, documented, backend-agnostic (you write the same code no matter which backend is being used), and written 100% in C#.
+It is extensible, documented, and backend-agnostic (you write the same code no matter which backend is being used)
 
 ### No Python Dependencies
-Pure C# implementation. No Python runtime, no conda environments, no pip hell.
+Pure .NET 8 C# implementation. No Python runtime, no conda environments, no pip hell.
 
 ### Self-Contained
 Built-in LlamaSharp backend means you can distribute a **single executable** 
 that runs LLMs locally. No external server required, but external servers are supported too.
-
-### Production-Ready
-- Proper async/await patterns
-- Configurable error handling
-- Logging integration
-- Thread-safe semaphore locking
 
 ## 🎯 Use Cases
 - **Game NPCs** - Create dynamic, memory-enabled characters for NPC
