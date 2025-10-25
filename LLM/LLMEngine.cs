@@ -809,7 +809,7 @@ namespace LetheAISharp.LLM
                 var abilities = Bot.AgentSystem?.AbilitiesToString();
                 if (!string.IsNullOrEmpty(abilities))
                 {
-                    rawprompt.AppendLinuxLine(NewLine + NewLine + "Note: Sometimes the system will insert events in the format <SystemEvent>[TYPE]: {content}.\nThese may include JOURNAL, WEBSEARCH, or GOAL.\nYou may acknowledge that you did one of the actions listed below when a system message says you did. However, you must not invent or describe the contents of those actions unless a <SystemEvent>[TYPE] has been explicitly provided:\n" + abilities);
+                    rawprompt.AppendLinuxLine(NewLine + NewLine + "Note: Sometimes the system will insert events in the format <SystemEvent>[TYPE]: {content}.\nThese may include JOURNAL, WEBSEARCH, or GOAL.\nYou may acknowledge that you did one of the actions listed below when a system message says you did. However, you must not invent or describe the contents of those actions unless a <SystemEvent>[TYPE] has been explicitly provided:\n");
 
                     rawprompt.AppendLinuxLine(abilities);
                 }
