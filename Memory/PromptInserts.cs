@@ -85,7 +85,12 @@ namespace LetheAISharp.Memory
                     if (mem.Category == MemoryType.WorldInfo)
                         AddInsert(new PromptInsert(mem.Guid, mem.Content, mem.PositionIndex, mem.Duration));
                     else
-                        AddInsert(new PromptInsert(mem.Guid, mem.Content, LLMEngine.Settings.RAGIndex, 1));
+                    {
+                        var hastitle = mem.Category == MemoryType.Person || mem.Category == MemoryType.Location || mem.Category == MemoryType.Event || mem.Category == MemoryType.Journal;
+                        var compress = hastitle;
+                        var hasdate = mem.Category == MemoryType.Journal || mem.Category == MemoryType.Event;
+                        AddInsert(new PromptInsert(mem.Guid, mem.ToSnippet(hastitle ? TitleInsertType.None : TitleInsertType.Simple, hasdate, false, compress), LLMEngine.Settings.RAGIndex, 1));
+                    }
                 }
             }
         }

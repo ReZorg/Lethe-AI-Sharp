@@ -136,14 +136,7 @@ namespace LetheAISharp.Memory
             var content = compactContent ? Content.RemoveNewLines() : Content;
             if (includeDate)
             {
-                if (Added.Date == EndTime.Date)
-                {
-                    sb.AppendLinuxLine($"On {Added.DayOfWeek}, {StringExtensions.DateToHumanString(Added)}: {content}");
-                }
-                else
-                {
-                    sb.AppendLinuxLine($"Between the {Added.DayOfWeek} {StringExtensions.DateToHumanString(Added)} and the {EndTime.DayOfWeek} {StringExtensions.DateToHumanString(EndTime)}: {content}");
-                }
+                sb.AppendLinuxLine($" {StringExtensions.FormatDateRange(Added, EndTime)}: {content}");
             }
             else
             {

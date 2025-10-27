@@ -3,6 +3,7 @@ using LetheAISharp.SearchAPI;
 using LLama;
 using LLama.Common;
 using LLama.Sampling;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -166,6 +167,7 @@ namespace LetheAISharp.API
             }
             catch (Exception e)
             {
+                LLMEngine.Logger?.LogError(e, "Error during LlamaSharp inference");
                 throw;
             }
             return response;

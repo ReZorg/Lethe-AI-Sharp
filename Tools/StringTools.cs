@@ -505,6 +505,50 @@ namespace LetheAISharp
             }
         }
 
+        public static string FormatDateRange(DateTime startDate, DateTime endDate)
+        {
+            var culture = CultureInfo.GetCultureInfo("en-US");
+
+            // Same day
+            if (startDate.Date == endDate.Date)
+            {
+                return $"On {startDate.ToString("MMMM d", culture)}{GetOrdinalSuffix(startDate.Day)}, {startDate.Year}";
+            }
+
+            // Same month and year
+            if (startDate.Year == endDate.Year && startDate.Month == endDate.Month)
+            {
+                return $"From the {startDate.Day}{GetOrdinalSuffix(startDate.Day)} to the {endDate.Day}{GetOrdinalSuffix(endDate.Day)} of {startDate.ToString("MMMM yyyy", culture)}";
+            }
+
+            // Same year, different months
+            if (startDate.Year == endDate.Year)
+            {
+                return $"From {startDate.ToString("MMMM d", culture)}{GetOrdinalSuffix(startDate.Day)} to {endDate.ToString("MMMM d", culture)}{GetOrdinalSuffix(endDate.Day)}, {startDate.Year}";
+            }
+
+            // Different years
+            return $"From {startDate.ToString("MMMM d", culture)}{GetOrdinalSuffix(startDate.Day)}, {startDate.Year} to {endDate.ToString("MMMM d", culture)}{GetOrdinalSuffix(endDate.Day)}, {endDate.Year}";
+        }
+
+        private static string GetOrdinalSuffix(int day)
+        {
+            if (day <= 0) return "";
+
+            int lastDigit = day % 10;
+            int lastTwoDigits = day % 100;
+
+            if (lastTwoDigits >= 11 && lastTwoDigits <= 13)
+                return "th";
+
+            return lastDigit switch
+            {
+                1 => "st",
+                2 => "nd",
+                3 => "rd",
+                _ => "th"
+            };
+        }
 
     }
 }
