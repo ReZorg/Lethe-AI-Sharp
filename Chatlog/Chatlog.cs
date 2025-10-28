@@ -235,6 +235,14 @@ namespace LetheAISharp.Files
         public ChatSession? GetSessionByID(Guid id) => Sessions.FirstOrDefault(s => s.Guid == id);
 
         /// <summary>
+        /// Retrieves all chat sessions with the specified title
+        /// </summary>
+        /// <param name="id">The unique identifier of the chat session to retrieve.</param>
+        /// <returns>The <see cref="ChatSession"/> with the specified identifier, or <see langword="null"/> if no matching
+        /// session is found.</returns>
+        public List<ChatSession> GetSessionsByTitle(string title) => Sessions.FindAll(s => s.Name == title);
+
+        /// <summary>
         /// Retrieves a message with the specified unique identifier.
         /// </summary>
         /// <remarks>This method searches the messages and returns the first match based on the provided GUID. 

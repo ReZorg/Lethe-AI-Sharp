@@ -476,6 +476,38 @@ namespace LetheAISharp.Files
             res.Replace("{{date}}", StringExtensions.DateToHumanString(DateTime.Now))
                .Replace("{{time}}", DateTime.Now.ToString("hh:mm tt", CultureInfo.InvariantCulture))
                .Replace("{{day}}", DateTime.Now.DayOfWeek.ToString());
+
+            // now check for {{memory:<title>}} macros
+            var memstart = "{{memory:";
+            var memend = "}}";
+            int startindex = res.ToString().IndexOf(memstart, StringComparison.InvariantCultureIgnoreCase);
+            while (startindex >= 0)
+            {
+                var endindex = res.ToString().IndexOf(memend, startindex + memstart.Length, StringComparison.InvariantCultureIgnoreCase);
+                if (endindex < 0)
+                    break;
+                var titlelength = endindex - (startindex + memstart.Length);
+                if (titlelength <= 0)
+                    break;
+                var title = res.ToString().Substring(startindex + memstart.Length, titlelength).Trim();
+                var memories = Brain.GetMemoriesByTitle(title);
+                res.Remove(startindex, (endindex + memend.Length) - startindex);
+                var memorycontent = string.Empty;
+                if (memories.Count > 0)
+                {
+                    foreach (var mem in memories)
+                    {
+                        if (memorycontent.Length > 0)
+                            memorycontent += LLMEngine.NewLine;
+                        memorycontent += mem.ToSnippet(TitleInsertType.Simple, mem.Category == MemoryType.ChatSession, mem.Category == MemoryType.Goal, false).CleanupAndTrim() + LLMEngine.NewLine;
+                    }
+                    res.Insert(startindex, memorycontent.Trim());
+                }
+                if (startindex + memorycontent.Length > res.Length)
+                    break;
+                startindex = res.ToString().IndexOf(memstart, startindex + memorycontent.Length, StringComparison.InvariantCultureIgnoreCase);
+            }
+
             return res.ToString();
         }
     }

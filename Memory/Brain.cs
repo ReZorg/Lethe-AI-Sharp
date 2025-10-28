@@ -359,6 +359,29 @@ namespace LetheAISharp.Memory
         }
 
         /// <summary>
+        /// Checks for a memory by its title across sessions, world info, and local memories.
+        /// </summary>
+        /// <param name="title"></param>
+        /// <returns></returns>
+        public virtual List<MemoryUnit> GetMemoriesByTitle(string title)
+        {
+            // Check Sessions
+            List<MemoryUnit> res = Owner.History.GetSessionsByTitle(title).ConvertAll(a => a as MemoryUnit);
+
+            // Check WorldInfo
+            if (Owner.MyWorlds.Count > 0)
+            {
+                foreach (var world in Owner.MyWorlds)
+                {
+                    res.AddRange(world.Entries.FindAll(e => e.Name == title));
+                }
+            }
+            // Check local memories
+            res.AddRange(Memories.FindAll(m => m.Name == title));
+            return res;
+        }
+
+        /// <summary>
         /// Move memories to to their proper slot, delete old stuff.
         /// </summary>
         protected virtual void MemoryDecay()
