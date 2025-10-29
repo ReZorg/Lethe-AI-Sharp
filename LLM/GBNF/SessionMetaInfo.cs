@@ -25,7 +25,7 @@ namespace LetheAISharp.GBNF
         [Required][Description("A boolean to say if this chat correspond to a roleplay session or a normal chat (roleplay sessions have physical actions and a lot of *narrative text in asterisks like this*). Only mark a session as roleplay if it's practically entirely roleplay.")]
         public bool IsRoleplaySession { get; set; } = false;
         
-        [MinLength(0)][MaxLength(5)][Description("An optional list of future plans set during the discussion. It can contain up to 5 elements, and can be empty if no particular goals were set during the session.")]
+        [MinLength(0)][MaxLength(5)][Description("An optional list of future plans and goals set during the discussion. It can contain anywhere from 0 to 5 elements, and can be empty if no particular goals were set during the session. Each item should explicitely state who is meant to complete the goal.")]
         public List<string> FutureGoals { get; set; } = [];
 
         [Required][MinLength(4)][MaxLength(6)][Description("A list of 4 to 6 keywords for this chat session, used for filtering and searching.")]

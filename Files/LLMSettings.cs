@@ -130,6 +130,9 @@ namespace LetheAISharp.Files
         /// <summary> Maximum number of entries to be retrieved with RAG </summary>
         public int RAGMaxEntries { get; set; } = 3;
 
+        /// <summary> Maximum number of entries to be retrieved from WorldInfo </summary>
+        public int WorldInfoMaxEntries { get; set; } = 3;
+
         /// <summary> Index at which RAG entries will be inserted in the chatlog. -1 to insert in system prompt. </summary>
         public int RAGIndex { get; set; } = 3;
 

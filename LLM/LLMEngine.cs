@@ -803,13 +803,13 @@ namespace LetheAISharp.LLM
                     rawprompt.AppendLinuxLine(shistory);
                 }
             }
-
+            
             if (Settings.AntiHallucinationMemoryFormat && !Bot.Brain.DisableEurekas)
             { 
                 var abilities = Bot.AgentSystem?.AbilitiesToString();
                 if (!string.IsNullOrEmpty(abilities))
                 {
-                    rawprompt.AppendLinuxLine(NewLine + NewLine + "Note: Sometimes the system will insert events in the format <SystemEvent>[TYPE]: {content}.\nThese may include JOURNAL, WEBSEARCH, or GOAL.\nYou may acknowledge that you did one of the actions listed below when a system message says you did. However, you must not invent or describe the contents of those actions unless a <SystemEvent>[TYPE] has been explicitly provided:" + abilities);
+                    rawprompt.AppendLinuxLine(NewLine + "Note: Sometimes the system will insert events in the format <SystemEvent>[TYPE]: {content}.\nThese may include JOURNAL, WEBSEARCH, or GOAL.\nYou may acknowledge that you did one of the actions listed below when a system message says you did. However, you must not invent or describe the contents of those actions unless a <SystemEvent>[TYPE] has been explicitly provided:" + abilities);
                 }
             }
 
@@ -836,8 +836,10 @@ namespace LetheAISharp.LLM
                 availtokens -= PromptBuilder.GetTokenCount(AuthorRole.System, pluginMessage);
             }
 
+            var searchstring = string.IsNullOrEmpty(newMessage) ? History.GetLastFromInSession(AuthorRole.User)?.Message : newMessage;
+
             // update the RAG, world info, and summary stuff
-            await Bot.Brain.GetRAGandInserts(dataInserts, newMessage, Settings.RAGMaxEntries, Settings.RAGDistanceCutOff).ConfigureAwait(false);
+            await Bot.Brain.GetRAGandInserts(dataInserts, searchstring, -1, Settings.RAGDistanceCutOff).ConfigureAwait(false);
 
             // Prepare the full system prompt and count the tokens used
             var rawprompt = GenerateSystemPromptContent(newMessage);

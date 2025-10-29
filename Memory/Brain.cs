@@ -268,10 +268,24 @@ namespace LetheAISharp.Memory
         }
 
         /// <summary>
-        /// Checks for RAG entries and refreshes the textual inserts.
+        /// Updates the specified <see cref="PromptInserts"/> instance with relevant RAG (Retrieval-Augmented
+        /// Generation)  and world information entries based on the provided search criteria.
         /// </summary>
-        /// <param name="MsgSender"></param>
-        /// <param name="searchstring"></param>
+        /// <remarks>This method performs the following operations: <list type="bullet">
+        /// <item><description>Decreases the duration of existing inserts in the <paramref name="target"/>
+        /// instance.</description></item> <item><description> Retrieves RAG entries if RAG is enabled in the engine
+        /// settings, using the specified search criteria and distance threshold. </description></item>
+        /// <item><description> Retrieves world information entries if world info is allowed in the engine settings,
+        /// including entries from the group, bot,  or active persona, and adds them to the <paramref name="target"/>
+        /// instance. </description></item> </list> Entries are prioritized and filtered to avoid duplicates, and the
+        /// total number of entries added respects the specified limits.</remarks>
+        /// <param name="target">The <see cref="PromptInserts"/> instance to update with the retrieved entries.</param>
+        /// <param name="searchstring">The search string used to query RAG and world information entries. If null or whitespace, the last user
+        /// message  from the session history is used as the search string.</param>
+        /// <param name="ragResCount">The maximum number of RAG entries to retrieve. If set to -1, the default maximum from the engine settings is
+        /// used.</param>
+        /// <param name="ragDistance">The maximum distance threshold for RAG entry retrieval. Entries with a distance greater than this value are
+        /// excluded.</param>
         /// <returns></returns>
         public virtual async Task GetRAGandInserts(PromptInserts target, string searchstring, int ragResCount, float ragDistance)
         {
@@ -282,9 +296,12 @@ namespace LetheAISharp.Memory
                 (Owner.History.GetLastFromInSession(AuthorRole.User)?.Message ?? string.Empty) : searchstring;
             searchmessage = Owner.ReplaceMacros(searchmessage);
 
+            var ragentries = ragResCount == -1 ? LLMEngine.Settings.RAGMaxEntries : ragResCount;
+            var wientries = ragResCount == -1 ? LLMEngine.Settings.WorldInfoMaxEntries : ragResCount;
+
             if (LLMEngine.Settings.RAGEnabled)
             {
-                var search = await Search(searchmessage, ragResCount, ragDistance).ConfigureAwait(false);
+                var search = await Search(searchmessage, ragentries, ragDistance).ConfigureAwait(false);
                 target.AddMemories(search);
             }
 
@@ -292,6 +309,15 @@ namespace LetheAISharp.Memory
             if (LLMEngine.Settings.AllowWorldInfo)
             {
                 var _currentWorldEntries = new List<MemoryUnit>();
+
+                foreach (var item in Owner.History.Sessions)
+                {
+                    if (item.CheckKeywords(searchstring))
+                    {
+                        _currentWorldEntries.Add(item);
+                    }
+                }
+
                 // Add world entries from the group/bot itself
                 if (Owner.MyWorlds.Count > 0)
                 {
@@ -322,12 +348,25 @@ namespace LetheAISharp.Memory
                 }
                 var usedguid = target.GetGuids();
                 _currentWorldEntries.RemoveAll(e => usedguid.Contains(e.Guid));
+                // sort by decreasing prio (higher = first)
+                _currentWorldEntries.Sort((a, b) => b.Priority.CompareTo(a.Priority));
+                if (_currentWorldEntries.Count > wientries)
+                    _currentWorldEntries = [.. _currentWorldEntries.Take(wientries)];
 
                 foreach (var entry in _currentWorldEntries)
                 {
-                    target.AddInsert(new PromptInsert(
-                        entry.Guid, entry.Content, entry.PositionIndex, entry.Duration)
-                        );
+                    if (entry.Category == MemoryType.ChatSession)
+                    {
+                        target.AddInsert(new PromptInsert(
+                            entry.Guid, entry.ToSnippet(TitleInsertType.Simple, true, false, true), entry.PositionIndex, entry.Duration)
+                            );
+                    }
+                    else
+                    {
+                        target.AddInsert(new PromptInsert(
+                            entry.Guid, entry.Content, entry.PositionIndex, entry.Duration)
+                            );
+                    }
                 }
             }
 
@@ -363,21 +402,27 @@ namespace LetheAISharp.Memory
         /// </summary>
         /// <param name="title"></param>
         /// <returns></returns>
-        public virtual List<MemoryUnit> GetMemoriesByTitle(string title)
+        public virtual List<MemoryUnit> GetMemoriesByTitle(string title, bool partialok = true)
         {
             // Check Sessions
-            List<MemoryUnit> res = Owner.History.GetSessionsByTitle(title).ConvertAll(a => a as MemoryUnit);
+            List<MemoryUnit> res = Owner.History.GetSessionsByTitle(title, partialok).ConvertAll(a => a as MemoryUnit);
 
             // Check WorldInfo
             if (Owner.MyWorlds.Count > 0)
             {
                 foreach (var world in Owner.MyWorlds)
                 {
-                    res.AddRange(world.Entries.FindAll(e => e.Name == title));
+                    if (partialok)
+                        res.AddRange(world.Entries.FindAll(e => e.Name.Contains(title, StringComparison.InvariantCultureIgnoreCase)));
+                    else
+                        res.AddRange(world.Entries.FindAll(e => e.Name.Equals(title, StringComparison.InvariantCultureIgnoreCase)));
                 }
             }
             // Check local memories
-            res.AddRange(Memories.FindAll(m => m.Name == title));
+            if (partialok)
+                res.AddRange(Memories.FindAll(m => m.Name.Contains(title, StringComparison.InvariantCultureIgnoreCase)));
+            else
+                res.AddRange(Memories.FindAll(m => m.Name.Equals(title, StringComparison.InvariantCultureIgnoreCase)));
             return res;
         }
 

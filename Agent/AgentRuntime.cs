@@ -67,6 +67,11 @@ namespace LetheAISharp.Agent
             _lastuseractivity = DateTime.Now;
         }
 
+        public void ForceRunLoop()
+        {
+            _lastuseractivity = DateTime.MinValue;
+        }
+
         /// <summary>
         /// The main loop that runs the agent tasks based on user inactivity and agent mode status.
         /// </summary>

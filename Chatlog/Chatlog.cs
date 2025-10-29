@@ -240,7 +240,13 @@ namespace LetheAISharp.Files
         /// <param name="id">The unique identifier of the chat session to retrieve.</param>
         /// <returns>The <see cref="ChatSession"/> with the specified identifier, or <see langword="null"/> if no matching
         /// session is found.</returns>
-        public List<ChatSession> GetSessionsByTitle(string title) => Sessions.FindAll(s => s.Name == title);
+        public List<ChatSession> GetSessionsByTitle(string title, bool partialok = true) 
+        {
+            if (partialok)
+                return [.. Sessions.Where(s => s.Name.Contains(title, StringComparison.InvariantCultureIgnoreCase))];
+            else
+                return [.. Sessions.Where(s => s.Name.Equals(title, StringComparison.InvariantCultureIgnoreCase))];
+        } 
 
         /// <summary>
         /// Retrieves a message with the specified unique identifier.
