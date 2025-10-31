@@ -113,6 +113,11 @@ namespace LetheAISharp.Memory
         public int Duration { get; set; } = 1;
         public float TriggerChance { get; set; } = 1;
 
+        /// <summary>
+        /// If set to true, this memory will always be included in the prompt
+        /// </summary>
+        public bool Sticky { get; set; } = false;
+
         public bool Enabled = true;
         public List<string> KeyWordsMain = [];
         public List<string> KeyWordsSecondary = [];

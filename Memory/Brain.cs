@@ -347,7 +347,6 @@ namespace LetheAISharp.Memory
                     }
                 }
                 var usedguid = target.GetGuids();
-                _currentWorldEntries.RemoveAll(e => usedguid.Contains(e.Guid));
                 // sort by decreasing prio (higher = first)
                 _currentWorldEntries.Sort((a, b) => b.Priority.CompareTo(a.Priority));
                 if (_currentWorldEntries.Count > wientries)
@@ -355,18 +354,7 @@ namespace LetheAISharp.Memory
 
                 foreach (var entry in _currentWorldEntries)
                 {
-                    if (entry.Category == MemoryType.ChatSession)
-                    {
-                        target.AddInsert(new PromptInsert(
-                            entry.Guid, entry.ToSnippet(TitleInsertType.Simple, true, false, true), entry.PositionIndex, entry.Duration)
-                            );
-                    }
-                    else
-                    {
-                        target.AddInsert(new PromptInsert(
-                            entry.Guid, entry.Content, entry.PositionIndex, entry.Duration)
-                            );
-                    }
+                    target.AddInsert(entry);
                 }
             }
 

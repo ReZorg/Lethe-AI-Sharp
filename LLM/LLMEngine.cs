@@ -172,10 +172,10 @@ namespace LetheAISharp.LLM
         };
 
         private static ILogger? logger = null;
-        private static BasePersona bot = new() { IsUser = false, Name = "Bot", Bio = "You are an helpful AI assistant whose goal is to answer questions and complete tasks.", UniqueName = string.Empty };
+        private static BasePersona bot = new() { IsUser = false, Name = "Bot", Bio = "You are a helpful AI assistant whose goal is to answer questions and complete tasks.", UniqueName = string.Empty };
         private static BasePersona user = new() { IsUser = true, Name = "User", UniqueName = string.Empty };
 
-        internal static PromptInserts dataInserts = [];
+        public static PromptInserts dataInserts = [];
         internal static readonly Random RNG = new();
 
         #region *** Semaphore for model access control (Internal) ***
@@ -791,7 +791,7 @@ namespace LetheAISharp.LLM
             {
                 rawprompt.AppendLinuxLine().AppendLinuxLine(SystemPrompt.WorldInfoTitle).AppendLinuxLine();
                 foreach (var item in syspromptentries)
-                    rawprompt.AppendLinuxLine(item.Content).AppendLinuxLine();
+                    rawprompt.AppendLinuxLine(item.ToContent()).AppendLinuxLine();
             }
 
             if (Settings.SessionMemorySystem && History.Sessions.Count > 1)

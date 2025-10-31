@@ -24,18 +24,11 @@ namespace LetheAISharp.Memory
 
     public class WorldInfo : BaseFile
     {
-        private class ActiveLink
-        {
-            public int RecordID = 0;
-            public int DurationLeft = 0;
-        }
-
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public bool DoEmbeds { get; set; } = true;
         public int ScanDepth { get; set; } = 1;
         public List<MemoryUnit> Entries { get; set; } = [];
-        private readonly List<ActiveLink> activeEntries = [];
 
         /// <summary>
         /// Check for entries from a string
@@ -44,19 +37,16 @@ namespace LetheAISharp.Memory
         /// <returns></returns>
         public List<MemoryUnit> FindEntries(string message)
         {
-            foreach (var entry in activeEntries)
-                entry.DurationLeft--;
-            activeEntries.RemoveAll(a => a.DurationLeft <= 0);
-            var active = activeEntries.Where(a => a.DurationLeft > 0).ToList();
+            var res = new List<MemoryUnit>();
             for (int i = 0; i < Entries.Count; i++)
             {
                 var entry = Entries[i];
-                if (!entry.Enabled || active.Any(a => a.RecordID == i))
+                if (!entry.Enabled)
                     continue;
-                if (entry.CheckKeywords(message) && entry.TriggerChance >= LLMEngine.RNG.NextDouble())
-                    activeEntries.Add(new ActiveLink { RecordID = i, DurationLeft = entry.Duration });
+                if (entry.Sticky || (entry.CheckKeywords(message) && entry.TriggerChance >= LLMEngine.RNG.NextDouble()))
+                    res.Add(entry);
             }
-            return [.. activeEntries.Select(a => Entries[a.RecordID])];
+            return res;
         }
 
         /// <summary>
@@ -91,10 +81,6 @@ namespace LetheAISharp.Memory
             return FindEntries(stbuilder.ToString());
         }
 
-        public void Reset()
-        {
-            activeEntries.Clear();
-        }
 
         public async Task EmbedText()
         {

@@ -7,22 +7,37 @@ namespace LetheAISharp.Memory
 {
     public class PromptInsert
     {
-        public Guid guid = Guid.NewGuid();
-        public string Content = string.Empty;
-        public int Location = 0;
+        public MemoryUnit Memory;
+        public Guid guid => Memory.Guid;
+        public int Location => Memory is ChatSession ? LLMEngine.Settings.RAGIndex : Memory.PositionIndex;
+        public bool Sticky => Memory.Sticky;
         public int Duration = 0;
 
-        public MemoryUnit? Memory => LLMEngine.Bot.Brain.GetMemoryByID(guid);
-
-        public PromptInsert(Guid? newguid, string content, int location, int duration)
+        public PromptInsert(MemoryUnit content)
         {
-            if (newguid != null)
-                guid = (Guid)newguid;
-            Content = content;
-            Location = location;
-            Duration = duration;
+            Memory = content;
+            Duration = content.Duration;
         }
 
+        public string ToContent()
+        {
+            if (Memory is ChatSession info)
+            {
+                return info.ToSnippet(TitleInsertType.Simple, LLMEngine.Bot.DatesInSessionSummaries, false, true);
+            }
+            else
+            {
+                if (Memory.Category == MemoryType.WorldInfo)
+                    return Memory.Content;
+                else
+                {
+                    var hastitle = Memory.Category == MemoryType.Person || Memory.Category == MemoryType.Location || Memory.Category == MemoryType.Event || Memory.Category == MemoryType.Journal;
+                    var compress = hastitle;
+                    var hasdate = Memory.Category == MemoryType.Journal || Memory.Category == MemoryType.Event;
+                    return Memory.ToSnippet(hastitle ? TitleInsertType.None : TitleInsertType.Simple, hasdate, false, compress);
+                }
+            }
+        }
     }
 
 
@@ -31,23 +46,25 @@ namespace LetheAISharp.Memory
         public void DecreaseDuration()
         {
             foreach (var item in this)
+            {
                 item.Duration--;
+            }
             RemoveAll(i => i.Duration <= 0);
         }
 
-        public void AddInsert(PromptInsert data)
+        public void AddInsert(MemoryUnit memory)
         {
             // Check if same guid exists, if so, replace the content
-            var index = FindIndex(i => i.guid == data.guid);
+            var index = FindIndex(i => i.guid == memory.Guid);
             if (index >= 0)
             {
-                this[index] = data;
+                this[index] = new PromptInsert(memory);
             }
             else
             {
-                LLMEngine.Bot.Brain.GetMemoryByID(data.guid)?.Touch();
-                Add(data);
+                Add(new PromptInsert(memory));
             }
+            memory.Touch();
         }
 
         public List<PromptInsert> GetEntriesByPosition(int position)
@@ -59,7 +76,7 @@ namespace LetheAISharp.Memory
         {
             var res = new StringBuilder();
             foreach (var item in GetEntriesByPosition(position))
-                res.AppendLinuxLine(item.Content);
+                res.AppendLinuxLine(item.ToContent());
             return LLMEngine.Bot.ReplaceMacros(res.ToString());
         }
 
@@ -69,29 +86,7 @@ namespace LetheAISharp.Memory
                 return;
             foreach (var meminfo in memories)
             {
-                var mem = meminfo.Memory;
-                if (mem is ChatSession info)
-                {
-                    AddInsert(
-                        new PromptInsert(
-                            info.Guid, 
-                            info.ToSnippet(TitleInsertType.Simple, LLMEngine.Bot.DatesInSessionSummaries, false, true), 
-                            LLMEngine.Settings.RAGIndex, 
-                            1)
-                        );
-                }
-                else
-                {
-                    if (mem.Category == MemoryType.WorldInfo)
-                        AddInsert(new PromptInsert(mem.Guid, mem.Content, mem.PositionIndex, mem.Duration));
-                    else
-                    {
-                        var hastitle = mem.Category == MemoryType.Person || mem.Category == MemoryType.Location || mem.Category == MemoryType.Event || mem.Category == MemoryType.Journal;
-                        var compress = hastitle;
-                        var hasdate = mem.Category == MemoryType.Journal || mem.Category == MemoryType.Event;
-                        AddInsert(new PromptInsert(mem.Guid, mem.ToSnippet(hastitle ? TitleInsertType.None : TitleInsertType.Simple, hasdate, false, compress), LLMEngine.Settings.RAGIndex, 1));
-                    }
-                }
+                AddInsert(meminfo.Memory);
             }
         }
 
@@ -104,6 +99,7 @@ namespace LetheAISharp.Memory
             return res;
         }
 
-        public bool Contains(Guid guid) => FindIndex(i => i.guid == guid) != -1;
+        public bool Contains(Guid guid) => Find(i => i.guid == guid) != null;
+        public bool Contains(MemoryUnit memory) => Find(e => e.Memory == memory) != null;
     }
 }

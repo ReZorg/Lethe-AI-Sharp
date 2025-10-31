@@ -157,7 +157,7 @@ namespace LetheAISharp.Files
                         {
                             if (insert?.Location > -1)
                             {
-                                res += "- " + LLMEngine.Bot.ReplaceMacros(insert.Content).RemoveNewLines().CleanupAndTrim() + LLMEngine.NewLine;
+                                res += "- " + LLMEngine.Bot.ReplaceMacros(insert.ToContent()).RemoveNewLines().CleanupAndTrim() + LLMEngine.NewLine;
                             }
                         }
                         res += LLMEngine.NewLine;
@@ -169,7 +169,7 @@ namespace LetheAISharp.Files
                         {
                             if (insert?.Location > -1)
                             {
-                                res += LLMEngine.Bot.ReplaceMacros(insert.Content).RemoveNewLines().CleanupAndTrim() + LLMEngine.NewLine + LLMEngine.NewLine;
+                                res += LLMEngine.Bot.ReplaceMacros(insert.ToContent()).RemoveNewLines().CleanupAndTrim() + LLMEngine.NewLine + LLMEngine.NewLine;
                             }
                         }
                     }

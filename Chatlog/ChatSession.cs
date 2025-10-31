@@ -37,11 +37,6 @@ namespace LetheAISharp.Files
 
         public List<SingleMessage> Messages { get; set; } = [];
 
-        /// <summary>
-        /// If set to true, this memory will always be included in the prompt
-        /// </summary>
-        public bool Sticky { get; set; } = false;
-
         [OnError]
         internal void OnError(StreamingContext ctx, ErrorContext error)
         {
