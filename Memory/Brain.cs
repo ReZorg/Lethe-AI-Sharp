@@ -348,7 +348,12 @@ namespace LetheAISharp.Memory
                 }
                 var usedguid = target.GetGuids();
                 // sort by decreasing prio (higher = first)
-                _currentWorldEntries.Sort((a, b) => b.Priority.CompareTo(a.Priority));
+                _currentWorldEntries.Sort((a, b) => 
+                {
+                    var aprio = a is ChatSession asession ? asession.Priority + asession.MetaData.Relevance * 10 : a.Priority;
+                    var bprio = b is ChatSession bsession ? bsession.Priority + bsession.MetaData.Relevance * 10 : b.Priority;
+                    return bprio.CompareTo(aprio);
+                });
                 if (_currentWorldEntries.Count > wientries)
                     _currentWorldEntries = [.. _currentWorldEntries.Take(wientries)];
 

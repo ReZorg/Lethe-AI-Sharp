@@ -224,9 +224,14 @@ namespace LetheAISharp.Memory
             }
             text.AppendLinuxLine().AppendLinuxLine($"{Content}");
 
-            text.AppendLinuxLine().Append("Note: Mention this information when there's a lull in the discussion, if {{user}} makes a mention of it, or if you feel like it's a good idea to talk about it. Make sure it fits in the conversation's flow naturally.");
+            if (Category == MemoryType.Goal)
+            {
+                text.AppendLinuxLine().Append("Note: Use this information to guide the discussion if it's contextually relevant or adjacent. Make sure it fits in the conversation's flow naturally.");
+            }
+            else
+                text.AppendLinuxLine().Append("Note: Mention this information when there's a lull in the discussion, if {{user}} makes a mention of it, or if you feel like it's a good idea to talk about it. Make sure it fits in the conversation's flow naturally.");
 
-            return text.ToString().CleanupAndTrim();
+            return LLMEngine.Bot.ReplaceMacros(text.ToString().CleanupAndTrim());
         }
 
         public bool CheckKeywords(string message)
