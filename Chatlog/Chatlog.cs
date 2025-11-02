@@ -246,7 +246,16 @@ namespace LetheAISharp.Files
                 return [.. Sessions.Where(s => s.Name.Contains(title, StringComparison.InvariantCultureIgnoreCase))];
             else
                 return [.. Sessions.Where(s => s.Name.Equals(title, StringComparison.InvariantCultureIgnoreCase))];
-        } 
+        }
+
+        public List<ChatSession> SearchSessions(string searchstring)
+        {
+            return [.. Sessions.Where(s => 
+                s.Name.Contains(searchstring, StringComparison.InvariantCultureIgnoreCase) ||
+                s.Content.Contains(searchstring, StringComparison.InvariantCultureIgnoreCase) ||
+                s.MetaData.Keywords.Contains(searchstring))
+                ];
+        }
 
         /// <summary>
         /// Retrieves a message with the specified unique identifier.

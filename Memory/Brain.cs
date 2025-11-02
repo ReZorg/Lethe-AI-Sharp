@@ -76,7 +76,7 @@ namespace LetheAISharp.Memory
         public DateTime LastInsertTime { get; protected set; }
         public int CurrentDelay { get; protected set; } = 0;
 
-        [JsonProperty] protected List<MemoryUnit> Memories { get; set; } = [];
+        [JsonProperty] public List<MemoryUnit> Memories { get; set; } = [];
         [JsonProperty] protected List<UserReturnInsert> Inserts { get; set; } = [];
 
         public List<TopicSearch> RecentSearches { get; set; } = [];
@@ -416,6 +416,38 @@ namespace LetheAISharp.Memory
                 res.AddRange(Memories.FindAll(m => m.Name.Contains(title, StringComparison.InvariantCultureIgnoreCase)));
             else
                 res.AddRange(Memories.FindAll(m => m.Name.Equals(title, StringComparison.InvariantCultureIgnoreCase)));
+            return res;
+        }
+
+        /// <summary>
+        /// Searches for memories that match the specified search string across all available various sources.
+        /// </summary>
+        /// <remarks>This method searches through the bot's session history, world entries, and local
+        /// memory entries to find matches for the specified search string. Matches are determined by checking if the
+        /// search string is contained in the name or content of the memory entries.</remarks>
+        /// <param name="searchstring">The string to search for. The search is case-insensitive and matches are found in the name or content of
+        /// memory entries.</param>
+        /// <returns>A list of <see cref="MemoryUnit"/> objects that match the search criteria. The list may include results from
+        /// session history, world entries, and local memories.</returns>
+        public virtual List<MemoryUnit> SearchMemories(string searchstring)
+        {
+            // Check Sessions
+
+            List<MemoryUnit> res = Owner.History.SearchSessions(searchstring).ConvertAll(a => a as MemoryUnit);
+            // Check WorldInfo
+            if (Owner.MyWorlds.Count > 0)
+            {
+                foreach (var world in Owner.MyWorlds)
+                {
+                    res.AddRange(world.Entries.FindAll(e => 
+                    e.Name.Contains(searchstring, StringComparison.InvariantCultureIgnoreCase) ||
+                    e.Content.Contains(searchstring, StringComparison.InvariantCultureIgnoreCase)
+                    ));
+                }
+            }
+            res.AddRange(Memories.FindAll(m => 
+                m.Name.Contains(searchstring, StringComparison.InvariantCultureIgnoreCase) ||
+                m.Content.Contains(searchstring, StringComparison.InvariantCultureIgnoreCase)));
             return res;
         }
 
