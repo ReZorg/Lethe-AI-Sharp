@@ -551,6 +551,21 @@ namespace LetheAISharp.Files
             }
             return res;
         }
+        public SingleMessage? GetLastMessageFrom(BasePersona author)
+        {
+            var res = CurrentSession.Messages.LastOrDefault(m => m.Sender == author);
+            // if not found, search in previous sessions until found
+            if (res == null)
+            {
+                for (int i = Sessions.Count - 2; i >= 0; i--)
+                {
+                    res = Sessions[i].Messages.LastOrDefault(m => m.Sender == author);
+                    if (res != null)
+                        break;
+                }
+            }
+            return res;
+        }
 
         /// <summary>
         /// Embedding of all the messages in the chatlog

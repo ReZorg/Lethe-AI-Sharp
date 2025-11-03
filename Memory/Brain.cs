@@ -749,7 +749,7 @@ namespace LetheAISharp.Memory
         public virtual SingleMessage? BuildAwayMessage()
         {
             // no previous user message, nothing to do either, chat just started
-            var lastmsg = LLMEngine.History.GetLastMessageFrom(AuthorRole.User);
+            var lastmsg = LLMEngine.History.GetLastMessageFrom(LLMEngine.User);
             if (lastmsg == null)
                 return null;
 
