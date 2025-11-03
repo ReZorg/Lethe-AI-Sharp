@@ -204,10 +204,10 @@ namespace LetheAISharp.Files
             {
                 var msg = messagelist[i];
                 oldest = Math.Min(oldest, msg.Item1);
-                tokensleft -= LLMEngine.PromptBuilder.GetTokenCount(msg.Item2.Role, msg.Item2.Message);
+                tokensleft -= LLMEngine.PromptBuilder.GetTokenCount(msg.Item2);
                 if (tokensleft <= 0)
                     break;
-                LLMEngine.PromptBuilder.InsertMessage(startpos, msg.Item2.Role, msg.Item2.Message);
+                LLMEngine.PromptBuilder.InsertMessage(startpos, msg.Item2);
                 // check if we need to add a memory
                 if (memories?.Count > 0 && !LLMEngine.Settings.MoveAllInsertsToSysPrompt)
                 {

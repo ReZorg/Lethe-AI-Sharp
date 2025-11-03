@@ -34,6 +34,8 @@ namespace LetheAISharp
         /// <returns>tokens used by this message</returns>
         int AddMessage(AuthorRole role, string message);
 
+        int AddMessage(SingleMessage message);
+
         /// <summary>
         /// Inserts a message at the specified index in the prompt with the given author role.
         /// </summary>
@@ -42,6 +44,8 @@ namespace LetheAISharp
         /// <param name="message">The content of the message to be added. Cannot be null or empty.</param>
         /// <returns>tokens used by this message</returns>
         int InsertMessage(int index, AuthorRole role, string message);
+
+        int InsertMessage(int index, SingleMessage message);
 
         /// <summary>
         /// Retrieve the full prompt. The exact format depends on the backend.
@@ -84,6 +88,8 @@ namespace LetheAISharp
         /// <param name="message">The message to analyze.</param>
         /// <returns>The total number of tokens in the message.</returns>
         int GetTokenCount(AuthorRole role, string message);
+
+        int GetTokenCount(SingleMessage message);
 
         /// <summary>
         /// Only relevant to text completion. Calculates the token overread for the responsse start block / prefill.

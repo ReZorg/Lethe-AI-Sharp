@@ -26,6 +26,13 @@ namespace LetheAISharp
             return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
         }
 
+        public int AddMessage(SingleMessage message)
+        {
+            var msg = FormatSingleMessage(message.Role, message.User, message.Bot, message.Message);
+            _prompt.Add(msg);
+            return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
+        }
+
         public object GetFullPrompt()
         {
             return _prompt;
@@ -48,6 +55,17 @@ namespace LetheAISharp
                 return AddMessage(role, message);
             }
             var msg = FormatSingleMessage(role, LLMEngine.User, LLMEngine.Bot, message);
+            _prompt.Insert(index, msg);
+            return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
+        }
+
+        public int InsertMessage(int index, SingleMessage message)
+        {
+            if (index == _prompt.Count)
+            {
+                return AddMessage(message);
+            }
+            var msg = FormatSingleMessage(message.Role, message.User, message.Bot, message.Message);
             _prompt.Insert(index, msg);
             return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
         }
@@ -101,6 +119,12 @@ namespace LetheAISharp
         public int GetTokenCount(AuthorRole role, string message)
         {
             var msg = FormatSingleMessage(role, LLMEngine.User, LLMEngine.Bot, message);
+            return LLMEngine.GetTokenCount(msg.Content.ToString());
+        }
+
+        public int GetTokenCount(SingleMessage message)
+        {
+            var msg = FormatSingleMessage(message.Role, message.User, message.Bot, message.Message);
             return LLMEngine.GetTokenCount(msg.Content.ToString());
         }
 

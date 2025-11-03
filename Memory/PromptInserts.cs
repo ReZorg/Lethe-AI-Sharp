@@ -63,8 +63,8 @@ namespace LetheAISharp.Memory
             else
             {
                 Add(new PromptInsert(memory));
+                memory.Touch();
             }
-            memory.Touch();
         }
 
         public List<PromptInsert> GetEntriesByPosition(int position)
