@@ -236,7 +236,7 @@ namespace LetheAISharp.Memory
 
         public bool CheckKeywords(string message)
         {
-            if (!Enabled || (KeyWordsMain.Count == 0 && KeyWordsSecondary.Count == 0))
+            if (!Enabled || (KeyWordsMain.Count == 0 && KeyWordsSecondary.Count == 0) || string.IsNullOrEmpty(message))
                 return false;
 
             var comparison = CaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase;

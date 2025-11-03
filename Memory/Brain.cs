@@ -223,6 +223,15 @@ namespace LetheAISharp.Memory
 
         #region *** LTM - Memory Management ***
 
+        /// <summary>
+        /// Reloads the memory vault with relevant memory units based on the current state of the system.
+        /// </summary>
+        /// <remarks>This method clears the existing memory vault and repopulates it with memory units
+        /// derived from  session logs, brain memories, and world entries. It only processes memory units that meet
+        /// specific  criteria, such as having non-empty embeddings and not being disabled. If RAG (Retrieval-Augmented 
+        /// Generation) is disabled in the settings, the method exits early without modifying the memory
+        /// vault.</remarks>
+        /// <exception cref="Exception">Thrown if an error occurs while adding memory units to the memory vault.</exception>
         public virtual void ReloadMemories()
         {
             MindPalace = new MemoryVault();
@@ -305,6 +314,8 @@ namespace LetheAISharp.Memory
                 target.AddMemories(search);
             }
 
+            
+
             // Check for keyword-activated world info entries
             if (LLMEngine.Settings.AllowWorldInfo)
             {
@@ -312,11 +323,15 @@ namespace LetheAISharp.Memory
 
                 foreach (var item in Owner.History.Sessions)
                 {
-                    if (item.CheckKeywords(searchstring))
+                    if (item.CheckKeywords(searchmessage))
                     {
                         _currentWorldEntries.Add(item);
                     }
                 }
+
+                var list = Memories.FindAll(e => (e.Category == MemoryType.Person || e.Category == MemoryType.Location) && searchmessage.Contains(e.Name, StringComparison.InvariantCultureIgnoreCase));
+                _currentWorldEntries.AddRange(list);
+
 
                 // Add world entries from the group/bot itself
                 if (Owner.MyWorlds.Count > 0)

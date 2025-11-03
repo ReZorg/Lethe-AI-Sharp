@@ -454,8 +454,16 @@ namespace LetheAISharp
         public static string TimeSpanToHumanString(TimeSpan span)
         {
             // Turn a time span into something clearly legible for a human
+            if (span.Days > 2)
+            {
+                return ((int)Math.Round(span.TotalDays)).ToString() + " days";
+            }
             if (span.Days > 1)
-                return span.Days.ToString() + " days";
+            {
+                if (span.Hours > 1)
+                    return $"{span.Days} days and {span.Hours} hours";
+                return $"{span.Days} days";
+            }
             else if (span.Days > 0)
                 return "1 day";
             else if (span.Hours > 0)
