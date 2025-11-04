@@ -122,7 +122,7 @@ namespace LetheAISharp.Memory
             // Select all natural memories within the cutoff period, order by Added descending, and enqueue them
             Eurekas.Clear();
             var cutoff = DateTime.Now - EurekaCutOff;
-            var recent = Memories.Where(m => (m.Insertion == MemoryInsertion.Natural || m.Insertion == MemoryInsertion.NaturalForced) && m.Added >= cutoff).OrderByDescending(m => m.Added).ToList();
+            var recent = Memories.Where(m => (m.Insertion == MemoryInsertion.Natural || m.Insertion == MemoryInsertion.NaturalForced) && m.Added <= DateTime.Now && m.Added >= cutoff).OrderByDescending(m => m.Added).ToList();
             foreach (var item in recent)
                 Eurekas.Add(item);
         }
@@ -251,7 +251,7 @@ namespace LetheAISharp.Memory
                 vectors.Add(session);
             }
 
-            var brainmemories = Memories.FindAll(m => m.Insertion == MemoryInsertion.Trigger && m.EmbedSummary.Length > 0 && !DisableRAG.Contains(m.Category));
+            var brainmemories = Memories.FindAll(m => m.Added <= DateTime.Now && m.Insertion == MemoryInsertion.Trigger && m.EmbedSummary.Length > 0 && !DisableRAG.Contains(m.Category));
             foreach (var doc in brainmemories)
             {
                 vectors.Add(doc);
@@ -331,7 +331,7 @@ namespace LetheAISharp.Memory
                     }
                 }
 
-                var list = Memories.FindAll(e => (e.Category == MemoryType.Person || e.Category == MemoryType.Location) && searchmessage.Contains(e.Name, StringComparison.InvariantCultureIgnoreCase));
+                var list = Memories.FindAll(e => e.Added <= DateTime.Now && (e.Category == MemoryType.Person || e.Category == MemoryType.Location) && searchmessage.Contains(e.Name, StringComparison.InvariantCultureIgnoreCase));
                 _currentWorldEntries.AddRange(list);
 
 

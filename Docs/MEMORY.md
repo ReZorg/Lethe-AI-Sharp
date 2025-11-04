@@ -35,7 +35,7 @@ The `MemoryUnit` class is the unified format for all memory and knowledge storag
 |----------|------|---------|
 | `Guid` | `Guid` | Unique identifier for the memory entry |
 | `Category` | `MemoryType` | Type of memory (General, WorldInfo, WebSearch, ChatSession, etc.) |
-| `Insertion` | `MemoryInsertion` | How the memory is inserted (Trigger, Natural, NaturalForced, None) |
+| `Insertion` | `MemoryInsertion` | How the memory is inserted (Trigger, Natural, None) |
 | `Name` | `string` | Title or name for the memory entry |
 | `Content` | `string` | The actual memory content |
 | `Reason` | `string` | Context or reason why this memory is important (optional) |
@@ -184,7 +184,7 @@ The Agent system provides dynamic memory creation and research capabilities thro
 var mem = new MemoryUnit
 {
     Category = MemoryType.WebSearch,
-    Insertion = MemoryInsertion.NaturalForced,
+    Insertion = MemoryInsertion.Natural,
     Name = topic.Topic,
     Content = merged.CleanupAndTrim(),
     Reason = topic.Reason,
@@ -323,7 +323,7 @@ Oh yeah, I did! Here's the info I found.... (proceeds to reuse the info from the
 [/Bot]
 ```
 
-Here the `Brain` class found that the user's query was very close to one of the memories it had with the Natural or NaturalForced trigger, so it inserted it just above the user message as a system message. The bot then can then reuse that information in its own words.
+Here the `Brain` class found that the user's query was very close to one of the memories it had with the Natural trigger, so it inserted it just above the user message as a system message. The bot then can then reuse that information in its own words.
 
 ## Best Practices
 

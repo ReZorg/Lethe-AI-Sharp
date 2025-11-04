@@ -132,7 +132,7 @@ namespace LetheAISharp.Memory
                 sb.Append(includeTitle switch
                 {
                     TitleInsertType.Simple => $"{Name}: ",
-                    TitleInsertType.Bold => $"**{Name}:** ",
+                    TitleInsertType.Bold => $"**{Name}:**\n",
                     TitleInsertType.MarkdownH2 => $"## {Name}\n",
                     TitleInsertType.MarkdownH3 => $"### {Name}\n",
                     _ => $"{Name}\n"

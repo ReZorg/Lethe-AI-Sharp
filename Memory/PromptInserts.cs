@@ -23,19 +23,14 @@ namespace LetheAISharp.Memory
         {
             if (Memory is ChatSession info)
             {
-                return info.ToSnippet(TitleInsertType.Simple, LLMEngine.Bot.DatesInSessionSummaries, false, true);
+                return info.ToSnippet(TitleInsertType.Bold, LLMEngine.Bot.DatesInSessionSummaries, false, true);
             }
             else
             {
-                if (Memory.Category == MemoryType.WorldInfo)
-                    return Memory.Content;
-                else
-                {
-                    var hastitle = Memory.Category == MemoryType.Person || Memory.Category == MemoryType.Location || Memory.Category == MemoryType.Event || Memory.Category == MemoryType.Journal;
-                    var compress = hastitle;
-                    var hasdate = Memory.Category == MemoryType.Journal || Memory.Category == MemoryType.Event;
-                    return Memory.ToSnippet(hastitle ? TitleInsertType.None : TitleInsertType.Simple, hasdate, false, compress);
-                }
+                var hastitle = Memory.Category == MemoryType.Person || Memory.Category == MemoryType.Location || Memory.Category == MemoryType.Event || Memory.Category == MemoryType.Journal;
+                var compress = hastitle;
+                var hasdate = Memory.Category == MemoryType.Journal || Memory.Category == MemoryType.Event;
+                return Memory.ToSnippet(hastitle ? TitleInsertType.Bold : TitleInsertType.None, hasdate, false, false);
             }
         }
     }

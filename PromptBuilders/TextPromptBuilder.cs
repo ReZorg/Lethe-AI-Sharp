@@ -128,6 +128,8 @@ namespace LetheAISharp
             {
                 return AddMessage(role, message);
             }
+            if (index > _prompt.Count)
+                return -1;
 
             var msg = LLMEngine.Instruct.FormatSinglePrompt(role, LLMEngine.User, LLMEngine.Bot, message);
             var res = LLMEngine.GetTokenCount(msg);
@@ -141,6 +143,8 @@ namespace LetheAISharp
             {
                 return AddMessage(message);
             }
+            if (index > _prompt.Count)
+                return -1;
 
             var msg = LLMEngine.Instruct.FormatSinglePrompt(message.Role, message.User, message.Bot, message.Message);
             var res = LLMEngine.GetTokenCount(msg);
