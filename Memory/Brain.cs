@@ -144,6 +144,8 @@ namespace LetheAISharp.Memory
             if (message.Role != AuthorRole.User)
                 return;
 
+            if (LLMEngine.User.DisableBotGuidance)
+                return;
             Mood.Update();
             Mood.Interpret(message.Message);
 

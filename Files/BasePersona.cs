@@ -18,20 +18,33 @@ namespace LetheAISharp.Files
     /// The class provides a foundation for defining personas with
     /// properties such as name, biography, scenarios, and dialog examples. It supports macros for dynamic text
     /// replacement, self-editable fields, and integration with plugins and world information. This class is designed to
-    /// be extended for more specialized persona implementations.  Key features include: 
+    /// be extended for more specialized persona implementations. Key features include: 
     /// - Support for user or bot personas via the IsUser flag. 
     /// - Dynamic macro replacement in fields like Bio and Scenarios
     /// - Management of chat history, world information, and plugins. 
     /// - Customizable system prompts and session behaviors. 
     /// - Factory methods for creating chat logs and sessions.  
     /// - Derived classes can override methods such as BeginChat and EndChat to implement custom loading and saving behaviors.
+    /// - Most fields are for bots only. For users, only Name, Bio, and DisableBotGuidance really matter.
     /// </remarks>
     public class BasePersona : BaseFile
     {
         /// <summary> 
         /// Is this an User or Bot persona. It's mostly a flag for the front-end but also helps with prompt macros.
+        /// User personas will have {{user}} and {{userbio}} macros replaced with their Name and Bio, while Bot personas will use {{char}} and {{charbio}}.
+        /// Most fields are bot only. For users, only Name and Bio really matter.
         /// </summary>
         public bool IsUser { get; set; } = false;
+
+        /// <summary>
+        /// In full chat mode, If both IsUser and DisableBotGuidance are set to true, the bot will not receive any 
+        /// system message regarding date, mood, eurekas, or other contextual guidance in regards to this user.
+        /// </summary>
+        /// <remarks>
+        /// This is mostly for multi-user situation, roleplay, or testing. 
+        /// So you don't need to disable 3 or 4 different settings when you don't want a conversation with a particular user to change a bot's state
+        /// </remarks>
+        public bool DisableBotGuidance { get; set; } = false;
 
         /// <summary> 
         /// Character's name
