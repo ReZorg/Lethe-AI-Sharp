@@ -464,8 +464,12 @@ namespace LetheAISharp
                     return $"{span.Days} days and {span.Hours} hours";
                 return $"{span.Days} days";
             }
-            else if (span.Days > 0)
-                return "1 day";
+            else if (span.Days == 1)
+            {
+                if (span.Hours > 1)
+                    return $"a day and {span.Hours} hours";
+                return $"a day";
+            }
             else if (span.Hours > 0)
                 return span.Hours.ToString() + " hours";
             else if (span.Minutes > 0)
