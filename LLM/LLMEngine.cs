@@ -521,9 +521,9 @@ namespace LetheAISharp.LLM
         /// <returns></returns>
         public static int GetTokenCount(string text)
         {
-            if (string.IsNullOrEmpty(text) || Client == null)
+            if (string.IsNullOrEmpty(text))
                 return 0;
-            else if (Status == SystemStatus.NotInit || text.Length > MaxContextLength * 10)
+            else if (Client == null || Status != SystemStatus.Ready || text.Length > MaxContextLength * 8)
                 return TokenTools.CountTokens(text);
             try
             {
