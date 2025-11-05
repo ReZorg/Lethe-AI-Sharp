@@ -839,7 +839,7 @@ namespace LetheAISharp.LLM
             var searchstring = string.IsNullOrEmpty(newMessage) ? History.GetLastFromInSession(AuthorRole.User)?.Message : newMessage;
 
             // update the RAG, world info, and summary stuff
-            await Bot.Brain.GetRAGandInserts(dataInserts, searchstring, -1, Settings.RAGDistanceCutOff).ConfigureAwait(false);
+            await Bot.Brain.GetRAGandInserts(dataInserts, searchstring ?? string.Empty, -1, Settings.RAGDistanceCutOff).ConfigureAwait(false);
 
             // Prepare the full system prompt and count the tokens used
             var rawprompt = GenerateSystemPromptContent(newMessage);

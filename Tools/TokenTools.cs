@@ -21,6 +21,7 @@ namespace LetheAISharp
 
         public static void SetEncodingForModel(string model)
         {
+
             string encodingName = Model.GetEncodingNameForModel(model);
             if (encodingName != null)
             {
