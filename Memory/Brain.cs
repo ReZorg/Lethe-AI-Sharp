@@ -474,12 +474,12 @@ namespace LetheAISharp.Memory
         protected virtual void MemoryDecay()
         {
             // Remove old natural memories that haven't been inserted yet are are passed the cutoff
-            Memories.RemoveAll(e => (e.Insertion == MemoryInsertion.Natural || e.Insertion == MemoryInsertion.NaturalForced) && (DateTime.Now - e.Added) > EurekaCutOff);
+            Memories.RemoveAll(e => !e.Protected && (e.Insertion == MemoryInsertion.Natural || e.Insertion == MemoryInsertion.NaturalForced) && (DateTime.Now - e.Added) > EurekaCutOff);
 
             // Remove old trigger memories that are decayable and haven't been recalled in a while
             Memories.RemoveAll(e =>
             {
-                if (e.Insertion != MemoryInsertion.Trigger || !DecayableMemories.Contains(e.Category))
+                if (e.Insertion != MemoryInsertion.Trigger || !DecayableMemories.Contains(e.Category) || e.Protected)
                     return false;
                 var noRecallDays = MinNoRecallDaysBeforeDeletionPerPrioLevel * (e.Priority + 1) + e.TriggerCount;
 
@@ -511,7 +511,7 @@ namespace LetheAISharp.Memory
             // special case, just check name first
             if (mem.Category == MemoryType.Person || mem.Category == MemoryType.Location)
             {
-                var existing = Memories.Find(e => e.Category == MemoryType.Person && e.Name.Equals(mem.Name, StringComparison.InvariantCultureIgnoreCase));
+                var existing = Memories.Find(e => !e.Protected && e.Category == MemoryType.Person && e.Name.Equals(mem.Name, StringComparison.InvariantCultureIgnoreCase));
                 if (existing != null)
                 {
                     var idx = Memories.IndexOf(existing);
@@ -526,7 +526,7 @@ namespace LetheAISharp.Memory
 
             var mindist = float.MaxValue;
             var bestmatch = (MemoryUnit?)null;
-            var comparelist = Memories.FindAll(e => e.Category == mem.Category);
+            var comparelist = Memories.FindAll(e => e.Category == mem.Category && !e.Protected);
 
             foreach (var item in comparelist)
             {

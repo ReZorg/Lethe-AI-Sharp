@@ -118,11 +118,16 @@ namespace LetheAISharp.Memory
         /// </summary>
         public bool Sticky { get; set; } = false;
 
-        public bool Enabled = true;
-        public List<string> KeyWordsMain = [];
-        public List<string> KeyWordsSecondary = [];
-        public KeyWordLink WordLink = KeyWordLink.And;
-        public bool CaseSensitive = false;
+        /// <summary>
+        /// If set to true, this memory cannot be pruned automatically or overwritten by similar ones when adding new memories
+        /// </summary>
+        public bool Protected { get; set; } = false;
+
+        public bool Enabled { get; set; } = true;
+        public List<string> KeyWordsMain { get; set; } = new List<string>();
+        public List<string> KeyWordsSecondary { get; set; } = new List<string>();
+        public KeyWordLink WordLink { get; set; } = KeyWordLink.And;
+        public bool CaseSensitive { get; set; } = false;
 
         public virtual string ToSnippet(TitleInsertType includeTitle, bool includeDate, bool includeReason, bool compactContent)
         {
