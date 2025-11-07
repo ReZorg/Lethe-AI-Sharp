@@ -797,6 +797,15 @@ namespace LetheAISharp.Memory
                 }
                 Inserts.Clear();
             }
+
+            var InsertMems = Memories.FindAll(m => m.Insertion == MemoryInsertion.UserReturn && m.Added <= DateTime.Now);
+            foreach (var mem in InsertMems)
+            {
+                totalmessage += LLMEngine.NewLine + mem.Content.Trim();
+                mem.Touch();
+                mem.Insertion = MemoryInsertion.None;
+            }
+
             if (string.IsNullOrWhiteSpace(totalmessage))
                 return null;
 

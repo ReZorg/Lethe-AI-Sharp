@@ -1,7 +1,6 @@
 ﻿using LetheAISharp.Files;
 using LetheAISharp.LLM;
 using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LetheAISharp.Memory
 {
@@ -21,6 +20,7 @@ namespace LetheAISharp.Memory
 
         public string ToContent()
         {
+            Memory.Touch();
             if (Memory is ChatSession info)
             {
                 return info.ToSnippet(TitleInsertType.Bold, LLMEngine.Bot.DatesInSessionSummaries, false, true);
@@ -35,7 +35,11 @@ namespace LetheAISharp.Memory
         }
     }
 
-
+    /// <summary>
+    /// Represents an organized collection of MemoryUnit, mostly used for managing prompt inserts during LLM interactions.
+    /// Can also be used independently to retrieve all relevant memories for a specific prompt using Bot.Brain.GetRAGandInserts().
+    /// </summary>
+    /// <remarks>While this is a public class, this is not meant to be used directly outside of very specific scenarios.</remarks>
     public class PromptInserts : List<PromptInsert> 
     { 
         public void DecreaseDuration()
@@ -58,7 +62,6 @@ namespace LetheAISharp.Memory
             else
             {
                 Add(new PromptInsert(memory));
-                memory.Touch();
             }
         }
 

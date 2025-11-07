@@ -39,13 +39,20 @@ namespace LetheAISharp.Memory
         /// <summary>
         /// The memory will be inserted into the prompt in a similar fashion to Natural, but no trigger is required. 
         /// Instead, the MemoryUnit is inserted as soon as possible (no other natural insert in the last few question-response pairs). 
-        /// Converted to Trigger after use. It is not recommended to use this insertion type often as it can disrupt the flow of conversation.
+        /// Converted to Trigger after use.
         /// </summary>
+        /// <remarks>It is not recommended to use this insertion type often as it will disrupt the flow of conversation and may confuse the chatbot.</remarks>
         NaturalForced,
         /// <summary>
         /// The memory will not be inserted into the prompt automatically.
         /// </summary>
-        None
+        None,
+        /// <summary>
+        /// The memory's content will be inserted when the user returns from AFK as a part of the hidden system message usually containing date info, 
+        /// and (optionally) mood state. It will only be inserted if Added field is lower than latest user message. Memory is set to None after use to avoid 
+        /// re-insertion on subsequent returns. Content will be inserted "as is" with no title, it is recommended to keep it brief.
+        /// </summary>
+        UserReturn
     }
 
     /// <summary>
