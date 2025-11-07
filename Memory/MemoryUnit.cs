@@ -9,27 +9,67 @@ using System.Threading.Tasks;
 
 namespace LetheAISharp.Memory
 {
-    public enum MemoryInsertionStrategy
+    /// <summary>
+    /// Represents the type of memory or context used in the application.
+    /// </summary>
+    /// <remarks>This enumeration categorizes different types of memory or contextual information that can be
+    /// stored or processed. It is used to distinguish between various domains or purposes. Internally, only
+    /// ChatSession, WorldInfo, and WebSearch are actively used. Other types are there for convenience and do
+    /// not have to correspond to their stated purpose.</remarks>
+    public enum MemoryType { General, WorldInfo, WebSearch, ChatSession, Journal, Image, File, Location, Event, Person, Goal }
+
+    /// <summary>
+    /// Specifies the modes of memory insertion for a specific MemoryUnit.
+    /// </summary>
+    /// <remarks>This enumeration defines the available options for memory insertion behavior, which can be
+    /// used to control how memory is inserted or managed in specific scenarios.</remarks>
+    public enum MemoryInsertion 
     {
-        /// <summary> Insert when a trigger (RAG or Keyword) is activated during chat </summary>
+        /// <summary>
+        /// Trigger-based insertion: The memory is inserted in the prompt in a preset and fixed position based on similarity to user input or keyword. 
+        /// Insertion location and duration are determined by MemoryUnit properties.
+        /// </summary>
         Trigger,
-        /// <summary> Automatically inserted into prompt </summary>
-        Auto,
-        /// <summary> Turned off </summary>
+        /// <summary>
+        /// Natural insertion: The memory is inserted into the prompt as a system message above the user last input, based on similarity to user input or keyword. 
+        /// It will "scroll" alongside the chat messages as more are being added, ensuring a long term impact. It is converted to Trigger after use. 
+        /// Triggered
+        /// </summary>
+        Natural,
+        /// <summary>
+        /// The memory will be inserted into the prompt in a similar fashion to Natural, but no trigger is required. 
+        /// Instead, the MemoryUnit is inserted as soon as possible (no other natural insert in the last few question-response pairs). 
+        /// Converted to Trigger after use. It is not recommended to use this insertion type often as it can disrupt the flow of conversation.
+        /// </summary>
+        NaturalForced,
+        /// <summary>
+        /// The memory will not be inserted into the prompt automatically.
+        /// </summary>
         None
     }
 
-    public enum MemoryType { General, WorldInfo, WebSearch, ChatSession, Journal, Image, File, Location, Event, Person, Goal }
-    public enum MemoryInsertion { Trigger, Natural, NaturalForced, None }
-
+    /// <summary>
+    /// Specifies the types of title insertions that can be applied.
+    /// </summary>
+    /// <remarks>This enumeration defines the available formats for inserting titles, ranging from no formatting
+    /// to specific styles such as bold or Markdown headers. Use the appropriate value to control how titles are rendered.</remarks>
     public enum TitleInsertType { None, Simple, Bold, MarkdownH2, MarkdownH3 }
 
 
     /// <summary>
-    /// Individual long term and contextual memory entry
+    /// Represents a unit of memory that can be used to store and manage information relevant to the bot's operation.
     /// </summary>
+    /// <remarks>The <see cref="MemoryUnit"/> class provides a flexible structure for managing various types
+    /// of memory, such as general information, world knowledge, chat sessions, and more. Each memory unit is
+    /// categorized by a <see cref="MemoryType"/> and can be configured with properties such as priority, duration, and
+    /// insertion behavior. It supports keyword-based triggering, embedding for AI tasks, and sentiment analysis. This
+    /// class is designed to facilitate the organization and retrieval of information in conversational AI systems,
+    /// enabling context-aware interactions and dynamic memory management.</remarks>
     public class MemoryUnit : IEmbed
     {
+        /// <summary>
+        /// Helpful keywords for each memory type to populate keyword lists or nudge similarity searches
+        /// </summary>
         public static Dictionary<MemoryType, List<string>> EmbedHelpers { get; private set; } = new Dictionary<MemoryType, List<string>>
         {
             { MemoryType.General, [] },
@@ -75,6 +115,9 @@ namespace LetheAISharp.Memory
         /// </summary>
         public string Reason { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Sentiment analysis results (optional, mostly unused at library level)
+        /// </summary>
         public List<(string Label, float Probability)> Sentiments { get; set; } = [];
 
         /// <summary>
@@ -92,8 +135,14 @@ namespace LetheAISharp.Memory
         /// </summary>
         public DateTime EndTime { get; set; } = DateTime.Now;
 
+        /// <summary>
+        /// Date of the last time this memory was inserted into the prompt
+        /// </summary>
         public DateTime LastTrigger { get; set; } = DateTime.Now;
 
+        /// <summary>
+        /// Number of times this memory has been triggered
+        /// </summary>
         public int TriggerCount { get; set; } = 0;
 
         /// <summary>
@@ -110,7 +159,15 @@ namespace LetheAISharp.Memory
         /// Insertion position index. 0 = most recent -> 100 = least recent. -1 to insert into system prompt instead.
         /// </summary>
         public int PositionIndex { get; set; } = 0;
+
+        /// <summary>
+        /// How long this memory should last (in turns) in the prompt before being pruned
+        /// </summary>
         public int Duration { get; set; } = 1;
+
+        /// <summary>
+        /// Likelihood (0.0 to 1.0) of this memory being triggered when its conditions are met
+        /// </summary>
         public float TriggerChance { get; set; } = 1;
 
         /// <summary>
@@ -123,12 +180,47 @@ namespace LetheAISharp.Memory
         /// </summary>
         public bool Protected { get; set; } = false;
 
+        /// <summary>
+        /// Keyword trigger: If set to true, keyword checking is enabled for this memory, otherwise no keyword checking is performed
+        /// </summary>
         public bool Enabled { get; set; } = true;
+
+        /// <summary>
+        /// Keyword trigger: list of main keywords that will trigger this memory (any keyword found in list count as true)
+        /// </summary>
         public List<string> KeyWordsMain { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Keyword trigger: list of secondary keywords that will trigger this memory (any keyword found in list count as true)
+        /// </summary>
         public List<string> KeyWordsSecondary { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Keyword trigger: logic to apply between main and secondary keywords
+        /// </summary>
         public KeyWordLink WordLink { get; set; } = KeyWordLink.And;
+
+        /// <summary>
+        /// Keyword trigger: If set to true, keyword matching is case sensitive
+        /// </summary>
         public bool CaseSensitive { get; set; } = false;
 
+        /// <summary>
+        /// Generates a formatted text snippet based on the specified options.
+        /// </summary>
+        /// <remarks>This method allows for flexible formatting of the snippet, supporting various title
+        /// styles, optional inclusion of dates,  and compacting of content. The output is cleaned and trimmed to ensure
+        /// a polished result.</remarks>
+        /// <param name="includeTitle">Specifies whether and how the title should be included in the snippet.  Use <see
+        /// cref="TitleInsertType.None"/> to exclude the title, or other values to format the title accordingly.</param>
+        /// <param name="includeDate">A value indicating whether the date range should be included in the snippet. If <see langword="true"/>, the
+        /// date range will be appended to the content.</param>
+        /// <param name="includeReason">A value indicating whether the reason should be included in the snippet. If <see langword="true"/>, the
+        /// reason will be appended at the end of the snippet (assuming the field is not empty).</param>
+        /// <param name="compactContent">A value indicating whether the content should be compacted by removing new lines. If <see langword="true"/>,
+        /// new lines in the content will be removed.</param>
+        /// <returns>A formatted string containing the generated snippet based on the specified options. The snippet may include
+        /// the title, date range, content, and reason, depending on the provided parameters.</returns>
         public virtual string ToSnippet(TitleInsertType includeTitle, bool includeDate, bool includeReason, bool compactContent)
         {
             var sb = new StringBuilder();
@@ -159,11 +251,23 @@ namespace LetheAISharp.Memory
             return sb.ToString().CleanupAndTrim();
         }
 
+        /// <summary>
+        /// Updates the last trigger timestamp to the current time and increments the trigger count.
+        /// </summary>
+        /// <remarks>This method sets the <see cref="LastTrigger"/> property to the current date and time 
+        /// and increases the <see cref="TriggerCount"/> property by one. It is typically used to record that the memory got triggered.</remarks>
         public void Touch()
         {
             LastTrigger = DateTime.Now; TriggerCount++;
         }
 
+        /// <summary>
+        /// Updates the sentiment analysis results for the current content.
+        /// </summary>
+        /// <remarks>This method performs sentiment analysis on the <see cref="Content"/> property  and
+        /// updates the <see cref="Sentiments"/> property with the results. Sentiment  analysis is only performed if the
+        /// sentiment analysis feature is enabled in  <see cref="LLMEngine.Settings"/>.</remarks>
+        /// <returns></returns>
         public virtual async Task UpdateSentiment()
         {
             if (LLMEngine.Settings.SentimentEnabled)
@@ -172,6 +276,15 @@ namespace LetheAISharp.Memory
             }
         }
 
+        /// <summary>
+        /// Embeds the text content into a vector representation for use in AI-related tasks, such as semantic search.
+        /// </summary>
+        /// <remarks>This method performs text embedding based on the current category of the content. If
+        /// the category is not one of the predefined mixed categories,  the content is embedded directly. For mixed
+        /// categories, the method combines embeddings of the content and its associated name to produce a merged
+        /// embedding. The operation is asynchronous and depends on the RAG (Retrieval-Augmented Generation) setting
+        /// being enabled in the LLM engine.</remarks>
+        /// <returns></returns>
         public virtual async Task EmbedText()
         {
             if (!LLMEngine.Settings.RAGEnabled)
@@ -239,6 +352,24 @@ namespace LetheAISharp.Memory
             return LLMEngine.Bot.ReplaceMacros(text.ToString().CleanupAndTrim());
         }
 
+        /// <summary>
+        /// Determines whether the specified message contains keywords that match the configured criteria.
+        /// </summary>
+        /// <remarks>The method evaluates the presence of keywords in the message based on the following
+        /// criteria: <list type="bullet"> <item><description>The <c>Enabled</c> property must be <see langword="true"/>
+        /// for the method to perform the check.</description></item> <item><description>The <c>KeyWordsMain</c>
+        /// collection must contain at least one keyword, or the <c>KeyWordsSecondary</c> collection must contain at
+        /// least one keyword.</description></item> <item><description>The <c>CaseSensitive</c> property determines
+        /// whether the keyword matching is case-sensitive.</description></item> <item><description>The <c>WordLink</c>
+        /// property specifies how the main and secondary keyword conditions are combined: <list type="bullet">
+        /// <item><description><c>KeyWordLink.And</c>: Both main and secondary keyword conditions must be
+        /// satisfied.</description></item> <item><description><c>KeyWordLink.Or</c>: Either the main or secondary
+        /// keyword condition must be satisfied.</description></item> <item><description><c>KeyWordLink.Not</c>: The
+        /// main keyword condition must be satisfied, and the secondary keyword condition must not be
+        /// satisfied.</description></item> </list> </description></item> </list></remarks>
+        /// <param name="message">The message to evaluate. Cannot be <see langword="null"/> or empty.</param>
+        /// <returns><see langword="true"/> if the message contains keywords that satisfy the configured conditions; otherwise,
+        /// <see langword="false"/>.</returns>
         public bool CheckKeywords(string message)
         {
             if (!Enabled || (KeyWordsMain.Count == 0 && KeyWordsSecondary.Count == 0) || string.IsNullOrEmpty(message))
