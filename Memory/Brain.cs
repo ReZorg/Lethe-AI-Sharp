@@ -146,6 +146,10 @@ namespace LetheAISharp.Memory
 
             if (LLMEngine.User.DisableBotGuidance)
                 return;
+
+            if (LLMEngine.Settings.DisableDateAndMoodIfNotLastSession && LLMEngine.History.CurrentSession != LLMEngine.History.Sessions.Last())
+                return;
+
             Mood.Update();
             Mood.Interpret(message.Message);
 
@@ -750,6 +754,9 @@ namespace LetheAISharp.Memory
 
         public virtual SingleMessage? BuildAwayMessage()
         {
+            if (LLMEngine.Settings.DisableDateAndMoodIfNotLastSession && LLMEngine.History.CurrentSession != LLMEngine.History.Sessions.Last())
+                return null;
+
             // no previous user message, nothing to do either, chat just started
             var lastmsg = LLMEngine.History.GetLastMessageFrom(LLMEngine.User);
             if (lastmsg == null)

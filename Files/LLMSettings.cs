@@ -68,6 +68,13 @@ namespace LetheAISharp.Files
         /// </summary>
         public bool MoveAllInsertsToSysPrompt { get; set; } = false;
 
+        /// <summary>
+        /// If set to true (default) and the active chat session is not the lastest, date, mood and memories (with Natural insert policy)
+        /// will not be inserted in the prompt. This is useful when continuing old chat sessions where this information could be irrelevant or
+        /// even contradictory.
+        /// </summary>
+        public bool DisableDateAndMoodIfNotLastSession { get; set; } = true;
+
         #endregion
 
         #region *** Long term memory system and summaries ***
