@@ -67,6 +67,7 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 | CoT / “thinking” models | ✅ | ✅ | ✅ |
 | Personas & chat sessions | ✅ | ✅ | ✅ |
 | RAG / Memory integration | ✅ | ✅ | ✅ |
+| Token Management | ✅ Exact | ⚠️ Estimated  | ✅ Exact |
 | Web search integration | ✅ | ✅ | ✅ |
 | Text To Speech | ✅ (if loaded) | ❌ | ❌ |
 | VLM (image input)* | ✅ (if loaded) | ✅ | ❌ |
