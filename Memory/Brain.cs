@@ -335,6 +335,14 @@ namespace LetheAISharp.Memory
                     }
                 }
 
+                foreach (var item in Memories)
+                {
+                    if (item.CheckKeywords(searchmessage))
+                    {
+                        _currentWorldEntries.Add(item);
+                    }
+                }
+
                 var list = Memories.FindAll(e => e.Added <= DateTime.Now && (e.Category == MemoryType.Person || e.Category == MemoryType.Location) && searchmessage.Contains(e.Name, StringComparison.InvariantCultureIgnoreCase));
                 _currentWorldEntries.AddRange(list);
 
