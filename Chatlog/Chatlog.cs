@@ -142,6 +142,8 @@ namespace LetheAISharp.Files
             var sb = new StringBuilder();
             for (int i = entrydepth; i >= 0; i--)
             {
+                if (i >= Sessions.Count)
+                    continue;
                 var session = Sessions[i];
                 if (usedGuid.Contains(session.Guid) || string.IsNullOrWhiteSpace(session.Content))
                     continue;

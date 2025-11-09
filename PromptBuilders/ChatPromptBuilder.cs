@@ -78,6 +78,10 @@ namespace LetheAISharp
                 if (lastusermsg is not null)
                 {
                     var message = lastusermsg.Content.ToString();
+                    if (lastusermsg.Content is List<Content> lst)
+                    {
+                        message = lastusermsg.Content[0].ToString();
+                    }
 
                     var idx = _prompt.IndexOf(lastusermsg);
 
@@ -88,9 +92,34 @@ namespace LetheAISharp
                     foreach (var item in imagefilepath)
                     {
                         // determine data:image/extension based on file extension
-                        
-                        
-                        ctx.Add(new(ContentType.ImageUrl, $"data:image/gif;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
+                        // retrieve item extension
+                        var extension = Path.GetExtension(item).ToLowerInvariant();
+                        switch(extension)
+                        {                             
+                            case ".jpg":
+                            case ".jpeg":
+                                ctx.Add(new(ContentType.ImageUrl, $"data:image/jpeg;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
+                                break;
+                            case ".png":
+                                ctx.Add(new(ContentType.ImageUrl, $"data:image/png;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
+                                break;
+                            case ".gif":
+                                ctx.Add(new(ContentType.ImageUrl, $"data:image/gif;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
+                                break;
+                            case ".bmp":
+                                ctx.Add(new(ContentType.ImageUrl, $"data:image/bmp;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
+                                break;
+                            case ".webp":
+                                ctx.Add(new(ContentType.ImageUrl, $"data:image/webp;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
+                                break;
+                            case ".tiff ":
+                                ctx.Add(new(ContentType.ImageUrl, $"data:image/tiff;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
+                                break;
+                            default:
+                                ctx.Add(new(ContentType.ImageUrl, $"data:image/gif;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
+                                break;
+                        }
+                        //ctx.Add(new(ContentType.File, $"data:image/gif;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
                     }
                     _prompt[idx] = new Message(lastusermsg.Role, ctx, lastusermsg.Name);
                 }
