@@ -37,8 +37,9 @@ namespace LetheAISharp.Files
         public bool IsUser { get; set; } = false;
 
         /// <summary>
-        /// In full chat mode, If both IsUser and DisableBotGuidance are set to true, the bot will not receive any 
-        /// system message regarding date, mood, eurekas, or other contextual guidance in regards to this user.
+        /// In full chat mode, If DisableBotGuidance is set to true, the bot will not receive any system message 
+        /// regarding date, mood, eurekas, or other contextual guidance in regards to this user. 
+        /// This also works if the user has DisableBotGuidance set to true, in that case, the bot won't get any guidance either.
         /// </summary>
         /// <remarks>
         /// This is mostly for multi-user situation, roleplay, or testing. 

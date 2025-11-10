@@ -141,7 +141,7 @@ namespace LetheAISharp.Memory
         /// <returns></returns>
         public virtual async Task HandleMessages(SingleMessage message)
         {
-            if (message.Role != AuthorRole.User || LLMEngine.User.DisableBotGuidance)
+            if (message.Role != AuthorRole.User || LLMEngine.User.DisableBotGuidance || Owner.DisableBotGuidance)
                 return;
 
             if (LLMEngine.Settings.DisableDateAndMoodIfNotLastSession && LLMEngine.History.CurrentSession != LLMEngine.History.Sessions.Last())
@@ -154,7 +154,16 @@ namespace LetheAISharp.Memory
             var msg = BuildAwayMessage();
             if (msg != null)
             {
-                LLMEngine.History.LogMessage(msg);
+                // check if previous message is system or sysprompt
+                if (LLMEngine.History.CurrentSession.Messages.Count > 0 && (LLMEngine.History.CurrentSession.Messages.Last().Role == AuthorRole.System
+                    || LLMEngine.History.CurrentSession.Messages.Last().Role == AuthorRole.SysPrompt))
+                {
+                    // edit the last system message instead of adding a new one
+                    var lastmsg = LLMEngine.History.CurrentSession.Messages.Last();
+                    lastmsg.Message = msg.Message;
+                }
+                else
+                    LLMEngine.History.LogMessage(msg);
                 // Stop here, don't insert a eureka right after this one.
                 return;
             }

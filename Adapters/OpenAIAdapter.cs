@@ -87,7 +87,8 @@ namespace LetheAISharp.API
                 cts = new CancellationTokenSource();
                 token = cts.Token;
             }
-            var result = await _client.ChatCompletion(input, token).ConfigureAwait(false);
+            var param = input;
+            var result = await _client.ChatCompletion(param, token).ConfigureAwait(false);
             var res = result?.Message.Content.ToString();
             return res ?? string.Empty;
         }

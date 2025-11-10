@@ -94,7 +94,6 @@ namespace LetheAISharp
                 stops: [.. LLMEngine.Instruct.GetStoppingStrings(LLMEngine.User, LLMEngine.Bot)],
                 responseFormat: _currentSchema is not null ? OpenAI.TextResponseFormat.JsonSchema : OpenAI.TextResponseFormat.Auto,
                 jsonSchema: _currentSchema,
-
                 maxTokens: responseoverride == -1 ? LLMEngine.Settings.MaxReplyLength : responseoverride,
                 temperature: tempoverride >= 0 ? tempoverride : (LLMEngine.ForceTemperature >= 0) ? LLMEngine.ForceTemperature : LLMEngine.Sampler.Temperature);
 
@@ -152,12 +151,12 @@ namespace LetheAISharp
                     // For group conversations, use the current bot's name
                     var actualBot = message.Bot is GroupPersona groupPersona ?
                         (groupPersona.CurrentBot ?? groupPersona.BotPersonas.FirstOrDefault() ?? message.Bot) : message.Bot;
-                    realprompt = string.Format("{0}: {1}", actualBot.Name, realprompt);
+                    //realprompt = string.Format("{0}: {1}", actualBot.Name, realprompt);
                     selname = actualBot.Name;
                 }
                 else if (message.Role == AuthorRole.User)
                 {
-                    realprompt = string.Format("{0}: {1}", message.User.Name, realprompt);
+                    //realprompt = string.Format("{0}: {1}", message.User.Name, realprompt);
                     selname = message.User.Name;
                 }
             }
