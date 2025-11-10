@@ -141,10 +141,7 @@ namespace LetheAISharp.Memory
         /// <returns></returns>
         public virtual async Task HandleMessages(SingleMessage message)
         {
-            if (message.Role != AuthorRole.User)
-                return;
-
-            if (LLMEngine.User.DisableBotGuidance)
+            if (message.Role != AuthorRole.User || LLMEngine.User.DisableBotGuidance)
                 return;
 
             if (LLMEngine.Settings.DisableDateAndMoodIfNotLastSession && LLMEngine.History.CurrentSession != LLMEngine.History.Sessions.Last())

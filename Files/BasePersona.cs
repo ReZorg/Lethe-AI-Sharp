@@ -373,8 +373,8 @@ namespace LetheAISharp.Files
                 sysprompt.AppendLinuxLine(SelfEditField);
             else
                 sysprompt.AppendLinuxLine("This space is empty for now.");
-            promptbuilder.AddMessage(AuthorRole.SysPrompt, sysprompt.ToString());
-            promptbuilder.AddMessage(AuthorRole.User, $"Using {Name}'s memories alongside their biography, edit their personal thoughts section accordingly. Write two to three short paragraphs from {Name}'s perspective, in the first person. Focus on important events, life changing experiences, and promises, that {Name} would want to keep in mind. Don't include a title.");
+            promptbuilder.AddMessage(new SingleMessage(AuthorRole.SysPrompt, sysprompt.ToString()));
+            promptbuilder.AddMessage(new SingleMessage(AuthorRole.User, $"Using {Name}'s memories alongside their biography, edit their personal thoughts section accordingly. Write two to three short paragraphs from {Name}'s perspective, in the first person. Focus on important events, life changing experiences, and promises, that {Name} would want to keep in mind. Don't include a title."));
             var rln = SelfEditTokens;
             if (!string.IsNullOrWhiteSpace(LLMEngine.Instruct.ThinkingStart))
                 rln += 1024;

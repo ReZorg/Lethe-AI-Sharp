@@ -141,7 +141,7 @@ namespace LetheAISharp.Examples
                     }
                     
                     // Send message to bot
-                    await LLMEngine.SendMessageToBot(AuthorRole.User, input);
+                    await LLMEngine.SendMessageToBot(new SingleMessage(AuthorRole.User, input));
                     await WaitForResponse();
                     Console.WriteLine();
                 }

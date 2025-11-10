@@ -103,6 +103,15 @@ namespace LetheAISharp.API
                     FinishReason = "error"
                 });
             }
+            catch (OperationCanceledException ex)
+            {
+                LLMEngine.Logger?.LogInformation(ex, "Message stream stopped by user: {Message}", ex.Message);
+                RaiseOnStreamingResponse(new OpenTokenResponse
+                {
+                    Token = $"The response was manually interrupted or cancelled. ({ex.Message})",
+                    FinishReason = "error"
+                });
+            }
             catch (Exception ex)
             {
                 LLMEngine.Logger?.LogError(ex, "Error during streaming chat completion: {Message}", ex.Message);

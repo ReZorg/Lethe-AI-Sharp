@@ -40,7 +40,15 @@ namespace LetheAISharp.Files
         /// <summary> LlamaSharp: set to true to disable KV cache offloading to GPU (slower / less VRAM) </summary>
         public bool LlamaSharpNoKVoffload { get; set; } = false;
 
+        /// <summary>
+        /// OpenAI only: When chatting with a model that supports image inputs, if you set this to true, all the images in the prompt 
+        /// will be sent to OpenAI for processing. If set to false, only the image in the last user message will be. Depending on the amount of images
+        /// in the prompt, setting this to true may waste A LOT of tokens.
+        /// </summary>
+        public bool OpenAIProcessAllImages { get; set; } = false;
+
         #endregion
+
 
         #region *** Model Settings ***
 
@@ -77,6 +85,7 @@ namespace LetheAISharp.Files
 
         #endregion
 
+
         #region *** Long term memory system and summaries ***
 
         /// <summary> 
@@ -102,6 +111,7 @@ namespace LetheAISharp.Files
 
         #endregion
 
+
         #region *** Sentiment Analysis Module ***
 
         public bool SentimentEnabled { get; set; } = true;
@@ -110,6 +120,7 @@ namespace LetheAISharp.Files
         public string SentimentThresholdsPath { get; set; } = "data/classifiers/optimized_thresholds.json";
 
         #endregion
+
 
         #region *** RAG Settings (retrieval of past information based on text embedding similarity) ***
 
@@ -156,6 +167,7 @@ namespace LetheAISharp.Files
         public RAGSelectionHeuristic RAGHeuristic { get; set; } = RAGSelectionHeuristic.SelectSimple;
 
         #endregion
+
 
         #region *** WebSearch API Settings ***
 

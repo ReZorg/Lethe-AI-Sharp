@@ -21,15 +21,29 @@ namespace LetheAISharp
 
         public int AddMessage(AuthorRole role, string message)
         {
-            var msg = FormatSingleMessage(role, LLMEngine.User, LLMEngine.Bot, message);
+            var msg = FormatSingleMessage(new SingleMessage(role, message));
             _prompt.Add(msg);
-            return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
+            return LLMEngine.GetTokenCount(msg);
         }
 
         public int AddMessage(SingleMessage message)
         {
-            var msg = FormatSingleMessage(message.Role, message.User, message.Bot, message.Message);
+            var msg = FormatSingleMessage(message);
             _prompt.Add(msg);
+            return LLMEngine.GetTokenCount(msg);
+        }
+
+        private int GetTokenCountMsg(Message msg)
+        {
+            if (msg.Content is List<Content> lst)
+            {
+                var total = 0;
+                foreach (var content in lst)
+                {
+                    total += LLMEngine.GetTokenCount(content.ToString()) + 4;
+                }
+                return total + 4;
+            }
             return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
         }
 
@@ -43,7 +57,7 @@ namespace LetheAISharp
             var total = 0;
             foreach (var message in _prompt)
             {
-                total += LLMEngine.GetTokenCount(message.Content.ToString()) + 4;
+                total += LLMEngine.GetTokenCount(message);
             }
             return total;
         }
@@ -52,9 +66,9 @@ namespace LetheAISharp
         {
             if (index == _prompt.Count)
             {
-                return AddMessage(role, message);
+                return AddMessage(new SingleMessage(role, message));
             }
-            var msg = FormatSingleMessage(role, LLMEngine.User, LLMEngine.Bot, message);
+            var msg = FormatSingleMessage(new SingleMessage(role, message));
             _prompt.Insert(index, msg);
             return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
         }
@@ -65,66 +79,13 @@ namespace LetheAISharp
             {
                 return AddMessage(message);
             }
-            var msg = FormatSingleMessage(message.Role, message.User, message.Bot, message.Message);
+            var msg = FormatSingleMessage(message);
             _prompt.Insert(index, msg);
             return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
         }
 
         public object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null)
         {
-            if (imagefilepath.Count > 0)
-            {
-                var lastusermsg = _prompt.LastOrDefault(m => m.Role == Role.User);
-                if (lastusermsg is not null)
-                {
-                    var message = lastusermsg.Content.ToString();
-                    if (lastusermsg.Content is List<Content> lst)
-                    {
-                        message = lastusermsg.Content[0].ToString();
-                    }
-
-                    var idx = _prompt.IndexOf(lastusermsg);
-
-                    var ctx = new List<Content>
-                    {
-                        message
-                    };
-                    foreach (var item in imagefilepath)
-                    {
-                        // determine data:image/extension based on file extension
-                        // retrieve item extension
-                        var extension = Path.GetExtension(item).ToLowerInvariant();
-                        switch(extension)
-                        {                             
-                            case ".jpg":
-                            case ".jpeg":
-                                ctx.Add(new(ContentType.ImageUrl, $"data:image/jpeg;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
-                                break;
-                            case ".png":
-                                ctx.Add(new(ContentType.ImageUrl, $"data:image/png;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
-                                break;
-                            case ".gif":
-                                ctx.Add(new(ContentType.ImageUrl, $"data:image/gif;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
-                                break;
-                            case ".bmp":
-                                ctx.Add(new(ContentType.ImageUrl, $"data:image/bmp;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
-                                break;
-                            case ".webp":
-                                ctx.Add(new(ContentType.ImageUrl, $"data:image/webp;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
-                                break;
-                            case ".tiff ":
-                                ctx.Add(new(ContentType.ImageUrl, $"data:image/tiff;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
-                                break;
-                            default:
-                                ctx.Add(new(ContentType.ImageUrl, $"data:image/gif;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
-                                break;
-                        }
-                        //ctx.Add(new(ContentType.File, $"data:image/gif;base64,{ImageUtils.ImageToBase64(item, 1024)!}"));
-                    }
-                    _prompt[idx] = new Message(lastusermsg.Role, ctx, lastusermsg.Name);
-                }
-            }
-
             var chatrq = new ChatRequest(_prompt,
                 topP: LLMEngine.Sampler.Top_p,
                 frequencyPenalty: LLMEngine.Sampler.Rep_pen - 1,
@@ -147,13 +108,13 @@ namespace LetheAISharp
 
         public int GetTokenCount(AuthorRole role, string message)
         {
-            var msg = FormatSingleMessage(role, LLMEngine.User, LLMEngine.Bot, message);
+            var msg = FormatSingleMessage(new SingleMessage(role, message));
             return LLMEngine.GetTokenCount(msg.Content.ToString());
         }
 
         public int GetTokenCount(SingleMessage message)
         {
-            var msg = FormatSingleMessage(message.Role, message.User, message.Bot, message.Message);
+            var msg = FormatSingleMessage(message);
             return LLMEngine.GetTokenCount(msg.Content.ToString());
         }
 
@@ -172,35 +133,69 @@ namespace LetheAISharp
             return sb.ToString();
         }
 
-        private static Message FormatSingleMessage(AuthorRole role, BasePersona user, BasePersona bot, string prompt)
+        private static Message FormatSingleMessage(SingleMessage message)
         {
-            var realprompt = prompt;
+            var realprompt = message.Message;
             var addname = LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt;
 
             // In group conversations, ALWAYS add names so the LLM knows which persona is speaking
-            if (bot is GroupPersona)
+            if (message.Bot is GroupPersona)
                 addname = true;
 
-            if (role != AuthorRole.Assistant && role != AuthorRole.User)
+            if (message.Role != AuthorRole.Assistant && message.Role != AuthorRole.User)
                 addname = false;
             string? selname = null;
             if (addname)
             {
-                if (role == AuthorRole.Assistant)
+                if (message.Role == AuthorRole.Assistant)
                 {
                     // For group conversations, use the current bot's name
-                    var actualBot = bot is GroupPersona groupPersona ?
-                        (groupPersona.CurrentBot ?? groupPersona.BotPersonas.FirstOrDefault() ?? bot) : bot;
-                    realprompt = string.Format("{0}: {1}", actualBot.Name, prompt);
+                    var actualBot = message.Bot is GroupPersona groupPersona ?
+                        (groupPersona.CurrentBot ?? groupPersona.BotPersonas.FirstOrDefault() ?? message.Bot) : message.Bot;
+                    realprompt = string.Format("{0}: {1}", actualBot.Name, realprompt);
                     selname = actualBot.Name;
                 }
-                else if (role == AuthorRole.User)
+                else if (message.Role == AuthorRole.User)
                 {
-                    realprompt = string.Format("{0}: {1}", user.Name, prompt);
-                    selname = user.Name;
+                    realprompt = string.Format("{0}: {1}", message.User.Name, realprompt);
+                    selname = message.User.Name;
                 }
             }
-            return new Message(TokenTools.InternalRoleToChatRole(role), bot.ReplaceMacros(realprompt, user), selname);
+
+            if (string.IsNullOrEmpty(message.ImagePath) || !File.Exists(message.ImagePath))
+                return new Message(TokenTools.InternalRoleToChatRole(message.Role), message.Bot.ReplaceMacros(realprompt, message.User), selname);
+
+            var content = new List<Content>();
+
+            var extension = Path.GetExtension(message.ImagePath).ToLowerInvariant();
+            switch (extension)
+            {
+                case ".jpg":
+                case ".jpeg":
+                    content.Add(new(ContentType.ImageUrl, $"data:image/jpeg;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
+                    break;
+                case ".png":
+                    content.Add(new(ContentType.ImageUrl, $"data:image/png;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
+                    break;
+                case ".gif":
+                    content.Add(new(ContentType.ImageUrl, $"data:image/gif;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
+                    break;
+                case ".bmp":
+                    content.Add(new(ContentType.ImageUrl, $"data:image/bmp;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
+                    break;
+                case ".webp":
+                    content.Add(new(ContentType.ImageUrl, $"data:image/webp;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
+                    break;
+                case ".tiff ":
+                    content.Add(new(ContentType.ImageUrl, $"data:image/tiff;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
+                    break;
+                default:
+                    content.Add(new(ContentType.ImageUrl, $"data:image/gif;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
+                    break;
+            }
+            content.Add(message.Bot.ReplaceMacros(realprompt, message.User));
+
+            return new Message(TokenTools.InternalRoleToChatRole(message.Role), content);
         }
 
         public async Task SetStructuredOutput<ClassToConvert>()

@@ -174,8 +174,11 @@ namespace LetheAISharp.LLM
         private static ILogger? logger = null;
         private static BasePersona bot = new() { IsUser = false, Name = "Bot", Bio = "You are a helpful AI assistant whose goal is to answer questions and complete tasks.", UniqueName = string.Empty };
         private static BasePersona user = new() { IsUser = true, Name = "User", UniqueName = string.Empty };
-
+#if DEBUG
         public static PromptInserts dataInserts = [];
+#elif RELEASE
+        private static PromptInserts dataInserts = [];
+#endif
         internal static readonly Random RNG = new();
 
         #region *** Semaphore for model access control (Internal) ***
@@ -340,7 +343,7 @@ namespace LetheAISharp.LLM
         {
             if (Status == SystemStatus.Busy)
                 return;
-            await StartGeneration(AuthorRole.Assistant, string.Empty).ConfigureAwait(false);
+            await StartGeneration(new SingleMessage(AuthorRole.Assistant, string.Empty)).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -352,7 +355,7 @@ namespace LetheAISharp.LLM
         {
             if (Status == SystemStatus.Busy)
                 return;
-            await StartGeneration(AuthorRole.User, string.Empty).ConfigureAwait(false);
+            await StartGeneration(new SingleMessage(AuthorRole.User, string.Empty)).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -365,21 +368,7 @@ namespace LetheAISharp.LLM
         {
             if (Status == SystemStatus.Busy)
                 return;
-            await StartGeneration(message.Role, message.Message, message.Guid).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Sends a message to the LLM. Message is logged to chat history. 
-        /// Response done through the OnInferenceStreamed and OnInferenceEnded events.
-        /// </summary>
-        /// <param name="role">Role of the sender (User, Bot or System)</param>
-        /// <param name="message">Message to send </param>
-        /// <returns>It's the app's responsibility to log (or not) the response to the chat history through the OnInferenceEnded event </returns>
-        public static async Task SendMessageToBot(AuthorRole role, string message)
-        {
-            if (Status == SystemStatus.Busy)
-                return;
-            await StartGeneration(role, message).ConfigureAwait(false);
+            await StartGeneration(message).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -394,7 +383,7 @@ namespace LetheAISharp.LLM
             History.RemoveLast();
             if (PromptBuilder.Count == 0)
             {
-                await StartGeneration(AuthorRole.Assistant, string.Empty).ConfigureAwait(false);
+                await StartGeneration(new SingleMessage(AuthorRole.Assistant, string.Empty)).ConfigureAwait(false);
             }
             else
             {
@@ -452,7 +441,7 @@ namespace LetheAISharp.LLM
 
             var inputText = systemMessage;
             StreamingTextProgress = Instruct.GetThinkPrefill();
-            var genparams = await GenerateFullPrompt(AuthorRole.System, inputText, null, 0).ConfigureAwait(false);
+            var genparams = await GenerateFullPrompt(new SingleMessage(AuthorRole.System, inputText)).ConfigureAwait(false);
             if (!string.IsNullOrEmpty(systemMessage) && logSystemPrompt)
                 Bot.History.LogMessage(AuthorRole.System, systemMessage, User, Bot);
             Status = SystemStatus.Busy;
@@ -821,32 +810,32 @@ namespace LetheAISharp.LLM
         /// </summary>
         /// <param name="newMessage">Added message from the user</param>
         /// <returns></returns>
-        private static async Task<object> GenerateFullPrompt(AuthorRole MsgSender, string newMessage, string? pluginMessage = null, int imgpadding = 0)
+        private static async Task<object> GenerateFullPrompt(SingleMessage message, string? pluginMessage = null)
         {
-            var availtokens = MaxContextLength - Settings.MaxReplyLength - imgpadding;
+            var availtokens = MaxContextLength - Settings.MaxReplyLength;
             PromptBuilder!.Clear();
 
             // setup user message (+ optional plugin message) and count tokens used
-            if (!string.IsNullOrEmpty(newMessage))
+            if (!string.IsNullOrEmpty(message.Message))
             {
-                availtokens -= PromptBuilder.GetTokenCount(MsgSender, newMessage);
+                availtokens -= PromptBuilder.GetTokenCount(message.Role, message.Message);
             }
             if (!string.IsNullOrEmpty(pluginMessage))
             {
                 availtokens -= PromptBuilder.GetTokenCount(AuthorRole.System, pluginMessage);
             }
 
-            var searchstring = string.IsNullOrEmpty(newMessage) ? History.GetLastFromInSession(AuthorRole.User)?.Message : newMessage;
+            var searchstring = string.IsNullOrEmpty(message.Message) ? History.GetLastFromInSession(AuthorRole.User)?.Message : message.Message;
 
             // update the RAG, world info, and summary stuff
             await Bot.Brain.GetRAGandInserts(dataInserts, searchstring ?? string.Empty, -1, Settings.RAGDistanceCutOff).ConfigureAwait(false);
 
             // Prepare the full system prompt and count the tokens used
-            var rawprompt = GenerateSystemPromptContent(newMessage);
-            availtokens -= PromptBuilder.AddMessage(AuthorRole.SysPrompt, rawprompt);
+            var rawprompt = GenerateSystemPromptContent(message.Message);
+            availtokens -= PromptBuilder.AddMessage(new SingleMessage(AuthorRole.SysPrompt, rawprompt));
 
             // Prepare the bot's response tokens and count them
-            if (string.IsNullOrEmpty(newMessage) && MsgSender == AuthorRole.User)
+            if (string.IsNullOrEmpty(message.Message) && message.Role == AuthorRole.User)
                 availtokens -= PromptBuilder.GetResponseTokenCount(User);
             else
                 availtokens -= PromptBuilder.GetResponseTokenCount(Bot);
@@ -854,17 +843,17 @@ namespace LetheAISharp.LLM
             // get the full, formated chat history complemented by the data inserts
             var addinserts = string.IsNullOrEmpty(Instruct.ThinkingStart) || !Settings.RAGMoveToThinkBlock;
             History.AddHistoryToPrompt(Settings.SessionHandling, availtokens, addinserts ? dataInserts : null);
-            if (!string.IsNullOrEmpty(newMessage) || MsgSender != AuthorRole.User)
+            if (!string.IsNullOrEmpty(message.Message) || message.Role != AuthorRole.User)
             {
                 if (!string.IsNullOrEmpty(pluginMessage))
                 {
-                    PromptBuilder.AddMessage(AuthorRole.System, pluginMessage);
+                    PromptBuilder.AddMessage(new SingleMessage(AuthorRole.System, pluginMessage));
                 }
             }
 
-            if (!string.IsNullOrEmpty(newMessage))
+            if (!string.IsNullOrEmpty(message.Message))
             {
-                PromptBuilder.AddMessage(MsgSender, newMessage);
+                PromptBuilder.AddMessage(message);
             }
 
             var final = PromptBuilder.GetTokenUsage();
@@ -873,7 +862,7 @@ namespace LetheAISharp.LLM
                 var diff = final - (MaxContextLength - Settings.MaxReplyLength);
                 logger?.LogWarning("The prompt is {Diff} tokens over the limit.", diff);
             }
-            if (string.IsNullOrEmpty(newMessage) && MsgSender == AuthorRole.User)
+            if (string.IsNullOrEmpty(message.Message) && message.Role == AuthorRole.User)
                 return PromptBuilder.PromptToQuery(AuthorRole.User);
             else
                 return PromptBuilder.PromptToQuery(AuthorRole.Assistant);
@@ -914,38 +903,30 @@ namespace LetheAISharp.LLM
         /// <param name="MsgSender">Role of the sender</param>
         /// <param name="userInput">Message from sender</param>
         /// <returns></returns>
-        private static async Task StartGeneration(AuthorRole MsgSender, string userInput, Guid? setGuid = null)
+        private static async Task StartGeneration(SingleMessage message)
         {
             if (Client == null || PromptBuilder == null)
                 return;
 
             // Plugin pre-pass OUTSIDE the model slot to avoid deadlocks
-            var lastuserinput = string.IsNullOrWhiteSpace(userInput) ?
+            var lastuserinput = string.IsNullOrWhiteSpace(message.Message) ?
                 History.GetLastFromInSession(AuthorRole.User)?.Message ?? string.Empty :
-                userInput;
-            
+                message.Message;
+
             var pluginmessage = await BuildPluginSystemInsertAsync(lastuserinput).ConfigureAwait(false);
 
-            // build the message if relevant
-            SingleMessage? singlemsg = null;
-            if (!string.IsNullOrEmpty(userInput))
-            {
-                singlemsg = new SingleMessage(MsgSender, userInput);
-                if (setGuid is not null)
-                    singlemsg.Guid = (Guid)setGuid;
-            }
+
 
             // call the brain if there's no plugin interfering
-            if (singlemsg is not null && string.IsNullOrEmpty(pluginmessage))
+            if (!string.IsNullOrEmpty(message.Message) && string.IsNullOrEmpty(pluginmessage))
             {
-                await Bot.Brain.HandleMessages(singlemsg!).ConfigureAwait(false);
+                await Bot.Brain.HandleMessages(message).ConfigureAwait(false);
             }
 
             using var _ = await AcquireModelSlotAsync(CancellationToken.None).ConfigureAwait(false);
             Status = SystemStatus.Busy;
 
-            var inputText = userInput;
-            var genparams = await GenerateFullPrompt(MsgSender, inputText, pluginmessage, PromptBuilder.VLM_GetImageCount() * 1024).ConfigureAwait(false);
+            var genparams = await GenerateFullPrompt(message, pluginmessage).ConfigureAwait(false);
 
             StreamingTextProgress = Instruct.GetThinkPrefill();
             if (Instruct.PrefillThinking && !string.IsNullOrEmpty(Instruct.ThinkingStart))
@@ -953,9 +934,9 @@ namespace LetheAISharp.LLM
                 RaiseOnInferenceStreamed(StreamingTextProgress);
             }
 
-            if (singlemsg is not null)
+            if (!string.IsNullOrEmpty(message.Message))
             {
-                Bot.History.LogMessage(singlemsg!);
+                Bot.History.LogMessage(message);
             }
 
             RaiseOnFullPromptReady(PromptBuilder.PromptToText());

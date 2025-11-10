@@ -129,7 +129,7 @@ namespace LetheAISharp.Examples
                     Console.WriteLine($"{user.Name}: {question}");
                     
                     // Send message and get response
-                    await LLMEngine.SendMessageToBot(AuthorRole.User, question);
+                    await LLMEngine.SendMessageToBot(new SingleMessage(AuthorRole.User, question));
 
                     // Wait for response to complete (the dirty way to do this)
                     while (LLMEngine.Status == SystemStatus.Busy)

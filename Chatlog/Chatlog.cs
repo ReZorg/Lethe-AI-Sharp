@@ -219,7 +219,7 @@ namespace LetheAISharp.Files
                         tokensleft -= LLMEngine.PromptBuilder.GetTokenCount(AuthorRole.System, foundmemory.CleanupAndTrim());
                         if (tokensleft > 0)
                         {
-                            LLMEngine.PromptBuilder.InsertMessage(startpos, AuthorRole.System, foundmemory.CleanupAndTrim());
+                            LLMEngine.PromptBuilder.InsertMessage(startpos, new SingleMessage(AuthorRole.System, foundmemory.CleanupAndTrim()));
                         }
                     }
                 }

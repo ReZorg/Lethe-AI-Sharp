@@ -145,8 +145,8 @@ namespace LetheAISharp.Files
             availtokens -= promptbuild.GetTokenCount(AuthorRole.User, requestedTask);
 
             var docs = GetRawDialogs(availtokens, false, true, false, LLMEngine.Settings.CutInTheMiddleSummaryStrategy);
-            promptbuild.AddMessage(AuthorRole.SysPrompt, sysprompt + docs);
-            promptbuild.AddMessage(AuthorRole.User, requestedTask);
+            promptbuild.AddMessage(new SingleMessage(AuthorRole.SysPrompt, sysprompt + docs));
+            promptbuild.AddMessage(new SingleMessage(AuthorRole.User, requestedTask));
             await promptbuild.SetStructuredOutput(session);
             var ct = promptbuild.PromptToQuery(AuthorRole.Assistant, (LLMEngine.Sampler.Temperature > 0.75) ? 0.75 : LLMEngine.Sampler.Temperature, replyln);
             var finalstr = await LLMEngine.SimpleQuery(ct).ConfigureAwait(false);
@@ -232,8 +232,8 @@ namespace LetheAISharp.Files
             var promptBuilder = LLMEngine.GetPromptBuilder();
             var msgtxt = "You are an automated system designed to give titles to summaries." + LLMEngine.NewLine +
                 LLMEngine.NewLine + "# Summary:" + LLMEngine.NewLine + LLMEngine.NewLine + sum;
-            promptBuilder.AddMessage(AuthorRole.SysPrompt, msgtxt);
-            promptBuilder.AddMessage(AuthorRole.User, "Give a title to the summary above. This title should be a single short and descriptive sentence. Write only the title, nothing else.");
+            promptBuilder.AddMessage(new SingleMessage(AuthorRole.SysPrompt, msgtxt));
+            promptBuilder.AddMessage(new SingleMessage(AuthorRole.User, "Give a title to the summary above. This title should be a single short and descriptive sentence. Write only the title, nothing else."));
             var temp = LLMEngine.Sampler.Temperature;
             if (temp > 0.5f)
                 temp = 0.5f;
@@ -289,8 +289,8 @@ namespace LetheAISharp.Files
             availtokens -= promptbuild.GetTokenCount(AuthorRole.User, requestedTask);
 
             var docs = GetRawDialogs(availtokens, false, lightDialogs, showHidden, LLMEngine.Settings.CutInTheMiddleSummaryStrategy);
-            promptbuild.AddMessage(AuthorRole.SysPrompt, sysprompt + docs);
-            promptbuild.AddMessage(AuthorRole.User, requestedTask);
+            promptbuild.AddMessage(new SingleMessage(AuthorRole.SysPrompt, sysprompt + docs));
+            promptbuild.AddMessage(new SingleMessage(AuthorRole.User, requestedTask));
 
             var ct = promptbuild.PromptToQuery(AuthorRole.Assistant, (LLMEngine.Sampler.Temperature > 0.5) ? 0.5 : LLMEngine.Sampler.Temperature, replyln);
             var finalstr = await LLMEngine.SimpleQuery(ct).ConfigureAwait(false);
