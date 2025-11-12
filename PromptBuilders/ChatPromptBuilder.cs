@@ -138,7 +138,7 @@ namespace LetheAISharp
             var addname = LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt;
 
             // In group conversations, ALWAYS add names so the LLM knows which persona is speaking
-            if (message.Bot is GroupPersona)
+            if (message.Bot is GroupPersonaBase)
                 addname = true;
 
             if (message.Role != AuthorRole.Assistant && message.Role != AuthorRole.User)
@@ -148,15 +148,10 @@ namespace LetheAISharp
             {
                 if (message.Role == AuthorRole.Assistant)
                 {
-                    // For group conversations, use the current bot's name
-                    var actualBot = message.Bot is GroupPersona groupPersona ?
-                        (groupPersona.CurrentBot ?? groupPersona.BotPersonas.FirstOrDefault() ?? message.Bot) : message.Bot;
-                    //realprompt = string.Format("{0}: {1}", actualBot.Name, realprompt);
-                    selname = actualBot.Name;
+                    selname = message.Bot.Name;
                 }
                 else if (message.Role == AuthorRole.User)
                 {
-                    //realprompt = string.Format("{0}: {1}", message.User.Name, realprompt);
                     selname = message.User.Name;
                 }
             }

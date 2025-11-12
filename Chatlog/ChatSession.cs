@@ -588,7 +588,7 @@ namespace LetheAISharp.Files
             var opinion = await action.Execute(new SessionAnalysisParams(this, q), CancellationToken.None);
 
             var res = await SentimentAnalysis.MergedAnalyze(opinion, topK: 10);
-            var res2 = await GetSentimentTotalFor(LLMEngine.Bot.UniqueName);
+            var res2 = await GetSentimentTotalFor(LLMEngine.Bot.GetIdentifier());
             res2.RemoveAll(e => e.Probability < 0.05);
 
             // Merge the 2 lists and weight res1 more

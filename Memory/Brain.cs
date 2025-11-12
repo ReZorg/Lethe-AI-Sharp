@@ -361,26 +361,7 @@ namespace LetheAISharp.Memory
                         _currentWorldEntries.AddRange(world.FindEntries(Owner.History, searchmessage));
                     }
                 }
-                // If in group conversation, also add world entries from the current active persona
-                if (Owner is GroupPersona group)
-                {
-                    var currentBot = group.CurrentBot;
-                    if (currentBot?.MyWorlds.Count > 0)
-                    {
-                        foreach (var world in currentBot.MyWorlds)
-                        {
-                            var entries = world.FindEntries(Owner.History, searchmessage);
-                            // Only add entries that aren't already included from the group
-                            foreach (var entry in entries)
-                            {
-                                if (!_currentWorldEntries.Any(e => e.Guid == entry.Guid))
-                                {
-                                    _currentWorldEntries.Add(entry);
-                                }
-                            }
-                        }
-                    }
-                }
+
                 var usedguid = target.GetGuids();
                 // sort by decreasing prio (higher = first)
                 _currentWorldEntries.Sort((a, b) => 
@@ -831,7 +812,7 @@ namespace LetheAISharp.Memory
                 return null;
 
             totalmessage = Owner.ReplaceMacros(totalmessage).CleanupAndTrim();
-            var tosend = new SingleMessage(AuthorRole.System, DateTime.Now, totalmessage, Owner.UniqueName, LLMEngine.User.UniqueName, true);
+            var tosend = new SingleMessage(AuthorRole.System, DateTime.Now, totalmessage, Owner.GetIdentifier(), LLMEngine.User.GetIdentifier(), true);
             return tosend;
         }
 

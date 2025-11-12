@@ -7,21 +7,12 @@ using System.Text;
 
 namespace LetheAISharp.Files
 {
-    /// <summary>
-    /// Represents a group persona that manages multiple bot personas for group chat scenarios.
-    /// Uses a primary persona as the main actor and owner of the chatlog, with secondary personas as additional participants.
-    /// </summary>
-    /// <remarks>
-    /// The GroupPersona class serves as a container and coordinator for group conversations with one primary and multiple secondary personas.
-    /// Key features:
-    /// - Primary persona owns the chatlog and agent system
-    /// - All History and Brain properties redirect to the primary persona
-    /// - Secondary personas share the chatlog but use their own brains for context
-    /// - All personas go through full BeginChat()/EndChat() cycles
-    /// - Provides group-specific macros like {{group}} for formatted persona lists
-    /// </remarks>
-    public class GroupPersona : BasePersona
+
+    public abstract class GroupPersonaBase : BasePersona 
     {
+        public override string Name { get => GetCurrentPersona()?.Name ?? string.Empty; set => GetCurrentPersona()!.Name = value; }
+        public override string Bio { get => GetCurrentPersona()?.Bio ?? string.Empty; set => GetCurrentPersona()!.Bio = value; }
+
         /// <summary>
         /// Unique name of the primary persona who owns the chatlog and brain.
         /// This persona is the "main actor" and always exists.
@@ -35,11 +26,46 @@ namespace LetheAISharp.Files
         public List<string> SecondaryPersonaNames { get; set; } = [];
 
         /// <summary>
+        /// Unique identifier of the currently active bot persona.
+        /// Used for serialization/deserialization of CurrentBot.
+        /// </summary>
+        public string CurrentBotId { get; set; } = string.Empty;
+
+        public virtual BasePersona? GetCurrentPersona()
+        {
+            var id = string.IsNullOrEmpty(CurrentBotId) ? PrimaryPersonaName : CurrentBotId;
+            return LLMEngine.LoadedPersonas.TryGetValue(id, out var basePersona) ? basePersona : null;
+        }
+
+        public override string GetIdentifier()
+        {
+            return GetCurrentPersona()?.UniqueName ?? string.Empty;
+        }
+
+    }
+
+    /// <summary>
+    /// Represents a group persona that manages multiple bot personas for group chat scenarios.
+    /// Uses a primary persona as the main actor and owner of the chatlog, with secondary personas as additional participants.
+    /// </summary>
+    /// <remarks>
+    /// The GroupPersona class serves as a container and coordinator for group conversations with one primary and multiple secondary personas.
+    /// Key features:
+    /// - Primary persona owns the chatlog and agent system
+    /// - All History and Brain properties redirect to the primary persona
+    /// - Secondary personas share the chatlog but use their own brains for context
+    /// - All personas go through full BeginChat()/EndChat() cycles
+    /// - Provides group-specific macros like {{group}} for formatted persona lists
+    /// </remarks>
+    public class GroupPersona<TPersona> : GroupPersonaBase where TPersona : BasePersona
+    {
+
+        /// <summary>
         /// The primary bot persona who owns the chatlog and acts as the main participant.
         /// This is populated dynamically during BeginChat() from LLMEngine.LoadedPersonas.
         /// </summary>
         [JsonIgnore]
-        public BasePersona? PrimaryPersona { get; set; }
+        public TPersona? PrimaryBot { get; set; }
 
         /// <summary>
         /// List of secondary bot personas participating in the group conversation.
@@ -47,7 +73,7 @@ namespace LetheAISharp.Files
         /// This is populated dynamically during BeginChat() from LLMEngine.LoadedPersonas.
         /// </summary>
         [JsonIgnore]
-        public List<BasePersona> SecondaryPersonas { get; set; } = [];
+        public List<TPersona> SecondaryBots { get; set; } = [];
 
         /// <summary>
         /// The currently active/speaking bot persona in the group conversation.
@@ -55,18 +81,12 @@ namespace LetheAISharp.Files
         /// Always falls back to PrimaryPersona if null or invalid.
         /// </summary>
         [JsonIgnore]
-        public BasePersona? CurrentBot
+        public TPersona? CurrentBot
         {
-            get => _currentBot ?? PrimaryPersona;
+            get => _currentBot ?? PrimaryBot;
             set => SetCurrentBot(value ?? throw new ArgumentException("CurrentBot cannot be null"));
         }
-        private BasePersona? _currentBot;
-
-        /// <summary>
-        /// Unique identifier of the currently active bot persona.
-        /// Used for serialization/deserialization of CurrentBot.
-        /// </summary>
-        public string CurrentBotId { get; set; } = string.Empty;
+        private TPersona? _currentBot;
 
         /// <summary>
         /// Redirects to the primary persona's brain. The GroupPersona itself doesn't use its own brain.
@@ -74,11 +94,11 @@ namespace LetheAISharp.Files
         [JsonIgnore]
         public override Brain Brain
         {
-            get => PrimaryPersona?.Brain ?? base.Brain;
+            get => PrimaryBot?.Brain ?? base.Brain;
             set
             {
-                if (PrimaryPersona != null)
-                    PrimaryPersona.Brain = value;
+                if (PrimaryBot != null)
+                    PrimaryBot.Brain = value;
                 else
                     base.Brain = value;
             }
@@ -90,11 +110,11 @@ namespace LetheAISharp.Files
         [JsonIgnore]
         public override Chatlog History
         {
-            get => PrimaryPersona?.History ?? base.History;
+            get => PrimaryBot?.History ?? base.History;
             set
             {
-                if (PrimaryPersona != null)
-                    PrimaryPersona.History = value;
+                if (PrimaryBot != null)
+                    PrimaryBot.History = value;
                 else
                     base.History = value;
             }
@@ -106,11 +126,11 @@ namespace LetheAISharp.Files
         [JsonIgnore]
         public new AgentRuntime? AgentSystem
         {
-            get => PrimaryPersona?.AgentSystem;
+            get => PrimaryBot?.AgentSystem;
             set
             {
-                if (PrimaryPersona != null)
-                    PrimaryPersona.AgentSystem = value;
+                if (PrimaryBot != null)
+                    PrimaryBot.AgentSystem = value;
                 else
                     base.AgentSystem = value;
             }
@@ -120,14 +140,14 @@ namespace LetheAISharp.Files
         /// Gets all personas in the group (primary + secondaries) as a unified list.
         /// </summary>
         [JsonIgnore]
-        public List<BasePersona> AllPersonas
+        public List<TPersona> AllPersonas
         {
             get
             {
-                var all = new List<BasePersona>();
-                if (PrimaryPersona != null)
-                    all.Add(PrimaryPersona);
-                all.AddRange(SecondaryPersonas);
+                var all = new List<TPersona>();
+                if (PrimaryBot != null)
+                    all.Add(PrimaryBot);
+                all.AddRange(SecondaryBots);
                 return all;
             }
         }
@@ -143,7 +163,7 @@ namespace LetheAISharp.Files
         /// Sets the primary persona for the group. This persona will own the chatlog and brain.
         /// </summary>
         /// <param name="persona">The bot persona to set as primary. Must not be a user persona.</param>
-        public virtual void SetPrimaryPersona(BasePersona persona)
+        public virtual void SetPrimaryPersona(TPersona persona)
         {
             if (persona.IsUser)
                 throw new ArgumentException("Cannot use a user persona as primary. Only bot personas are allowed.");
@@ -152,7 +172,7 @@ namespace LetheAISharp.Files
                 throw new ArgumentException("Persona must have a valid UniqueName.");
 
             PrimaryPersonaName = persona.UniqueName;
-            PrimaryPersona = persona;
+            PrimaryBot = persona;
 
             // Set as current bot by default
             SetCurrentBot(persona);
@@ -162,7 +182,7 @@ namespace LetheAISharp.Files
         /// Adds a secondary bot persona to the group conversation.
         /// </summary>
         /// <param name="persona">The bot persona to add. Must not be a user persona.</param>
-        public virtual void AddSecondaryPersona(BasePersona persona)
+        public virtual void AddSecondaryPersona(TPersona persona)
         {
             if (persona.IsUser)
                 throw new ArgumentException("Cannot add user personas to group chat. Only bot personas are allowed.");
@@ -176,7 +196,7 @@ namespace LetheAISharp.Files
             if (!SecondaryPersonaNames.Contains(persona.UniqueName))
             {
                 SecondaryPersonaNames.Add(persona.UniqueName);
-                SecondaryPersonas.Add(persona);
+                SecondaryBots.Add(persona);
             }
         }
 
@@ -186,17 +206,17 @@ namespace LetheAISharp.Files
         /// <param name="uniqueName">The unique name of the persona to remove.</param>
         public virtual void RemoveSecondaryPersona(string uniqueName)
         {
-            var persona = SecondaryPersonas.FirstOrDefault(p => p.UniqueName == uniqueName);
+            var persona = SecondaryBots.FirstOrDefault(p => p.UniqueName == uniqueName);
             if (persona != null)
             {
                 SecondaryPersonaNames.Remove(uniqueName);
-                SecondaryPersonas.Remove(persona);
+                SecondaryBots.Remove(persona);
 
                 // If we removed the current bot, switch back to primary
                 if (_currentBot?.UniqueName == uniqueName)
                 {
-                    _currentBot = PrimaryPersona;
-                    CurrentBotId = PrimaryPersona?.UniqueName ?? string.Empty;
+                    _currentBot = PrimaryBot;
+                    CurrentBotId = PrimaryBot?.UniqueName ?? string.Empty;
                 }
             }
         }
@@ -205,9 +225,9 @@ namespace LetheAISharp.Files
         /// Sets the currently active bot persona for the conversation.
         /// </summary>
         /// <param name="persona">The persona to set as current. Must be the primary or in the secondary list.</param>
-        public virtual void SetCurrentBot(BasePersona persona)
+        public virtual void SetCurrentBot(TPersona persona)
         {
-            if (persona != PrimaryPersona && !SecondaryPersonas.Contains(persona))
+            if (persona != PrimaryBot && !SecondaryBots.Contains(persona))
                 throw new ArgumentException("Persona must be the primary or a secondary persona in the group.");
 
             _currentBot = persona;
@@ -220,13 +240,13 @@ namespace LetheAISharp.Files
         /// <param name="uniqueName">The unique name of the persona to set as current.</param>
         public virtual void SetCurrentBot(string uniqueName)
         {
-            if (PrimaryPersona?.UniqueName == uniqueName)
+            if (PrimaryBot?.UniqueName == uniqueName)
             {
-                SetCurrentBot(PrimaryPersona);
+                SetCurrentBot(PrimaryBot);
                 return;
             }
 
-            var persona = SecondaryPersonas.FirstOrDefault(p => p.UniqueName == uniqueName) ?? throw new ArgumentException($"No persona found with unique name: {uniqueName}");
+            var persona = SecondaryBots.FirstOrDefault(p => p.UniqueName == uniqueName) ?? throw new ArgumentException($"No persona found with unique name: {uniqueName}");
             SetCurrentBot(persona);
         }
 
@@ -305,23 +325,23 @@ namespace LetheAISharp.Files
             if (!LLMEngine.LoadedPersonas.TryGetValue(PrimaryPersonaName, out var primaryPersona))
                 throw new InvalidOperationException($"Primary persona '{PrimaryPersonaName}' not found in LoadedPersonas.");
 
-            PrimaryPersona = primaryPersona;
+            PrimaryBot = (TPersona?)primaryPersona;
 
             // Load personas from LoadedPersonas
-            SecondaryPersonas.Clear();
+            SecondaryBots.Clear();
             foreach (var secondaryName in SecondaryPersonaNames)
             {
                 if (LLMEngine.LoadedPersonas.TryGetValue(secondaryName, out var secondaryPersona))
                 {
-                    SecondaryPersonas.Add(secondaryPersona);
+                    SecondaryBots.Add((TPersona)secondaryPersona);
                 }
             }
 
             // Call BeginChat() on primary persona FIRST - this loads its brain, agent, and chatlog
-            PrimaryPersona.BeginChat();
+            PrimaryBot?.BeginChat();
 
             // Now call BeginChat() on all secondary personas - they'll load their own brains
-            foreach (var secondary in SecondaryPersonas)
+            foreach (var secondary in SecondaryBots)
             {
                 secondary.BeginChat();
             }
@@ -331,19 +351,19 @@ namespace LetheAISharp.Files
             {
                 if (CurrentBotId == PrimaryPersonaName)
                 {
-                    _currentBot = PrimaryPersona;
+                    _currentBot = PrimaryBot;
                 }
                 else
                 {
-                    _currentBot = SecondaryPersonas.FirstOrDefault(p => p.UniqueName == CurrentBotId);
+                    _currentBot = SecondaryBots.FirstOrDefault(p => p.UniqueName == CurrentBotId);
                 }
             }
 
             // Fallback to primary if current bot is still null
             if (_currentBot == null)
             {
-                _currentBot = PrimaryPersona;
-                CurrentBotId = PrimaryPersona.UniqueName;
+                _currentBot = PrimaryBot;
+                CurrentBotId = PrimaryBot?.UniqueName ?? string.Empty;
             }
 
             // Don't call base.BeginChat() as it would create duplicate brain/agent/history
@@ -357,21 +377,21 @@ namespace LetheAISharp.Files
         public override void EndChat(bool backup = false)
         {
             // Save current bot ID for restoration
-            CurrentBotId = _currentBot?.UniqueName ?? PrimaryPersona?.UniqueName ?? string.Empty;
+            CurrentBotId = _currentBot?.UniqueName ?? PrimaryBot?.UniqueName ?? string.Empty;
 
             // Ensure persona name lists are synchronized
-            if (PrimaryPersona != null)
-                PrimaryPersonaName = PrimaryPersona.UniqueName;
-            SecondaryPersonaNames = [.. SecondaryPersonas.Select(p => p.UniqueName)];
+            if (PrimaryBot != null)
+                PrimaryPersonaName = PrimaryBot.UniqueName;
+            SecondaryPersonaNames = [.. SecondaryBots.Select(p => p.UniqueName)];
 
             // Call EndChat() on all secondary personas first
-            foreach (var persona in SecondaryPersonas)
+            foreach (var persona in SecondaryBots)
             {
                 persona.EndChat(backup);
             }
 
             // Then call EndChat() on primary persona - this saves the shared chatlog, brain, and agent
-            PrimaryPersona?.EndChat(backup);
+            PrimaryBot?.EndChat(backup);
         }
 
         /// <summary>
@@ -379,7 +399,7 @@ namespace LetheAISharp.Files
         /// </summary>
         public override void LoadChatHistory()
         {
-            PrimaryPersona?.LoadChatHistory();
+            PrimaryBot?.LoadChatHistory();
         }
 
         /// <summary>
@@ -387,7 +407,7 @@ namespace LetheAISharp.Files
         /// </summary>
         public override void SaveChatHistory(bool backup = false)
         {
-            PrimaryPersona?.SaveChatHistory(backup);
+            PrimaryBot?.SaveChatHistory(backup);
         }
 
         /// <summary>
@@ -412,10 +432,10 @@ namespace LetheAISharp.Files
         /// </summary>
         /// <param name="userMessage">The user's message to analyze.</param>
         /// <returns>The persona that should respond next.</returns>
-        public virtual BasePersona SelectNextResponder(string userMessage)
+        public virtual TPersona SelectNextResponder(string userMessage)
         {
             // Override in derived class for custom logic (round-robin, keyword-based, LLM-assisted, etc.)
-            return CurrentBot ?? PrimaryPersona!;
+            return CurrentBot ?? PrimaryBot!;
         }
 
         /// <summary>

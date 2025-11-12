@@ -51,13 +51,13 @@ namespace LetheAISharp.Files
         /// Character's name
         /// can be put into system prompt and other inputs with {{user}} or {{char}} macros
         /// </summary>
-        public string Name { get; set; } = string.Empty;
+        public virtual string Name { get; set; } = string.Empty;
 
         /// <summary> 
         /// Character's bio.
         /// Can be put into prompt with {{userbio}} or {{charbio}} macros
         /// </summary>
-        public string Bio { get; set; } = string.Empty;
+        public virtual string Bio { get; set; } = string.Empty;
 
         /// <summary> 
         /// Optional Self-editable field for the character, updated on new summary if SelfEditTokens > 0. 
@@ -75,7 +75,7 @@ namespace LetheAISharp.Files
         /// Can be put into the prompt with the {{scenario}} macro.
         /// </summary>
         /// <seealso cref="Files.SystemPrompt"/>
-        public string Scenario { get; set; } = string.Empty;
+        public virtual string Scenario { get; set; } = string.Empty;
 
         /// <summary> 
         /// First message the character will send when starting a new session 
@@ -385,7 +385,6 @@ namespace LetheAISharp.Files
 
             SelfEditField = finalstr.RemoveUnfinishedSentence().RemoveNewLines().CleanupAndTrim().RemoveTitle();
         }
-
         protected virtual void SaveBrain(string path, bool backup = false)
         {
             Brain.Close();
@@ -523,6 +522,11 @@ namespace LetheAISharp.Files
             }
 
             return res.ToString();
+        }
+
+        public virtual string GetIdentifier()
+        {
+            return UniqueName;
         }
     }
 }

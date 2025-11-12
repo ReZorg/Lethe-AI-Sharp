@@ -15,17 +15,17 @@ namespace LetheAISharp.Files
     /// <param name="role"> AuthorRole of the message sender (e.g., User, Assistant, System) </param>
     /// <param name="date"> Timestamp of when the message was created </param>
     /// <param name="mess"> Content of the message </param>
-    /// <param name="chara"> Character ID associated with the bot persona </param>
-    /// <param name="user"> User ID associated with the user persona </param>
+    /// <param name="charID"> Character ID associated with the bot persona </param>
+    /// <param name="userID"> User ID associated with the user persona </param>
     /// <param name="hidden"> Indicates if the message is hidden from standard views </param>
-    public class SingleMessage(AuthorRole role, DateTime date, string mess, string chara, string user, bool hidden = false, string imagePath = "")
+    public class SingleMessage(AuthorRole role, DateTime date, string mess, string charID, string userID, bool hidden = false, string imagePath = "")
     {
         public Guid Guid { get; set; } = Guid.NewGuid();
         public AuthorRole Role = role;
         public string Message = mess;
         public DateTime Date = date;
-        public string CharID = chara;
-        public string UserID = user;
+        public string CharID = charID;
+        public string UserID = userID;
         public string ImagePath = imagePath;
         public bool Hidden = hidden;
         public string Note = string.Empty;
@@ -36,8 +36,8 @@ namespace LetheAISharp.Files
         [JsonIgnore] public BasePersona? Sender => 
             Role == AuthorRole.User? User : Role == AuthorRole.Assistant ? Bot : null;
 
-        public SingleMessage(AuthorRole role, string mess, string img = "") :
-            this(role, DateTime.Now, mess, LLMEngine.Bot.UniqueName, LLMEngine.User.UniqueName, false, img)
+        public SingleMessage(AuthorRole role, string mess, string img = "") : 
+            this(role, DateTime.Now, mess, LLMEngine.Bot.GetIdentifier(), LLMEngine.User.GetIdentifier(), false, img)
         { }
 
         public SingleMessage() : this(AuthorRole.User, DateTime.Now, "", "", "", false, "")

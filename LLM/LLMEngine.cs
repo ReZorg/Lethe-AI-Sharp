@@ -642,47 +642,13 @@ namespace LetheAISharp.LLM
         /// Checks if the current bot is a group persona.
         /// </summary>
         /// <returns>True if the current bot is a GroupPersona, false otherwise.</returns>
-        public static bool IsGroupConversation => Bot is GroupPersona;
+        public static bool IsGroupConversation => Bot is GroupPersonaBase;
 
         /// <summary>
         /// Gets the current GroupPersona if the bot is a group, null otherwise.
         /// </summary>
         /// <returns>The GroupPersona or null if not in group mode.</returns>
-        public static GroupPersona? GetGroupPersona() => Bot as GroupPersona;
-
-        /// <summary>
-        /// Sets the current active bot in a group conversation.
-        /// </summary>
-        /// <param name="uniqueName">The unique name of the bot persona to set as current.</param>
-        /// <exception cref="InvalidOperationException">Thrown when not in group conversation mode.</exception>
-        /// <exception cref="ArgumentException">Thrown when the specified bot is not found in the group.</exception>
-        public static void SetCurrentGroupBot(string uniqueName)
-        {
-            var groupPersona = GetGroupPersona() ?? throw new InvalidOperationException("Cannot set current group bot when not in group conversation mode.");
-            groupPersona.SetCurrentBot(uniqueName);
-            InvalidatePromptCache();
-
-            // Trigger bot changed event for UI updates
-            OnBotChanged?.Invoke(null, bot);
-        }
-
-        /// <summary>
-        /// Gets the currently active bot in a group conversation.
-        /// </summary>
-        /// <returns>The current bot persona, or null if not in group mode or no bot is set.</returns>
-        public static BasePersona? GetCurrentGroupBot()
-        {
-            return GetGroupPersona()?.CurrentBot;
-        }
-
-        /// <summary>
-        /// Gets all bot personas in the group conversation.
-        /// </summary>
-        /// <returns>List of bot personas if in group mode, empty list otherwise.</returns>
-        public static List<BasePersona> GetGroupBots()
-        {
-            return GetGroupPersona()?.AllPersonas ?? [];
-        }
+        public static GroupPersonaBase? GetGroupPersona() => Bot as GroupPersonaBase;
 
         #endregion
 
@@ -748,7 +714,7 @@ namespace LetheAISharp.LLM
             }
             if (History.CurrentSession.Messages.Count == 0 && History.Sessions.Count == 1)
             {
-                var message = new SingleMessage(AuthorRole.Assistant, DateTime.Now, bot.GetWelcomeLine(User.Name), bot.UniqueName, User.UniqueName);
+                var message = new SingleMessage(AuthorRole.Assistant, DateTime.Now, bot.GetWelcomeLine(User.Name), bot.GetIdentifier(), User.GetIdentifier());
                 History.LogMessage(message);
             }
         }

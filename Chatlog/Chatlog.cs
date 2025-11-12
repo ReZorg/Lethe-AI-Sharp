@@ -306,7 +306,7 @@ namespace LetheAISharp.Files
                 var idx = stringfix.IndexOf(LLMEngine.Instruct.ThinkingEnd);
                 stringfix = stringfix[(idx + LLMEngine.Instruct.ThinkingEnd.Length)..].CleanupAndTrim();
             }
-            var single = new SingleMessage(role, DateTime.Now, stringfix, bot.UniqueName, user.UniqueName);
+            var single = new SingleMessage(role, DateTime.Now, stringfix, bot.GetIdentifier(), user.GetIdentifier());
             OnBeforeMessageAdded?.Invoke(this, single);
             CurrentSession.Messages.Add(single);
             OnMessageAdded?.Invoke(this, single);
