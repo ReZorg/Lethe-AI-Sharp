@@ -59,7 +59,7 @@ namespace LetheAISharp.Files
         /// Adds a bot persona to the group conversation.
         /// </summary>
         /// <param name="persona">The bot persona to add. Must not be a user persona.</param>
-        public void AddBotPersona(BasePersona persona)
+        public virtual void AddBotPersona(BasePersona persona)
         {
             if (persona.IsUser)
                 throw new ArgumentException("Cannot add user personas to group chat. Only bot personas are allowed.");
@@ -84,7 +84,7 @@ namespace LetheAISharp.Files
         /// Removes a bot persona from the group conversation.
         /// </summary>
         /// <param name="uniqueName">The unique name of the persona to remove.</param>
-        public void RemoveBotPersona(string uniqueName)
+        public virtual void RemoveBotPersona(string uniqueName)
         {
             var persona = BotPersonas.FirstOrDefault(p => p.UniqueName == uniqueName);
             if (persona != null)
@@ -105,7 +105,7 @@ namespace LetheAISharp.Files
         /// Sets the currently active bot persona for the conversation.
         /// </summary>
         /// <param name="persona">The persona to set as current. Must be in the BotPersonas list.</param>
-        public void SetCurrentBot(BasePersona persona)
+        public virtual void SetCurrentBot(BasePersona persona)
         {
             if (!BotPersonas.Contains(persona))
                 throw new ArgumentException("Persona must be added to the group before setting as current bot.");
@@ -118,7 +118,7 @@ namespace LetheAISharp.Files
         /// Sets the currently active bot persona by unique name.
         /// </summary>
         /// <param name="uniqueName">The unique name of the persona to set as current.</param>
-        public void SetCurrentBot(string uniqueName)
+        public virtual void SetCurrentBot(string uniqueName)
         {
             var persona = BotPersonas.FirstOrDefault(p => p.UniqueName == uniqueName) ?? 
                 throw new ArgumentException($"No persona found with unique name: {uniqueName}");
@@ -131,7 +131,7 @@ namespace LetheAISharp.Files
         /// </summary>
         /// <param name="userName">The user's name for bio formatting.</param>
         /// <returns>Formatted string containing all bot personas information.</returns>
-        public string GetGroupPersonasList(string userName)
+        public virtual string GetGroupPersonasList(string userName)
         {
             if (BotPersonas.Count == 0)
                 return string.Empty;

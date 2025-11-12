@@ -28,11 +28,7 @@ namespace LetheAISharp
                 return image;
 
             // Calculate the scaling factor to maintain aspect ratio
-            float scaleFactor;
-            if (originalWidth > originalHeight)
-                scaleFactor = (float)maxSize / originalWidth;
-            else
-                scaleFactor = (float)maxSize / originalHeight;
+            float scaleFactor = (originalWidth > originalHeight) ? (float)maxSize / originalWidth : (float)maxSize / originalHeight;
 
             // Calculate new dimensions
             int newWidth = (int)(originalWidth * scaleFactor);
