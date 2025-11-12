@@ -681,7 +681,7 @@ namespace LetheAISharp.LLM
         /// <returns>List of bot personas if in group mode, empty list otherwise.</returns>
         public static List<BasePersona> GetGroupBots()
         {
-            return GetGroupPersona()?.BotPersonas ?? [];
+            return GetGroupPersona()?.AllPersonas ?? [];
         }
 
         #endregion
