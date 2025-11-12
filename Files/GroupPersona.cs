@@ -438,6 +438,11 @@ namespace LetheAISharp.Files
             return CurrentBot ?? PrimaryBot!;
         }
 
+        public override string GetIdentifier()
+        {
+            return CurrentBot?.UniqueName ?? string.Empty;
+        }
+
         /// <summary>
         /// Internal method that performs the actual macro replacement logic for group personas.
         /// </summary>
