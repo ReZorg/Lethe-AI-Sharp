@@ -10,7 +10,9 @@ namespace LetheAISharp.Files
 
     public abstract class GroupPersonaBase : BasePersona 
     {
+        [JsonIgnore] 
         public override string Name { get => GetCurrentPersona()?.Name ?? string.Empty; set => GetCurrentPersona()!.Name = value; }
+        [JsonIgnore] 
         public override string Bio { get => GetCurrentPersona()?.Bio ?? string.Empty; set => GetCurrentPersona()!.Bio = value; }
 
         /// <summary>
@@ -59,6 +61,10 @@ namespace LetheAISharp.Files
     /// </remarks>
     public class GroupPersona<TPersona> : GroupPersonaBase where TPersona : BasePersona
     {
+        [JsonIgnore]
+        public override string Name { get => CurrentBot?.Name ?? string.Empty; set => CurrentBot!.Name = value; }
+        [JsonIgnore]
+        public override string Bio { get => CurrentBot?.Bio ?? string.Empty; set => CurrentBot!.Bio = value; }
 
         /// <summary>
         /// The primary bot persona who owns the chatlog and acts as the main participant.

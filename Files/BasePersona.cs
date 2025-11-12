@@ -27,7 +27,7 @@ namespace LetheAISharp.Files
     /// - Derived classes can override methods such as BeginChat and EndChat to implement custom loading and saving behaviors.
     /// - Most fields are for bots only. For users, only Name, Bio, and DisableBotGuidance really matter.
     /// </remarks>
-    public class BasePersona : BaseFile
+    public class BasePersona : BaseFile, IBasePersona
     {
         /// <summary> 
         /// Is this an User or Bot persona. It's mostly a flag for the front-end but also helps with prompt macros.
@@ -161,7 +161,7 @@ namespace LetheAISharp.Files
         {
             return new Chatlog();
         }
-        
+
         /// <summary>
         /// Factory method for creating ChatSession instances. Override this in derived classes to provide custom ChatSession implementations.
         /// </summary>
@@ -217,7 +217,7 @@ namespace LetheAISharp.Files
             return FirstMessage[index].Replace("{{user}}", othername).Replace("{{char}}", Name);
         }
 
-        public BasePersona() 
+        public BasePersona()
         {
             Brain = new(this);
         }
