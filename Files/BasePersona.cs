@@ -134,7 +134,7 @@ namespace LetheAISharp.Files
         /// Gets the <see cref="Brain"/> instance associated with this object. The brain handles memory management, 
         /// retrieval, and storage for the persona, alongside multiple advanced features.
         /// </summary>
-        [JsonIgnore] public Brain Brain { get; protected set; }
+        [JsonIgnore] public virtual Brain Brain { get; set; }
 
         /// <summary>
         /// Loaded keyword-activated WorldInfo entries for this character. The frontend is meant to load those based on the Worlds field.
@@ -145,7 +145,7 @@ namespace LetheAISharp.Files
         /// <summary>
         /// Chat history for this character. The frontend is meant to load and save this based on the UniqueName field.
         /// </summary>
-        [JsonIgnore] public Chatlog History { get; protected set; } = new();
+        [JsonIgnore] public virtual Chatlog History { get; set; } = new();
 
         /// <summary>
         /// Represents the background agent runtime system associated with the agent, 

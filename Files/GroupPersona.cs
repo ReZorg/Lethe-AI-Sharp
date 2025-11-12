@@ -1,4 +1,6 @@
+using LetheAISharp.Agent;
 using LetheAISharp.LLM;
+using LetheAISharp.Memory;
 using Newtonsoft.Json;
 using System.Globalization;
 using System.Text;
@@ -7,40 +9,58 @@ namespace LetheAISharp.Files
 {
     /// <summary>
     /// Represents a group persona that manages multiple bot personas for group chat scenarios.
-    /// Extends BasePersona to support group conversations with multiple characters.
+    /// Uses a primary persona as the main actor and owner of the chatlog, with secondary personas as additional participants.
     /// </summary>
     /// <remarks>
-    /// The GroupPersona class serves as a container and coordinator for multiple bot personas in group conversations.
+    /// The GroupPersona class serves as a container and coordinator for group conversations with one primary and multiple secondary personas.
     /// Key features:
-    /// - Manages a collection of bot personas
+    /// - Primary persona owns the chatlog and agent system
+    /// - All History and Brain properties redirect to the primary persona
+    /// - Secondary personas share the chatlog but use their own brains for context
+    /// - All personas go through full BeginChat()/EndChat() cycles
     /// - Provides group-specific macros like {{group}} for formatted persona lists
-    /// - Supports context-aware macro replacement where {{char}} and {{charbio}} refer to the current speaking bot
-    /// - Maintains group scenario that applies to all participants
-    /// - Handles persona switching and management for group interactions
     /// </remarks>
     public class GroupPersona : BasePersona
     {
         /// <summary>
-        /// List of unique names of bot personas participating in the group conversation.
-        /// Used for serialization to avoid nested persona objects in JSON.
+        /// Unique name of the primary persona who owns the chatlog and brain.
+        /// This persona is the "main actor" and always exists.
         /// </summary>
-        public List<string> BotPersonaNames { get; set; } = [];
+        public string PrimaryPersonaName { get; set; } = string.Empty;
 
         /// <summary>
-        /// List of bot personas participating in the group conversation.
-        /// Does not include the user persona. This is populated dynamically during BeginChat()
-        /// from LLMSystem.LoadedPersonas using BotPersonaNames.
+        /// List of unique names of secondary bot personas participating in the group conversation.
+        /// Used for serialization to avoid nested persona objects in JSON.
+        /// </summary>
+        public List<string> SecondaryPersonaNames { get; set; } = [];
+
+        /// <summary>
+        /// The primary bot persona who owns the chatlog and acts as the main participant.
+        /// This is populated dynamically during BeginChat() from LLMEngine.LoadedPersonas.
         /// </summary>
         [JsonIgnore]
-        public List<BasePersona> BotPersonas { get; set; } = [];
+        public BasePersona? PrimaryPersona { get; set; }
+
+        /// <summary>
+        /// List of secondary bot personas participating in the group conversation.
+        /// These personas share the primary's chatlog but maintain their own brains.
+        /// This is populated dynamically during BeginChat() from LLMEngine.LoadedPersonas.
+        /// </summary>
+        [JsonIgnore]
+        public List<BasePersona> SecondaryPersonas { get; set; } = [];
 
         /// <summary>
         /// The currently active/speaking bot persona in the group conversation.
-        /// This determines which persona responds to user messages and affects 
-        /// {{char}} and {{charbio}} macro resolution.
+        /// This determines which persona's brain/context is used for responses.
+        /// Always falls back to PrimaryPersona if null or invalid.
         /// </summary>
         [JsonIgnore]
-        public BasePersona? CurrentBot { get; set; }
+        public BasePersona? CurrentBot
+        {
+            get => _currentBot ?? PrimaryPersona;
+            set => SetCurrentBot(value ?? throw new ArgumentException("CurrentBot cannot be null"));
+        }
+        private BasePersona? _currentBot;
 
         /// <summary>
         /// Unique identifier of the currently active bot persona.
@@ -48,18 +68,101 @@ namespace LetheAISharp.Files
         /// </summary>
         public string CurrentBotId { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Redirects to the primary persona's brain. The GroupPersona itself doesn't use its own brain.
+        /// </summary>
+        [JsonIgnore]
+        public override Brain Brain
+        {
+            get => PrimaryPersona?.Brain ?? base.Brain;
+            set
+            {
+                if (PrimaryPersona != null)
+                    PrimaryPersona.Brain = value;
+                else
+                    base.Brain = value;
+            }
+        }
+
+        /// <summary>
+        /// Redirects to the primary persona's chatlog. The GroupPersona itself doesn't maintain its own history.
+        /// </summary>
+        [JsonIgnore]
+        public override Chatlog History
+        {
+            get => PrimaryPersona?.History ?? base.History;
+            set
+            {
+                if (PrimaryPersona != null)
+                    PrimaryPersona.History = value;
+                else
+                    base.History = value;
+            }
+        }
+
+        /// <summary>
+        /// Redirects to the primary persona's agent system. The GroupPersona itself doesn't run its own agent.
+        /// </summary>
+        [JsonIgnore]
+        public new AgentRuntime? AgentSystem
+        {
+            get => PrimaryPersona?.AgentSystem;
+            set
+            {
+                if (PrimaryPersona != null)
+                    PrimaryPersona.AgentSystem = value;
+                else
+                    base.AgentSystem = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets all personas in the group (primary + secondaries) as a unified list.
+        /// </summary>
+        [JsonIgnore]
+        public List<BasePersona> AllPersonas
+        {
+            get
+            {
+                var all = new List<BasePersona>();
+                if (PrimaryPersona != null)
+                    all.Add(PrimaryPersona);
+                all.AddRange(SecondaryPersonas);
+                return all;
+            }
+        }
+
         public GroupPersona()
         {
-            IsUser = false; // Group personas are always bot-type containers
+            IsUser = false;
             Name = "Group Chat";
             Bio = "A group conversation with multiple AI personas";
         }
 
         /// <summary>
-        /// Adds a bot persona to the group conversation.
+        /// Sets the primary persona for the group. This persona will own the chatlog and brain.
+        /// </summary>
+        /// <param name="persona">The bot persona to set as primary. Must not be a user persona.</param>
+        public virtual void SetPrimaryPersona(BasePersona persona)
+        {
+            if (persona.IsUser)
+                throw new ArgumentException("Cannot use a user persona as primary. Only bot personas are allowed.");
+
+            if (string.IsNullOrEmpty(persona.UniqueName))
+                throw new ArgumentException("Persona must have a valid UniqueName.");
+
+            PrimaryPersonaName = persona.UniqueName;
+            PrimaryPersona = persona;
+
+            // Set as current bot by default
+            SetCurrentBot(persona);
+        }
+
+        /// <summary>
+        /// Adds a secondary bot persona to the group conversation.
         /// </summary>
         /// <param name="persona">The bot persona to add. Must not be a user persona.</param>
-        public virtual void AddBotPersona(BasePersona persona)
+        public virtual void AddSecondaryPersona(BasePersona persona)
         {
             if (persona.IsUser)
                 throw new ArgumentException("Cannot add user personas to group chat. Only bot personas are allowed.");
@@ -67,36 +170,33 @@ namespace LetheAISharp.Files
             if (string.IsNullOrEmpty(persona.UniqueName))
                 throw new ArgumentException("Persona must have a valid UniqueName.");
 
-            if (!BotPersonaNames.Contains(persona.UniqueName))
+            if (PrimaryPersonaName == persona.UniqueName)
+                throw new ArgumentException("Cannot add the primary persona as a secondary persona.");
+
+            if (!SecondaryPersonaNames.Contains(persona.UniqueName))
             {
-                BotPersonaNames.Add(persona.UniqueName);
-                BotPersonas.Add(persona);
-                
-                // Set as current bot if this is the first one added
-                if (CurrentBot == null)
-                {
-                    SetCurrentBot(persona);
-                }
+                SecondaryPersonaNames.Add(persona.UniqueName);
+                SecondaryPersonas.Add(persona);
             }
         }
 
         /// <summary>
-        /// Removes a bot persona from the group conversation.
+        /// Removes a secondary bot persona from the group conversation.
         /// </summary>
         /// <param name="uniqueName">The unique name of the persona to remove.</param>
-        public virtual void RemoveBotPersona(string uniqueName)
+        public virtual void RemoveSecondaryPersona(string uniqueName)
         {
-            var persona = BotPersonas.FirstOrDefault(p => p.UniqueName == uniqueName);
+            var persona = SecondaryPersonas.FirstOrDefault(p => p.UniqueName == uniqueName);
             if (persona != null)
             {
-                BotPersonaNames.Remove(uniqueName);
-                BotPersonas.Remove(persona);
-                
-                // If we removed the current bot, switch to the first available one
-                if (CurrentBot?.UniqueName == uniqueName)
+                SecondaryPersonaNames.Remove(uniqueName);
+                SecondaryPersonas.Remove(persona);
+
+                // If we removed the current bot, switch back to primary
+                if (_currentBot?.UniqueName == uniqueName)
                 {
-                    CurrentBot = BotPersonas.FirstOrDefault();
-                    CurrentBotId = CurrentBot?.UniqueName ?? string.Empty;
+                    _currentBot = PrimaryPersona;
+                    CurrentBotId = PrimaryPersona?.UniqueName ?? string.Empty;
                 }
             }
         }
@@ -104,13 +204,13 @@ namespace LetheAISharp.Files
         /// <summary>
         /// Sets the currently active bot persona for the conversation.
         /// </summary>
-        /// <param name="persona">The persona to set as current. Must be in the BotPersonas list.</param>
+        /// <param name="persona">The persona to set as current. Must be the primary or in the secondary list.</param>
         public virtual void SetCurrentBot(BasePersona persona)
         {
-            if (!BotPersonas.Contains(persona))
-                throw new ArgumentException("Persona must be added to the group before setting as current bot.");
+            if (persona != PrimaryPersona && !SecondaryPersonas.Contains(persona))
+                throw new ArgumentException("Persona must be the primary or a secondary persona in the group.");
 
-            CurrentBot = persona;
+            _currentBot = persona;
             CurrentBotId = persona.UniqueName;
         }
 
@@ -120,8 +220,13 @@ namespace LetheAISharp.Files
         /// <param name="uniqueName">The unique name of the persona to set as current.</param>
         public virtual void SetCurrentBot(string uniqueName)
         {
-            var persona = BotPersonas.FirstOrDefault(p => p.UniqueName == uniqueName) ?? 
-                throw new ArgumentException($"No persona found with unique name: {uniqueName}");
+            if (PrimaryPersona?.UniqueName == uniqueName)
+            {
+                SetCurrentBot(PrimaryPersona);
+                return;
+            }
+
+            var persona = SecondaryPersonas.FirstOrDefault(p => p.UniqueName == uniqueName) ?? throw new ArgumentException($"No persona found with unique name: {uniqueName}");
             SetCurrentBot(persona);
         }
 
@@ -133,13 +238,14 @@ namespace LetheAISharp.Files
         /// <returns>Formatted string containing all bot personas information.</returns>
         public virtual string GetGroupPersonasList(string userName)
         {
-            if (BotPersonas.Count == 0)
+            var all = AllPersonas;
+            if (all.Count == 0)
                 return string.Empty;
 
             var sb = new StringBuilder();
             sb.AppendLine("=== Group Chat Participants ===");
-            
-            foreach (var persona in BotPersonas)
+
+            foreach (var persona in all)
             {
                 sb.AppendLine($"**{persona.Name}**");
                 var bio = persona.GetBio(userName);
@@ -156,121 +262,165 @@ namespace LetheAISharp.Files
         /// <summary>
         /// Gets the bio for the group context, which includes information about all participants.
         /// </summary>
-        /// <param name="otherName">The other participant's name (typically the user).</param>
-        /// <returns>Group bio with participant information.</returns>
         public override string GetBio(string otherName)
         {
             var groupBio = base.GetBio(otherName);
             var participantsList = GetGroupPersonasList(otherName);
-            
+
             if (!string.IsNullOrWhiteSpace(participantsList))
             {
                 return $"{groupBio}\n\n{participantsList}";
             }
-            
-            return groupBio;
-        }
 
-        /// <summary>
-        /// Gets the scenario for the group context, which applies to all participants.
-        /// </summary>
-        /// <param name="otherName">The other participant's name (typically the user).</param>
-        /// <returns>Group scenario with macros replaced.</returns>
-        public override string GetScenario(string otherName)
-        {
-            return base.GetScenario(otherName);
+            return groupBio;
         }
 
         /// <summary>
         /// Gets dialog examples from the current active bot in the group.
         /// </summary>
-        /// <param name="otherName">The other participant's name (typically the user).</param>
-        /// <returns>Dialog examples from the current bot, or empty string if no current bot.</returns>
         public override string GetDialogExamples(string otherName)
         {
-            var currentBot = CurrentBot ?? BotPersonas.FirstOrDefault();
-            return currentBot?.GetDialogExamples(otherName) ?? string.Empty;
+            return CurrentBot?.GetDialogExamples(otherName) ?? string.Empty;
         }
 
         /// <summary>
         /// Gets welcome line from the current active bot in the group.
         /// </summary>
-        /// <param name="otherName">The other participant's name (typically the user).</param>
-        /// <returns>Welcome line from the current bot, or empty string if no current bot.</returns>
         public override string GetWelcomeLine(string otherName)
         {
-            var currentBot = CurrentBot ?? BotPersonas.FirstOrDefault();
-            return currentBot?.GetWelcomeLine(otherName) ?? string.Empty;
+            return CurrentBot?.GetWelcomeLine(otherName) ?? string.Empty;
         }
 
         /// <summary>
-        /// Override BeginChat to initialize all bot personas in the group.
+        /// Override BeginChat to initialize the group with primary and secondary personas.
+        /// All personas go through full BeginChat() to ensure proper initialization.
+        /// The group redirects to the primary's chatlog and uses the primary's brain/agent system.
         /// </summary>
         public override void BeginChat()
         {
-            base.BeginChat();
-            
-            // Clear the current BotPersonas list and repopulate from LoadedPersonas
-            BotPersonas.Clear();
-            
-            // Load personas from LLMSystem.LoadedPersonas based on BotPersonaNames
-            foreach (var personaName in BotPersonaNames)
+            // Validate primary persona exists
+            if (string.IsNullOrEmpty(PrimaryPersonaName))
+                throw new InvalidOperationException("GroupPersona must have a PrimaryPersonaName set.");
+
+            if (!LLMEngine.LoadedPersonas.TryGetValue(PrimaryPersonaName, out var primaryPersona))
+                throw new InvalidOperationException($"Primary persona '{PrimaryPersonaName}' not found in LoadedPersonas.");
+
+            PrimaryPersona = primaryPersona;
+
+            // Load personas from LoadedPersonas
+            SecondaryPersonas.Clear();
+            foreach (var secondaryName in SecondaryPersonaNames)
             {
-                if (LLMEngine.LoadedPersonas.TryGetValue(personaName, out var persona))
+                if (LLMEngine.LoadedPersonas.TryGetValue(secondaryName, out var secondaryPersona))
                 {
-                    BotPersonas.Add(persona);
-                    persona.BeginChat();
+                    SecondaryPersonas.Add(secondaryPersona);
                 }
             }
-            
+
+            // Call BeginChat() on primary persona FIRST - this loads its brain, agent, and chatlog
+            PrimaryPersona.BeginChat();
+
+            // Now call BeginChat() on all secondary personas - they'll load their own brains
+            foreach (var secondary in SecondaryPersonas)
+            {
+                secondary.BeginChat();
+            }
+
             // Restore current bot from saved ID
             if (!string.IsNullOrEmpty(CurrentBotId))
             {
-                var savedBot = BotPersonas.FirstOrDefault(p => p.UniqueName == CurrentBotId);
-                if (savedBot != null)
+                if (CurrentBotId == PrimaryPersonaName)
                 {
-                    CurrentBot = savedBot;
+                    _currentBot = PrimaryPersona;
+                }
+                else
+                {
+                    _currentBot = SecondaryPersonas.FirstOrDefault(p => p.UniqueName == CurrentBotId);
                 }
             }
-            
-            // If no current bot is set but we have personas, set the first one
-            if (CurrentBot == null && BotPersonas.Count > 0)
+
+            // Fallback to primary if current bot is still null
+            if (_currentBot == null)
             {
-                CurrentBot = BotPersonas.First();
-                CurrentBotId = CurrentBot.UniqueName;
+                _currentBot = PrimaryPersona;
+                CurrentBotId = PrimaryPersona.UniqueName;
             }
+
+            // Don't call base.BeginChat() as it would create duplicate brain/agent/history
         }
 
         /// <summary>
-        /// Override EndChat to properly save all bot personas in the group.
+        /// Override EndChat to properly save all persona brains and the shared chatlog.
+        /// All personas go through full EndChat() to ensure proper cleanup.
         /// </summary>
         /// <param name="backup">Whether to create backup files.</param>
         public override void EndChat(bool backup = false)
         {
             // Save current bot ID for restoration
-            CurrentBotId = CurrentBot?.UniqueName ?? string.Empty;
-            
-            // Ensure BotPersonaNames is synchronized with BotPersonas
-            BotPersonaNames = [.. BotPersonas.Select(p => p.UniqueName)];
-            
-            // End chat for all bot personas
-            foreach (var persona in BotPersonas)
+            CurrentBotId = _currentBot?.UniqueName ?? PrimaryPersona?.UniqueName ?? string.Empty;
+
+            // Ensure persona name lists are synchronized
+            if (PrimaryPersona != null)
+                PrimaryPersonaName = PrimaryPersona.UniqueName;
+            SecondaryPersonaNames = [.. SecondaryPersonas.Select(p => p.UniqueName)];
+
+            // Call EndChat() on all secondary personas first
+            foreach (var persona in SecondaryPersonas)
             {
                 persona.EndChat(backup);
             }
-            
-            base.EndChat(backup);
+
+            // Then call EndChat() on primary persona - this saves the shared chatlog, brain, and agent
+            PrimaryPersona?.EndChat(backup);
         }
 
         /// <summary>
-        /// Internal method that performs the actual macro replacement logic.
-        /// Handles both regular and group personas in a unified way.
+        /// Redirects to the primary persona's LoadChatHistory.
         /// </summary>
-        /// <param name="inputText">The text to process</param>
-        /// <param name="userName">The user's name</param>
-        /// <param name="userBio">The user's bio</param>
-        /// <param name="character">The character persona (can be BasePersona or GroupPersona)</param>
-        /// <returns>Text with macros replaced</returns>
+        public override void LoadChatHistory()
+        {
+            PrimaryPersona?.LoadChatHistory();
+        }
+
+        /// <summary>
+        /// Redirects to the primary persona's SaveChatHistory.
+        /// </summary>
+        public override void SaveChatHistory(bool backup = false)
+        {
+            PrimaryPersona?.SaveChatHistory(backup);
+        }
+
+        /// <summary>
+        /// Redirects to the primary persona's LoadBrain.
+        /// </summary>
+        protected override void LoadBrain(string path)
+        {
+            throw new Exception("GroupPersona does not support LoadBrain directly. Brains are loaded individually by each persona during BeginChat().");
+        }
+
+        /// <summary>
+        /// Redirects to the primary persona's SaveBrain.
+        /// </summary>
+        protected override void SaveBrain(string path, bool backup = false)
+        {
+            throw new Exception("GroupPersona does not support SaveBrain directly. Brains are saved individually by each persona during EndChat().");
+        }
+
+        /// <summary>
+        /// Allows derived classes (e.g., GroupCharacter in WaifuAI) to select which bot should respond next.
+        /// Default implementation returns the current bot.
+        /// </summary>
+        /// <param name="userMessage">The user's message to analyze.</param>
+        /// <returns>The persona that should respond next.</returns>
+        public virtual BasePersona SelectNextResponder(string userMessage)
+        {
+            // Override in derived class for custom logic (round-robin, keyword-based, LLM-assisted, etc.)
+            return CurrentBot ?? PrimaryPersona!;
+        }
+
+        /// <summary>
+        /// Internal method that performs the actual macro replacement logic for group personas.
+        /// </summary>
         protected override string ReplaceMacrosInternal(string inputText, string userName, string userBio)
         {
             if (string.IsNullOrEmpty(inputText))
@@ -278,11 +428,12 @@ namespace LetheAISharp.Files
 
             StringBuilder res = new(inputText);
 
-            var currentBot = CurrentBot ?? BotPersonas.FirstOrDefault();
+            var currentBot = CurrentBot; // Will never be null due to property fallback
+
             if (currentBot != null)
             {
                 // In group context, {{char}} and {{charbio}} refer to current bot
-                res.Replace("{{user}}", userName)
+                res.Replace("{{user}}",  userName)
                     .Replace("{{userbio}}", userBio)
                     .Replace("{{char}}", currentBot.Name)
                     .Replace("{{charbio}}", currentBot.GetBio(userName))
@@ -290,29 +441,64 @@ namespace LetheAISharp.Files
                     .Replace("{{currentcharbio}}", currentBot.GetBio(userName))
                     .Replace("{{examples}}", currentBot.GetDialogExamples(userName))
                     .Replace("{{group}}", GetGroupPersonasList(userName))
-                    .Replace("{{selfedit}}", currentBot.SelfEditField);
+                    .Replace("{{selfedit}}", currentBot.SelfEditField)
+                    .Replace("{{scenario}}", string.IsNullOrWhiteSpace(LLMEngine.Settings.ScenarioOverride) ? GetScenario(userName) : LLMEngine.Settings.ScenarioOverride);
             }
             else
             {
-                // Fallback to group persona itself if no current bot
+                // Extreme fallback (should never happen due to CurrentBot property logic)
                 res.Replace("{{user}}", userName)
                     .Replace("{{userbio}}", userBio)
                     .Replace("{{char}}", Name)
                     .Replace("{{charbio}}", GetBio(userName))
                     .Replace("{{currentchar}}", "[No character selected]")
                     .Replace("{{currentcharbio}}", "[No character selected]")
-                    .Replace("{{examples}}", GetDialogExamples(userName))
+                    .Replace("{{examples}}", string.Empty)
                     .Replace("{{group}}", GetGroupPersonasList(userName))
-                    .Replace("{{selfedit}}", SelfEditField);
+                    .Replace("{{selfedit}}", SelfEditField)
+                    .Replace("{{scenario}}", string.IsNullOrWhiteSpace(LLMEngine.Settings.ScenarioOverride) ? GetScenario(userName) : LLMEngine.Settings.ScenarioOverride);
             }
-            // Common replacements for both group and single
+
+            // Common replacements
             res.Replace("{{date}}", StringExtensions.DateToHumanString(DateTime.Now))
                .Replace("{{time}}", DateTime.Now.ToString("hh:mm tt", CultureInfo.InvariantCulture))
-               .Replace("{{day}}", DateTime.Now.DayOfWeek.ToString())
-               .Replace("{{scenario}}", string.IsNullOrWhiteSpace(LLMEngine.Settings.ScenarioOverride) ? GetScenario(userName) : LLMEngine.Settings.ScenarioOverride);
+               .Replace("{{day}}", DateTime.Now.DayOfWeek.ToString());
 
-            return res.ToString().CleanupAndTrim();
+            // Handle {{memory:<title>}} macros using current bot's brain
+            if (currentBot != null)
+            {
+                var memstart = "{{memory:";
+                var memend = "}}";
+                int startindex = res.ToString().IndexOf(memstart, StringComparison.InvariantCultureIgnoreCase);
+                while (startindex >= 0)
+                {
+                    var endindex = res.ToString().IndexOf(memend, startindex + memstart.Length, StringComparison.InvariantCultureIgnoreCase);
+                    if (endindex < 0)
+                        break;
+                    var titlelength = endindex - (startindex + memstart.Length);
+                    if (titlelength <= 0)
+                        break;
+                    var title = res.ToString().Substring(startindex + memstart.Length, titlelength).Trim();
+                    var memories = currentBot.Brain.GetMemoriesByTitle(title);
+                    res.Remove(startindex, (endindex + memend.Length) - startindex);
+                    var memorycontent = string.Empty;
+                    if (memories.Count > 0)
+                    {
+                        foreach (var mem in memories)
+                        {
+                            if (memorycontent.Length > 0)
+                                memorycontent += LLMEngine.NewLine;
+                            memorycontent += mem.ToSnippet(TitleInsertType.Simple, mem.Category == MemoryType.ChatSession, mem.Category == MemoryType.Goal, false).CleanupAndTrim() + LLMEngine.NewLine;
+                        }
+                        res.Insert(startindex, memorycontent.Trim());
+                    }
+                    if (startindex + memorycontent.Length > res.Length)
+                        break;
+                    startindex = res.ToString().IndexOf(memstart, startindex + memorycontent.Length, StringComparison.InvariantCultureIgnoreCase);
+                }
+            }
+
+            return res.ToString();
         }
-
     }
 }
