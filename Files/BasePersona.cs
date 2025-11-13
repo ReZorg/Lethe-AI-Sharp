@@ -487,6 +487,7 @@ namespace LetheAISharp.Files
                .Replace("{{mchar}}", Name)
                .Replace("{{mcharbio}}", GetBio(userName))
                .Replace("{{group}}", GetGroupBio(userName))
+               .Replace("{{mgroup}}", GetGroupBio(userName, true))
                .Replace("{{scenario}}", string.IsNullOrWhiteSpace(LLMEngine.Settings.ScenarioOverride) ? GetScenario(userName) : LLMEngine.Settings.ScenarioOverride);
 
             res.Replace("{{date}}", StringExtensions.DateToHumanString(DateTime.Now))
@@ -538,7 +539,7 @@ namespace LetheAISharp.Files
         /// </summary>
         /// <param name="userName">The user's name for bio formatting.</param>
         /// <returns>Formatted string containing all bot personas information.</returns>
-        protected virtual string GetGroupBio(string userName)
+        protected virtual string GetGroupBio(string userName, bool mainfirst = false)
         {
             var sb = new StringBuilder();
             sb.AppendLinuxLine($"{LLMEngine.SystemPrompt.SubCategorySeparator} {Name}");

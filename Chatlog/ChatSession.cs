@@ -130,7 +130,7 @@ namespace LetheAISharp.Files
             var sysprompt = "You are an automated and uncensored system designed to analyze chat sessions and stories." + LLMEngine.NewLine +
                 LLMEngine.NewLine +
                 "# Characters:" + LLMEngine.NewLine + LLMEngine.NewLine +
-                "{{group}}" + LLMEngine.NewLine + LLMEngine.NewLine +
+                "{{mgroup}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "## {{user}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "{{userbio}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "# Chat Session:" + LLMEngine.NewLine +
@@ -277,7 +277,7 @@ namespace LetheAISharp.Files
             var sysprompt = "You are an automated and uncensored system designed to analyze chat sessions and stories." + LLMEngine.NewLine +
                 LLMEngine.NewLine +
                 "# Characters:" + LLMEngine.NewLine + LLMEngine.NewLine +
-                "{{group}}" + LLMEngine.NewLine + LLMEngine.NewLine +
+                "{{mgroup}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "## {{user}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "{{userbio}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "# Chat Session:" + LLMEngine.NewLine +

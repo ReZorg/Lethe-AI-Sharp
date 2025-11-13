@@ -268,52 +268,29 @@ namespace LetheAISharp.Files
         /// </summary>
         /// <param name="userName">The user's name for bio formatting.</param>
         /// <returns>Formatted string containing all bot personas information.</returns>
-        public virtual string GetGroupPersonasList(string userName)
-        {
-            var all = AllPersonas;
-            if (all.Count == 0)
-                return string.Empty;
-
-            var sb = new StringBuilder();
-            sb.AppendLine("=== Group Chat Participants ===");
-
-            foreach (var persona in all)
-            {
-                sb.AppendLine($"**{persona.Name}**");
-                var bio = persona.GetBio(userName);
-                if (!string.IsNullOrWhiteSpace(bio))
-                {
-                    sb.AppendLine(bio);
-                }
-                sb.AppendLine();
-            }
-
-            return sb.ToString().Trim();
-        }
-
-        /// <summary>
-        /// Gets a formatted list of all bot personas (Name + Bio) for use in system prompts.
-        /// This is used by the {{group}} macro.
-        /// </summary>
-        /// <param name="userName">The user's name for bio formatting.</param>
-        /// <returns>Formatted string containing all bot personas information.</returns>
-        protected override string GetGroupBio(string userName)
+        protected override string GetGroupBio(string userName, bool mainfirst = false)
         {
             var all = AllPersonas;
             if (all.Count == 0)
                 return string.Empty;
             var sb = new StringBuilder();
-            if (CurrentBot is not null)
+
+            var firstone = mainfirst ? PrimaryBot : CurrentBot;
+
+            if (firstone is not null)
             {
-                sb.AppendLinuxLine($"{LLMEngine.SystemPrompt.SubCategorySeparator} {CurrentBot.Name} (this is you)");
+                if (mainfirst)
+                    sb.AppendLinuxLine($"{LLMEngine.SystemPrompt.SubCategorySeparator} {firstone.Name}");
+                else
+                    sb.AppendLinuxLine($"{LLMEngine.SystemPrompt.SubCategorySeparator} {firstone.Name} (this is you)");
                 sb.AppendLinuxLine();
-                sb.AppendLinuxLine(CurrentBot.GetBio(userName).CleanupAndTrim());
+                sb.AppendLinuxLine(firstone.GetBio(userName).CleanupAndTrim());
                 sb.AppendLinuxLine();
             }
 
             foreach (var persona in all)
             {
-                if (persona == CurrentBot)
+                if (persona == firstone)
                     continue;
                 sb.AppendLinuxLine($"## {persona.Name}");
                 sb.AppendLinuxLine();
@@ -328,15 +305,7 @@ namespace LetheAISharp.Files
         /// </summary>
         public override string GetBio(string otherName)
         {
-            var groupBio = base.GetBio(otherName);
-            var participantsList = GetGroupPersonasList(otherName);
-
-            if (!string.IsNullOrWhiteSpace(participantsList))
-            {
-                return $"{groupBio}\n\n{participantsList}";
-            }
-
-            return groupBio;
+            return CurrentBot?.GetBio(otherName) ?? PrimaryBot?.GetBio(otherName) ?? string.Empty;
         }
 
         /// <summary>
@@ -510,6 +479,7 @@ namespace LetheAISharp.Files
                     .Replace("{{currentcharbio}}", currentBot.GetBio(userName))
                     .Replace("{{examples}}", currentBot.GetDialogExamples(userName))
                     .Replace("{{group}}", GetGroupBio(userName))
+                    .Replace("{{mgroup}}", GetGroupBio(userName, true))
                     .Replace("{{selfedit}}", currentBot.SelfEditField)
                     .Replace("{{scenario}}", string.IsNullOrWhiteSpace(LLMEngine.Settings.ScenarioOverride) ? GetScenario(userName) : LLMEngine.Settings.ScenarioOverride);
             }
@@ -524,6 +494,7 @@ namespace LetheAISharp.Files
                     .Replace("{{currentcharbio}}", "[No character selected]")
                     .Replace("{{examples}}", string.Empty)
                     .Replace("{{group}}", GetGroupBio(userName))
+                    .Replace("{{mgroup}}", GetGroupBio(userName, true))
                     .Replace("{{selfedit}}", SelfEditField)
                     .Replace("{{scenario}}", string.IsNullOrWhiteSpace(LLMEngine.Settings.ScenarioOverride) ? GetScenario(userName) : LLMEngine.Settings.ScenarioOverride);
             }
