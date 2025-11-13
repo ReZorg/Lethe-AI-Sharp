@@ -1,4 +1,5 @@
-﻿using LetheAISharp.LLM;
+﻿using CommunityToolkit.HighPerformance;
+using LetheAISharp.LLM;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

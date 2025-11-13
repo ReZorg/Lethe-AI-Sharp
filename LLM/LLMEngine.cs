@@ -794,7 +794,9 @@ namespace LetheAISharp.LLM
             var searchstring = string.IsNullOrEmpty(message.Message) ? History.GetLastFromInSession(AuthorRole.User)?.Message : message.Message;
 
             // update the RAG, world info, and summary stuff
-            await Bot.Brain.GetRAGandInserts(dataInserts, searchstring ?? string.Empty, -1, Settings.RAGDistanceCutOff).ConfigureAwait(false);
+            var actbot = Bot is GroupPersonaBase gp ? gp.GetCurrentPersona() : Bot;
+            actbot ??= Bot;
+            await actbot.Brain.GetRAGandInserts(dataInserts, searchstring ?? string.Empty, -1, Settings.RAGDistanceCutOff).ConfigureAwait(false);
 
             // Prepare the full system prompt and count the tokens used
             var rawprompt = GenerateSystemPromptContent(message.Message);
@@ -886,7 +888,9 @@ namespace LetheAISharp.LLM
             // call the brain if there's no plugin interfering
             if (!string.IsNullOrEmpty(message.Message) && string.IsNullOrEmpty(pluginmessage))
             {
-                await Bot.Brain.HandleMessages(message).ConfigureAwait(false);
+                var actbot = Bot is GroupPersonaBase gp ? gp.GetCurrentPersona() : Bot;
+                actbot ??= Bot;
+                await actbot.Brain.HandleMessages(message).ConfigureAwait(false);
             }
 
             using var _ = await AcquireModelSlotAsync(CancellationToken.None).ConfigureAwait(false);

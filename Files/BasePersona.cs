@@ -140,7 +140,7 @@ namespace LetheAISharp.Files
         /// Loaded keyword-activated WorldInfo entries for this character. The frontend is meant to load those based on the Worlds field.
         /// This is ignored during serialization.
         /// </summary>
-        [JsonIgnore] public List<WorldInfo> MyWorlds { get; protected set; } = [];
+        [JsonIgnore] public List<WorldInfo> MyWorlds { get; set; } = [];
 
         /// <summary>
         /// Chat history for this character. The frontend is meant to load and save this based on the UniqueName field.
@@ -385,7 +385,8 @@ namespace LetheAISharp.Files
 
             SelfEditField = finalstr.RemoveUnfinishedSentence().RemoveNewLines().CleanupAndTrim().RemoveTitle();
         }
-        protected virtual void SaveBrain(string path, bool backup = false)
+
+        public virtual void SaveBrain(string path, bool backup = false)
         {
             Brain.Close();
             if (string.IsNullOrEmpty(UniqueName))
@@ -416,7 +417,7 @@ namespace LetheAISharp.Files
         /// Load the brain, can be overriden if you want to make a custom brain or load from a different location.
         /// </summary>
         /// <param name="path"></param>
-        protected virtual void LoadBrain(string path)
+        public virtual void LoadBrain(string path)
         {
             // if path doesn't have a trailing slash, add one
             var selpath = path;

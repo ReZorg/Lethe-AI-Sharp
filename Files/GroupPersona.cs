@@ -356,7 +356,8 @@ namespace LetheAISharp.Files
             // Now call BeginChat() on all secondary personas - they'll load their own brains
             foreach (var secondary in SecondaryBots)
             {
-                secondary.BeginChat();
+                secondary.LoadBrain(LLMEngine.Settings.DataPath);
+                secondary.AgentSystem = null;
             }
 
             // Restore current bot from saved ID
@@ -400,7 +401,9 @@ namespace LetheAISharp.Files
             // Call EndChat() on all secondary personas first
             foreach (var persona in SecondaryBots)
             {
-                persona.EndChat(backup);
+                persona.SaveBrain(LLMEngine.Settings.DataPath);
+                persona.AgentSystem?.CloseSync();
+                persona.AgentSystem = null;
             }
 
             // Then call EndChat() on primary persona - this saves the shared chatlog, brain, and agent
@@ -426,7 +429,7 @@ namespace LetheAISharp.Files
         /// <summary>
         /// Redirects to the primary persona's LoadBrain.
         /// </summary>
-        protected override void LoadBrain(string path)
+        public override void LoadBrain(string path)
         {
             throw new Exception("GroupPersona does not support LoadBrain directly. Brains are loaded individually by each persona during BeginChat().");
         }
@@ -434,7 +437,7 @@ namespace LetheAISharp.Files
         /// <summary>
         /// Redirects to the primary persona's SaveBrain.
         /// </summary>
-        protected override void SaveBrain(string path, bool backup = false)
+        public override void SaveBrain(string path, bool backup = false)
         {
             throw new Exception("GroupPersona does not support SaveBrain directly. Brains are saved individually by each persona during EndChat().");
         }
