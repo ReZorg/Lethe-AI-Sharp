@@ -530,11 +530,15 @@ The LetheAISharp includes a powerful macro system that allows dynamic text repla
 #### Character and User Macros
 - **`{{char}}`**: Current bot character's name
 - **`{{charbio}}`**: Current bot character's biography
+- **`{{mchar}}`**: In groups this points to the main character, elsewhere it's the same as `{{char}}`
+- **`{{mcharbio}}`**: In groups this points to the main character's biography, elsewhere it's the same as `{{charbio}}`
 - **`{{user}}`**: Current user's name
 - **`{{userbio}}`**: Current user's biography
 - **`{{examples}}`**: Character's example dialogs
 - **`{{scenario}}`**: Current scenario description
 - **`{{selfedit}}`**: Character's self-editable field
+- **`{{group}}`**: Formatted list of all group members (names and bios). if not in a group, it's just for the current bot
+- **`{{memory:<title>}}`**: Retrieves a specific entry by title from the bot's memory banks
 
 #### Time and Date Macros
 - **`{{time}}`**: Current time (e.g., "02:30 PM")

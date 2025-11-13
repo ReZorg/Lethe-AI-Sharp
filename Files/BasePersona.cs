@@ -63,12 +63,12 @@ namespace LetheAISharp.Files
         /// Optional Self-editable field for the character, updated on new summary if SelfEditTokens > 0. 
         /// Can be put into prompt with the {{selfedit}} macro.
         /// </summary>
-        public string SelfEditField { get; set; } = string.Empty;
+        public virtual string SelfEditField { get; set; } = string.Empty;
 
         /// <summary> 
         /// If set above 0, this character will be allowed to write this amount of tokens in its SelfEditField field. Updated each chat session.
         /// </summary>
-        public int SelfEditTokens { get; set; } = 0;
+        public virtual int SelfEditTokens { get; set; } = 0;
 
         /// <summary> 
         /// Character's default scenario. An arbitrary text to give some context to the language model
@@ -80,19 +80,19 @@ namespace LetheAISharp.Files
         /// <summary> 
         /// First message the character will send when starting a new session 
         /// </summary>
-        public List<string> FirstMessage { get; set; } = [];
+        public virtual List<string> FirstMessage { get; set; } = new List<string>();
 
         /// <summary> 
         /// Examples of dialogs from the character to get a more consistent tone, assuming the system prompt has a field for this. 
         /// </summary>
         /// <seealso cref="Files.SystemPrompt"/>
-        public List<string> ExampleDialogs { get; set; } = [];
+        public virtual List<string> ExampleDialogs { get; set; } = new List<string>();
 
         /// <summary> 
         /// If set, this will override the system prompt selected in LLMSystem and use this instead. Can be useful for very custom characters. 
         /// </summary>
         /// <seealso cref="Files.SystemPrompt"/>
-        public string SystemPrompt { get; set; } = string.Empty;
+        public virtual string SystemPrompt { get; set; } = string.Empty;
 
         /// <summary> 
         /// WorldInfo ID applied to this character. WorldInfo is a keyword-activated text insertion system that can be used to give context to the model.
@@ -111,7 +111,7 @@ namespace LetheAISharp.Files
         /// Toggles the background agent mode for this persona (the bot will act autonomously in the background using the provided AgentTasks). 
         /// Only the currently loaded persona will run the agentic logic. See documentations for more information.
         /// </summary>
-        public bool AgentMode { get; set; } = false;
+        public virtual bool AgentMode { get; set; } = false;
 
         /// <summary> 
         /// Optional list of plugin ID for the background agent mode. See documentations for more information.
@@ -122,13 +122,13 @@ namespace LetheAISharp.Files
         /// If set to true, system messages will occasionally be inserted in the chat to inform the bot of how much time has passed 
         /// between the latest user message and its last response. It'll also help with keeping track of dates and time in general.
         /// </summary>
-        public bool SenseOfTime { get; set; } = false;
+        public virtual bool SenseOfTime { get; set; } = false;
 
         /// <summary>
         /// For better recall accuracy IRL dates are included in session summaries. 
         /// However for roleplay characters, this might be counter productive. Set this to false to disable dates.
         /// </summary>
-        public bool DatesInSessionSummaries { get; set; } = true;
+        public virtual bool DatesInSessionSummaries { get; set; } = true;
 
         /// <summary>
         /// Gets the <see cref="Brain"/> instance associated with this object. The brain handles memory management, 
@@ -484,6 +484,9 @@ namespace LetheAISharp.Files
                .Replace("{{charbio}}", GetBio(userName))
                .Replace("{{examples}}", GetDialogExamples(userName))
                .Replace("{{selfedit}}", SelfEditField)
+               .Replace("{{mchar}}", Name)
+               .Replace("{{mcharbio}}", GetBio(userName))
+               .Replace("{{group}}", GetGroupBio(userName))
                .Replace("{{scenario}}", string.IsNullOrWhiteSpace(LLMEngine.Settings.ScenarioOverride) ? GetScenario(userName) : LLMEngine.Settings.ScenarioOverride);
 
             res.Replace("{{date}}", StringExtensions.DateToHumanString(DateTime.Now))
@@ -527,6 +530,21 @@ namespace LetheAISharp.Files
         public virtual string GetIdentifier()
         {
             return UniqueName;
+        }
+
+        /// <summary>
+        /// Gets a formatted list of all bot personas (Name + Bio) for use in system prompts.
+        /// This is used by the {{group}} macro.
+        /// </summary>
+        /// <param name="userName">The user's name for bio formatting.</param>
+        /// <returns>Formatted string containing all bot personas information.</returns>
+        protected virtual string GetGroupBio(string userName)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLinuxLine($"{LLMEngine.SystemPrompt.SubCategorySeparator} {Name}");
+            sb.AppendLinuxLine();
+            sb.AppendLinuxLine(GetBio(userName).CleanupAndTrim());
+            return sb.ToString().CleanupAndTrim();
         }
     }
 }

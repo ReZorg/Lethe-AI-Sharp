@@ -43,10 +43,10 @@ namespace LetheAISharp.Agent.Actions
 
             var str = new StringBuilder();
             var tokenleft = LLMEngine.MaxContextLength - 1024; // leave some space for response + mix
-            str.AppendLinuxLine("You are {{char}} and you are meant to reflect on this session with {{user}}.").AppendLinuxLine();
+            str.AppendLinuxLine("You are {{mchar}} and you are meant to reflect on this session with {{user}}.").AppendLinuxLine();
 
-            str.AppendLinuxLine("## {{char}} (this is you)").AppendLinuxLine();
-            str.AppendLine("{{charbio}}").AppendLinuxLine();
+            str.AppendLinuxLine("## {{mchar}} (this is you)").AppendLinuxLine();
+            str.AppendLine("{{mcharbio}}").AppendLinuxLine();
             str.AppendLinuxLine("## {{user}} (this is the user)").AppendLinuxLine();
             str.AppendLine("{{userbio}}").AppendLinuxLine();
             if (!string.IsNullOrEmpty(param.Content))

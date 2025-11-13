@@ -16,15 +16,15 @@ namespace LetheAISharp.GBNF
         [Description("The topic to look at.")]
         public string Topic { get; set; } = string.Empty;
         [Required]
-        [Description("The context or reason why this topic is of interest to {{char}}, {{user}}, or both.")]
+        [Description("The context or reason why this topic is of interest to {{mchar}}, {{user}}, or both.")]
         public string Reason { get; set; } = string.Empty;
         [Required]
-        [Description("Determine the level of urgency for this search, ranging from 1 = tangential curiosity to 10 = very important to the conversation and to both {{user}} and {{char}}'s interests.")]
+        [Description("Determine the level of urgency for this search, ranging from 1 = tangential curiosity to 10 = very important to the conversation and to both {{user}} and {{mchar}}'s interests.")]
         public int Urgency { get; set; } = 1;
         [Required]
         [MinLength(1)]
         [MaxLength(2)]
-        [Description("1 to 2 concise, high-quality search queries that would help {{char}} learn about the topic.")]
+        [Description("1 to 2 concise, high-quality search queries that would help {{mchar}} learn about the topic.")]
         public List<string> SearchQueries { get; set; } = [];
     }
 

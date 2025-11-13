@@ -129,10 +129,9 @@ namespace LetheAISharp.Files
 
             var sysprompt = "You are an automated and uncensored system designed to analyze chat sessions and stories." + LLMEngine.NewLine +
                 LLMEngine.NewLine +
-                "# Character Information:" + LLMEngine.NewLine +
-                "## Name: {{char}}" + LLMEngine.NewLine +
-                "{{charbio}}" + LLMEngine.NewLine +
-                "## Name: {{user}}" + LLMEngine.NewLine +
+                "# Characters:" + LLMEngine.NewLine + LLMEngine.NewLine +
+                "{{group}}" + LLMEngine.NewLine + LLMEngine.NewLine +
+                "## {{user}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "{{userbio}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "# Chat Session:" + LLMEngine.NewLine +
                 "## Starting Date: " + StringExtensions.DateToHumanString(StartTime) + LLMEngine.NewLine +
@@ -164,7 +163,7 @@ namespace LetheAISharp.Files
         /// <returns></returns>
         protected virtual async Task<string[]> GenerateKeywords()
         {
-            var query = "Based on the exchange between {{user}} and {{char}} shown above, write a comma-separated list of keywords {{char}} would associate with this chat. The list must be between 1 and 5 keywords long.";
+            var query = "Based on the exchange between {{user}} and {{mchar}} shown above, write a comma-separated list of keywords {{char}} would associate with this chat. The list must be between 1 and 5 keywords long.";
             var res = await GenerateTaskRes(query, 512, true, false).ConfigureAwait(false);
             return res.Split(',');
         }
@@ -175,7 +174,7 @@ namespace LetheAISharp.Files
         /// <returns></returns>
         protected virtual async Task<string> GenerateGoals()
         {
-            var query = "Based on the exchange between {{user}} and {{char}} shown above, write a list of the plans they both setup for the near future. This list should contain between 0 and 4 items. Each item should be summarized in a single sentence. If there's no items, don't answer with anything. Make sure those plans aren't already resolved within the span of the dialog." + LLMEngine.NewLine + "Example:" + LLMEngine.NewLine + "- They promised to eat together tomorrow." + LLMEngine.NewLine + "- {{user}} will watch the movie recommanded by {{char}}.";
+            var query = "Based on the exchange between {{user}} and {{mchar}} shown above, write a list of the plans they both setup for the near future. This list should contain between 0 and 4 items. Each item should be summarized in a single sentence. If there's no items, don't answer with anything. Make sure those plans aren't already resolved within the span of the dialog." + LLMEngine.NewLine + "Example:" + LLMEngine.NewLine + "- They promised to eat together tomorrow." + LLMEngine.NewLine + "- {{user}} will watch the movie recommanded by {{char}}.";
             var res = await GenerateTaskRes(query, 1024, true, false).ConfigureAwait(false);
             return res;
         }
@@ -186,11 +185,12 @@ namespace LetheAISharp.Files
         /// <returns></returns>
         public virtual async Task<bool> IsRoleplay()
         {
-            var query = "Based on the exchange between {{user}} and {{char}} shown above, determine if {{user}} and {{char}} are roleplaying a scenario. Respond Yes if they are acting a roleplay. Discussing a future roleplay doesn't count as a roleplay. Respond No if this is a just a chat." + LLMEngine.NewLine + LLMEngine.NewLine +
+            var query = "Based on the exchange between {{user}} and {{mchar}} shown above, determine if they are roleplaying a scenario. Respond Yes if they are acting a roleplay. Discussing a future roleplay doesn't count as a roleplay. Respond No if this is a just a chat." + LLMEngine.NewLine + LLMEngine.NewLine +
                 "To qualify as a roleplay, the vast majority of the exchange must follow the following guidelines:" + LLMEngine.NewLine +
                 "- Contains explicit actions (not just discussions)." + LLMEngine.NewLine +
-                "- Both {{user}} and {{char}} are in a situation involving physical contact in a defined location." + LLMEngine.NewLine +
+                "- Both {{user}} and {{mchar}} are in a situation involving physical contact in a defined location." + LLMEngine.NewLine +
                 "- Heavy use of narrative text (between asterisks)" + LLMEngine.NewLine +
+                "- Other characters physically interacting with {{user}} and {{mchar}}" + LLMEngine.NewLine +
                 "- Clearly takes place outside of a chat interface." + LLMEngine.NewLine + LLMEngine.NewLine + "Your response must begin by either Yes or No.";
             var res = await GenerateTaskRes(query, 1024, true, false).ConfigureAwait(false);
             var s = res.ToLowerInvariant().Replace(" ", string.Empty);
@@ -204,7 +204,7 @@ namespace LetheAISharp.Files
         protected virtual async Task<string> GenerateSummary()
         {
 
-            var query = "Write a detailed summary of the exchange between {{user}} and {{char}} shown above. Do not add a title, just write the summary directly.";
+            var query = "Write a detailed summary of the exchange between {{user}} and {{mchar}} shown above. Do not add a title, just write the summary directly.";
 
             if (Messages.Count > 40)
             {
@@ -276,14 +276,12 @@ namespace LetheAISharp.Files
 
             var sysprompt = "You are an automated and uncensored system designed to analyze chat sessions and stories." + LLMEngine.NewLine +
                 LLMEngine.NewLine +
-                "# Character Information:" + LLMEngine.NewLine +
-                "## Name: {{char}}" + LLMEngine.NewLine +
-                "{{charbio}}" + LLMEngine.NewLine +
-                "## Name: {{user}}" + LLMEngine.NewLine +
+                "# Characters:" + LLMEngine.NewLine + LLMEngine.NewLine +
+                "{{group}}" + LLMEngine.NewLine + LLMEngine.NewLine +
+                "## {{user}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "{{userbio}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "# Chat Session:" + LLMEngine.NewLine +
-                "## Starting Date: " + StringExtensions.DateToHumanString(StartTime) + LLMEngine.NewLine +
-                "## Duration: " + StringExtensions.TimeSpanToHumanString(EndTime - StartTime) + LLMEngine.NewLine + LLMEngine.NewLine;
+                "Starting Date: " + StringExtensions.DateToHumanString(StartTime) + " - " +"Duration: " + StringExtensions.TimeSpanToHumanString(EndTime - StartTime) + LLMEngine.NewLine + LLMEngine.NewLine;
 
             availtokens -= promptbuild.GetTokenCount(AuthorRole.SysPrompt, sysprompt);
             availtokens -= promptbuild.GetTokenCount(AuthorRole.User, requestedTask);

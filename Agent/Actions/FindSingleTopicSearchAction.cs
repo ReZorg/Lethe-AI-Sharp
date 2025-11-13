@@ -36,8 +36,8 @@ namespace LetheAISharp.Agent.Actions
             {
                 sysprompt +=
                 "# Character Information:" + LLMEngine.NewLine + LLMEngine.NewLine +
-                "## Name: {{char}}" + LLMEngine.NewLine + LLMEngine.NewLine +
-                "{{charbio}}" + LLMEngine.NewLine + LLMEngine.NewLine +
+                "## Name: {{mchar}}" + LLMEngine.NewLine + LLMEngine.NewLine +
+                "{{mcharbio}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "## Name: {{user}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "{{userbio}}" + LLMEngine.NewLine + LLMEngine.NewLine;
             }

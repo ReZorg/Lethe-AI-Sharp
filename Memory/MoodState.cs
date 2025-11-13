@@ -108,7 +108,7 @@ namespace LetheAISharp.Memory
 
         public virtual string Describe()
         {
-            var sb = new StringBuilder("{{char}} is currently feeling");
+            var sb = new StringBuilder("{{mchar}} is currently feeling");
             var moods = GetAdjectives();
             if (moods.Count > 0)
             {

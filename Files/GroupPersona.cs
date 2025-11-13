@@ -65,6 +65,14 @@ namespace LetheAISharp.Files
         public override string Name { get => CurrentBot?.Name ?? string.Empty; set => CurrentBot!.Name = value; }
         [JsonIgnore]
         public override string Bio { get => CurrentBot?.Bio ?? string.Empty; set => CurrentBot!.Bio = value; }
+        [JsonIgnore]
+        public override bool AgentMode { get => PrimaryBot?.AgentMode ?? false; set => PrimaryBot!.AgentMode = value; }
+        [JsonIgnore]
+        public override string SelfEditField { get => PrimaryBot?.SelfEditField ?? string.Empty; set => PrimaryBot!.SelfEditField = value; }
+        [JsonIgnore]
+        public override int SelfEditTokens { get => PrimaryBot?.SelfEditTokens ?? 0; set => PrimaryBot!.SelfEditTokens = value; }
+        [JsonIgnore]
+        public override bool SenseOfTime { get => PrimaryBot?.SenseOfTime ?? false; set => PrimaryBot!.SenseOfTime = value; }
 
         /// <summary>
         /// The primary bot persona who owns the chatlog and acts as the main participant.
@@ -289,18 +297,25 @@ namespace LetheAISharp.Files
         /// </summary>
         /// <param name="userName">The user's name for bio formatting.</param>
         /// <returns>Formatted string containing all bot personas information.</returns>
-        public virtual string GetGroupBio(string userName)
+        protected override string GetGroupBio(string userName)
         {
             var all = AllPersonas;
             if (all.Count == 0)
                 return string.Empty;
             var sb = new StringBuilder();
+            if (CurrentBot is not null)
+            {
+                sb.AppendLinuxLine($"{LLMEngine.SystemPrompt.SubCategorySeparator} {CurrentBot.Name} (this is you)");
+                sb.AppendLinuxLine();
+                sb.AppendLinuxLine(CurrentBot.GetBio(userName).CleanupAndTrim());
+                sb.AppendLinuxLine();
+            }
+
             foreach (var persona in all)
             {
                 if (persona == CurrentBot)
-                    sb.AppendLinuxLine($"## {persona.Name} (this is you)");
-                else
-                    sb.AppendLinuxLine($"## {persona.Name}");
+                    continue;
+                sb.AppendLinuxLine($"## {persona.Name}");
                 sb.AppendLinuxLine();
                 sb.AppendLinuxLine(persona.GetBio(userName).CleanupAndTrim());
                 sb.AppendLinuxLine();
@@ -516,7 +531,9 @@ namespace LetheAISharp.Files
             // Common replacements
             res.Replace("{{date}}", StringExtensions.DateToHumanString(DateTime.Now))
                .Replace("{{time}}", DateTime.Now.ToString("hh:mm tt", CultureInfo.InvariantCulture))
-               .Replace("{{day}}", DateTime.Now.DayOfWeek.ToString());
+               .Replace("{{day}}", DateTime.Now.DayOfWeek.ToString())
+               .Replace("{{mchar}}", PrimaryBot!.Name)
+               .Replace("{{mcharbio}}", PrimaryBot!.GetBio(userName));
 
             // Handle {{memory:<title>}} macros using current bot's brain
             if (currentBot != null)

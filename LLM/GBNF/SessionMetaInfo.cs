@@ -32,7 +32,7 @@ namespace LetheAISharp.GBNF
         public List<string> Keywords { get; set; } = [];
 
         // Note: Due to LLM bias, relevance will be converted to 1-5 value
-        [Required][Description("A value between 1 and 10 determining how important and meaningful this session is to {{char}}. Ranging from 1 (not important) to 10 (critical importance). Make your judgement based on {{char}}'s personality and the session's overal tone.")]
+        [Required][Description("A value between 1 and 10 determining how important and meaningful this session is to {{mchar}}. Ranging from 1 (not important) to 10 (critical importance). Make your judgement based on {{mchar}}'s personality and the session's overal tone.")]
         public int Relevance { get; set; } = 1;
 
         public override async Task<string> GetGrammar()
