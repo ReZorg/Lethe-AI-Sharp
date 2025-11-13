@@ -341,9 +341,14 @@ namespace LetheAISharp.Memory
                     }
                 }
 
+                // Get the last message with user or assistant role from the current session
+                var found = Owner.History.CurrentSession.Messages.TakeLast(1).Where(m => m.Role == AuthorRole.User || m.Role == AuthorRole.Assistant).ToList();
+
+                var keywordsearch = found?.Count > 0 ? searchmessage + " " + found[0].Message : searchmessage;
+
                 foreach (var item in Memories)
                 {
-                    if (item.CheckKeywords(searchmessage))
+                    if (item.CheckKeywords(keywordsearch))
                     {
                         _currentWorldEntries.Add(item);
                     }

@@ -1,5 +1,4 @@
 ﻿using LetheAISharp.Agent.Actions;
-using LetheAISharp.API;
 using LetheAISharp.GBNF;
 using LetheAISharp.LLM;
 using LetheAISharp.Memory;
@@ -29,7 +28,7 @@ namespace LetheAISharp.Files
 
         public string Scenario { get; set; } = string.Empty;
 
-        public DateTime StartTime 
+        public DateTime StartTime
         {
             get => Added;
             set => Added = value;
@@ -135,7 +134,7 @@ namespace LetheAISharp.Files
                 "{{userbio}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "# Chat Session:" + LLMEngine.NewLine +
                 "## Starting Date: " + StringExtensions.DateToHumanString(StartTime) + LLMEngine.NewLine +
-                "## Duration: " + StringExtensions.TimeSpanToHumanString(EndTime-StartTime) + LLMEngine.NewLine + LLMEngine.NewLine;
+                "## Duration: " + StringExtensions.TimeSpanToHumanString(EndTime - StartTime) + LLMEngine.NewLine + LLMEngine.NewLine;
 
 
             var requestedTask = session.GetQuery();
@@ -281,7 +280,7 @@ namespace LetheAISharp.Files
                 "## {{user}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "{{userbio}}" + LLMEngine.NewLine + LLMEngine.NewLine +
                 "# Chat Session:" + LLMEngine.NewLine +
-                "Starting Date: " + StringExtensions.DateToHumanString(StartTime) + " - " +"Duration: " + StringExtensions.TimeSpanToHumanString(EndTime - StartTime) + LLMEngine.NewLine + LLMEngine.NewLine;
+                "Starting Date: " + StringExtensions.DateToHumanString(StartTime) + " - " + "Duration: " + StringExtensions.TimeSpanToHumanString(EndTime - StartTime) + LLMEngine.NewLine + LLMEngine.NewLine;
 
             availtokens -= promptbuild.GetTokenCount(AuthorRole.SysPrompt, sysprompt);
             availtokens -= promptbuild.GetTokenCount(AuthorRole.User, requestedTask);
@@ -320,8 +319,8 @@ namespace LetheAISharp.Files
         /// truncated if the token limit is reached.</returns>
         public string GetRawDialogs(int maxTokens, bool ignoresystem, bool lightDialogs = true, bool showHidden = false, bool middleCut = false)
         {
-            return middleCut ? 
-                GetRawDialogsMiddleCut(Messages, maxTokens, ignoresystem, lightDialogs, showHidden) : 
+            return middleCut ?
+                GetRawDialogsMiddleCut(Messages, maxTokens, ignoresystem, lightDialogs, showHidden) :
                 GetRawDialogs(Messages, maxTokens, ignoresystem, lightDialogs, showHidden);
         }
 
@@ -613,5 +612,6 @@ namespace LetheAISharp.Files
             Sentiments = res;
 
         }
+
     }
 }
