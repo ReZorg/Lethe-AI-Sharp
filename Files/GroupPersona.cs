@@ -161,8 +161,6 @@ namespace LetheAISharp.Files
         public GroupPersona()
         {
             IsUser = false;
-            Name = "Group Chat";
-            Bio = "A group conversation with multiple AI personas";
         }
 
         /// <summary>
@@ -282,6 +280,31 @@ namespace LetheAISharp.Files
                 sb.AppendLine();
             }
 
+            return sb.ToString().Trim();
+        }
+
+        /// <summary>
+        /// Gets a formatted list of all bot personas (Name + Bio) for use in system prompts.
+        /// This is used by the {{group}} macro.
+        /// </summary>
+        /// <param name="userName">The user's name for bio formatting.</param>
+        /// <returns>Formatted string containing all bot personas information.</returns>
+        public virtual string GetGroupBio(string userName)
+        {
+            var all = AllPersonas;
+            if (all.Count == 0)
+                return string.Empty;
+            var sb = new StringBuilder();
+            foreach (var persona in all)
+            {
+                if (persona == CurrentBot)
+                    sb.AppendLinuxLine($"## {persona.Name} (this is you)");
+                else
+                    sb.AppendLinuxLine($"## {persona.Name}");
+                sb.AppendLinuxLine();
+                sb.AppendLinuxLine(persona.GetBio(userName).CleanupAndTrim());
+                sb.AppendLinuxLine();
+            }
             return sb.ToString().Trim();
         }
 
@@ -471,7 +494,7 @@ namespace LetheAISharp.Files
                     .Replace("{{currentchar}}", currentBot.Name)
                     .Replace("{{currentcharbio}}", currentBot.GetBio(userName))
                     .Replace("{{examples}}", currentBot.GetDialogExamples(userName))
-                    .Replace("{{group}}", GetGroupPersonasList(userName))
+                    .Replace("{{group}}", GetGroupBio(userName))
                     .Replace("{{selfedit}}", currentBot.SelfEditField)
                     .Replace("{{scenario}}", string.IsNullOrWhiteSpace(LLMEngine.Settings.ScenarioOverride) ? GetScenario(userName) : LLMEngine.Settings.ScenarioOverride);
             }
@@ -485,7 +508,7 @@ namespace LetheAISharp.Files
                     .Replace("{{currentchar}}", "[No character selected]")
                     .Replace("{{currentcharbio}}", "[No character selected]")
                     .Replace("{{examples}}", string.Empty)
-                    .Replace("{{group}}", GetGroupPersonasList(userName))
+                    .Replace("{{group}}", GetGroupBio(userName))
                     .Replace("{{selfedit}}", SelfEditField)
                     .Replace("{{scenario}}", string.IsNullOrWhiteSpace(LLMEngine.Settings.ScenarioOverride) ? GetScenario(userName) : LLMEngine.Settings.ScenarioOverride);
             }
