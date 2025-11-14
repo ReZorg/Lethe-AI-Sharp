@@ -87,6 +87,7 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 - Web search integration (DuckDuckGo, Brave API)
 - Useful LLM related tools (token counting, GBNF grammar, text manipulation helpers)
 - Visual language model support
+- Framework for group chat functionalities (one user and multiple AI characters)
 
 ## 📝 Long Term Memory and RAG
 - Summaries of recent chat sessions into the system prompt
@@ -100,7 +101,6 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 - Write your own tasks easily to boost your bot's abilities
 
 ## 🛠️ Experimental Features (work in progress)
-- Group chat functionalities (one user and multiple AI characters)
 - Sentiment analysis
 
 ## 👀 See it in action
