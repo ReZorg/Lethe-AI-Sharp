@@ -195,12 +195,12 @@ namespace LetheAISharp.Memory
         /// <summary>
         /// Keyword trigger: list of main keywords that will trigger this memory (any keyword found in list count as true)
         /// </summary>
-        public List<string> KeyWordsMain { get; set; } = new List<string>();
+        public List<string> KeyWordsMain { get; set; } = [];
 
         /// <summary>
         /// Keyword trigger: list of secondary keywords that will trigger this memory (any keyword found in list count as true)
         /// </summary>
-        public List<string> KeyWordsSecondary { get; set; } = new List<string>();
+        public List<string> KeyWordsSecondary { get; set; } = [];
 
         /// <summary>
         /// Keyword trigger: logic to apply between main and secondary keywords

@@ -80,13 +80,13 @@ namespace LetheAISharp.Files
         /// <summary> 
         /// First message the character will send when starting a new session 
         /// </summary>
-        public virtual List<string> FirstMessage { get; set; } = new List<string>();
+        public virtual List<string> FirstMessage { get; set; } = [];
 
         /// <summary> 
         /// Examples of dialogs from the character to get a more consistent tone, assuming the system prompt has a field for this. 
         /// </summary>
         /// <seealso cref="Files.SystemPrompt"/>
-        public virtual List<string> ExampleDialogs { get; set; } = new List<string>();
+        public virtual List<string> ExampleDialogs { get; set; } = [];
 
         /// <summary> 
         /// If set, this will override the system prompt selected in LLMSystem and use this instead. Can be useful for very custom characters. 
