@@ -326,7 +326,13 @@ namespace LetheAISharp.Memory
                 target.AddMemories(search);
             }
 
-            
+            // add sticky
+            var stickies = Memories.FindAll(e => e.Sticky && e.Added <= DateTime.Now && !DisableRAG.Contains(e.Category));
+            foreach (var item in stickies)
+            {
+                if (!target.Contains(item))
+                    target.AddInsert(item);
+            }
 
             // Check for keyword-activated world info entries
             if (LLMEngine.Settings.AllowWorldInfo)
@@ -348,7 +354,7 @@ namespace LetheAISharp.Memory
 
                 foreach (var item in Memories)
                 {
-                    if (item.CheckKeywords(keywordsearch))
+                    if (!item.Sticky && item.CheckKeywords(keywordsearch) && item.Added <= DateTime.Now && !DisableRAG.Contains(item.Category))
                     {
                         _currentWorldEntries.Add(item);
                     }
