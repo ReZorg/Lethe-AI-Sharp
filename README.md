@@ -13,7 +13,7 @@ It unifies: chat personas, conversation/session management, streaming inference,
 It is extensible, documented, and backend-agnostic (you write the same code no matter which backend is being used)
 
 ### No Python Dependencies
-Pure .NET 8 C# implementation. No Python runtime, no conda environments, no pip hell.
+Pure .NET 10 C# implementation. No Python runtime, no conda environments, no pip hell.
 
 ### Self-Contained
 Built-in LlamaSharp backend means you can distribute a **single executable** 
