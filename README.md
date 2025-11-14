@@ -1,7 +1,7 @@
 # Lethe AI - A C# Middleware LLM Library
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 ![GitHub Stars](https://img.shields.io/github/stars/SerialKicked/Lethe-AI-Sharp)
 
 ## 🚀 What Is It?
