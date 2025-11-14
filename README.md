@@ -141,4 +141,4 @@ For comprehensive documentation, check the `Docs/` folder:
 - [General Text Embedding - Large](https://huggingface.co/thenlper/gte-large) - Embedding model used as our default (works best in english)
 - [HNSW.NET](https://github.com/curiosity-ai/hnsw-sharp) - Used for everything related to RAG / Vector Search
 - [Newtonsoft Json](https://www.newtonsoft.com/json) - Practically all the classes can be imported and exported in Json
-- [OpenAI .Net API Library](https://github.com/openai/openai-dotnet) - Used for OpenAI API backend compatibility
+- [OpenAI-DotNet](https://github.com/RageAgainstThePixel/OpenAI-DotNet) - Used for OpenAI API backend compatibility
