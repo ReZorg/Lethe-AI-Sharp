@@ -131,6 +131,7 @@ namespace LetheAISharp.Files
         public bool ForceRAGToThinkingPrompt { get; set; } = false;
 
         [JsonIgnore] private bool RealAddNameToPrompt => LLMEngine.NamesInPromptOverride ?? AddNamesToPrompt;
+        [JsonIgnore] public bool IsThinkFormat => !string.IsNullOrEmpty(ThinkingEnd);
 
         // Functions in this class are set as public for testing and experimentation purpose.
         // However the end user should rely on the <see cref="IPromptBuilder"/> to generate correct prompts.
@@ -139,6 +140,8 @@ namespace LetheAISharp.Files
         public string GetThinkPrefill()
         {
             var res = string.Empty;
+            if (LLMEngine.Client?.CompletionType == API.CompletionType.Chat)
+                return res;
             if (PrefillThinking && !string.IsNullOrEmpty(ThinkingStart))
             {
                 res = ThinkingStart;

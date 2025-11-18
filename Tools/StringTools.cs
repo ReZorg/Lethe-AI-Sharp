@@ -11,7 +11,7 @@ using System.Globalization;
 
 namespace LetheAISharp
 {
-    public class StringFix(bool removeAllBoldedText, bool fixQuotes, bool removeSingleWorldEmphasis, bool removeAllQuotes, bool removeItalic, float removeItalicRatio, int removeItalicMaxWords, bool lastParagraphDeleter)
+    public class StringFix(bool removeAllBoldedText, bool fixQuotes, bool removeSingleWorldEmphasis, bool removeAllQuotes, bool removeItalic, float removeItalicRatio, int removeItalicMaxWords, bool lastParagraphDeleter, bool removeStartingSlop)
     {
         public bool RemoveAllBoldedText = removeAllBoldedText;
         public bool RemoveAllQuotes = removeAllQuotes;
@@ -21,6 +21,7 @@ namespace LetheAISharp
         public float RemoveItalicRatio = removeItalicRatio;
         public int RemoveItalicMaxWords = removeItalicMaxWords;
         public bool LastParagraphDeleter = lastParagraphDeleter;
+        public bool RemoveStartingSlop = removeStartingSlop;
     }
 
     public static class StringExtensions
@@ -214,20 +215,37 @@ namespace LetheAISharp
             }
 
             // If the text starts with * and has less than 4 words before the next *, remove the asterisks and what's in between
-            if (workstring.StartsWith('*'))
+            if (fix.RemoveStartingSlop && (!streamed || !LLMEngine.Instruct.IsThinkFormat))
             {
-                var endIdx = workstring.IndexOf('*', 1);
-                if (endIdx != -1)
+                // start of check after ThinkingEnd tag is exists
+                var startid = !LLMEngine.Instruct.IsThinkFormat ? 0 : workstring.IndexOf(LLMEngine.Instruct.ThinkingEnd) + LLMEngine.Instruct.ThinkingEnd.Length + LLMEngine.NewLine.Length;
+                // save what's before in a variable and work with the rest
+                if (startid + 5 < workstring.Length)
                 {
-                    var between = workstring[1..endIdx];
-                    if (between.Split(' ').Length < 3)
+                    var prefix = startid > 0 ? workstring[..startid] : string.Empty;
+                    workstring = startid > 0 ? workstring[startid..].TrimStart() : workstring;
+
+                    var endIdx = workstring.IndexOf('*', 1);
+                    if (endIdx != -1)
                     {
-                        workstring = workstring[(endIdx + 1)..].TrimStart();
+                        var between = workstring[1..endIdx];
+                        if (between.Split(' ').Length < 4)
+                        {
+                            workstring = workstring[(endIdx + 1)..].TrimStart();
+                        }
                     }
+
+                    var reg = new Regex(@"^Oh,\s+(\p{L}+)\.\.\.\s*");
+                    var match = reg.Match(workstring);
+                    if (match.Success)
+                    {
+                        workstring = workstring[match.Length..].TrimStart();
+                        workstring = workstring.TrimStart();
+                        workstring = char.ToUpper(workstring[0]) + workstring[1..];
+                    }
+                    workstring = prefix + workstring;
                 }
-            };
-
-
+            }
 
             if (fix.RemoveSingleWorldEmphasis)
             {
