@@ -397,7 +397,7 @@ namespace LetheAISharp.LLM
                     RaiseOnInferenceStreamed(StreamingTextProgress);
                 }
                 RaiseOnFullPromptReady(PromptBuilder.PromptToText());
-                await Client.GenerateTextStreaming(PromptBuilder.PromptToQuery(AuthorRole.Assistant)).ConfigureAwait(false);
+                await Client.GenerateTextStreaming(PromptBuilder.PromptToQuery(AuthorRole.Assistant, forceAltRoles: IsGroupConversation && Settings.GroupInstructFormatAdapter)).ConfigureAwait(false);
             }
         }
 
@@ -831,9 +831,9 @@ namespace LetheAISharp.LLM
                 logger?.LogWarning("The prompt is {Diff} tokens over the limit.", diff);
             }
             if (string.IsNullOrEmpty(message.Message) && message.Role == AuthorRole.User)
-                return PromptBuilder.PromptToQuery(AuthorRole.User);
+                return PromptBuilder.PromptToQuery(AuthorRole.User, forceAltRoles: IsGroupConversation && Settings.GroupInstructFormatAdapter);
             else
-                return PromptBuilder.PromptToQuery(AuthorRole.Assistant);
+                return PromptBuilder.PromptToQuery(AuthorRole.Assistant, forceAltRoles: IsGroupConversation && Settings.GroupInstructFormatAdapter);
         }
 
         /// <summary>

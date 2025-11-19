@@ -10,6 +10,13 @@ using LetheAISharp.Memory;
 
 namespace LetheAISharp.Files
 {
+    public enum GroupChatPastSessionMode
+    {
+        None,
+        ActiveOnly,
+        All,
+    }
+
     public class LLMSettings : BaseFile
     {
 
@@ -183,6 +190,25 @@ namespace LetheAISharp.Files
 
         /// <summary> Attempt to scrape the most relevant search results for their full content. </summary>
         public bool WebSearchDetailedResults { get; set; } = true;
+
+        #endregion
+
+        #region *** Group Chat Settings ***
+
+        /// <summary>
+        /// Should secondary personas in group chats be able to see summaries of past chat sessions?
+        /// All = they see all past sessions.
+        /// ActiveOnly = they see only past sessions where they were active.
+        /// None = they don't see any past sessions.
+        /// </summary>
+        /// <remarks> only relevant when SessionMemorySystem is enabled </remarks>
+        public GroupChatPastSessionMode GroupSecondaryPersonaSeePastSessions { get; set; } = GroupChatPastSessionMode.All;
+
+        /// <summary>
+        /// If set to true, the Group Chat messages will alternate between user and bot role for each persona independantly of who sent the message.
+        /// This is useful when using models that rely on role alternation for proper functioning.
+        /// </summary>
+        public bool GroupInstructFormatAdapter { get; set; } = false;
 
         #endregion
 

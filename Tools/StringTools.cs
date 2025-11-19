@@ -215,7 +215,7 @@ namespace LetheAISharp
             }
 
             // If the text starts with * and has less than 4 words before the next *, remove the asterisks and what's in between
-            if (fix.RemoveStartingSlop && (!streamed || !LLMEngine.Instruct.IsThinkFormat))
+            if (fix.RemoveStartingSlop && (!streamed || !LLMEngine.Instruct.IsThinkFormat) && workstring.Length > 8)
             {
                 // start of check after ThinkingEnd tag is exists
                 var startid = !LLMEngine.Instruct.IsThinkFormat ? 0 : workstring.IndexOf(LLMEngine.Instruct.ThinkingEnd) + LLMEngine.Instruct.ThinkingEnd.Length + LLMEngine.NewLine.Length;
@@ -237,7 +237,7 @@ namespace LetheAISharp
 
                     var reg = new Regex(@"^Oh,\s+(\p{L}+)\.\.\.\s*");
                     var match = reg.Match(workstring);
-                    if (match.Success)
+                    if (match.Success && workstring.Length > match.Length)
                     {
                         workstring = workstring[match.Length..].TrimStart();
                         workstring = workstring.TrimStart();

@@ -613,5 +613,10 @@ namespace LetheAISharp.Files
 
         }
 
+        public virtual bool ContainsPersona(BasePersona? persona)
+        {
+            return Messages.Find(e => e.Sender?.UniqueName == persona?.UniqueName) != null;
+        }
+
     }
 }

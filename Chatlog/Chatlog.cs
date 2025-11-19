@@ -127,6 +127,10 @@ namespace LetheAISharp.Files
             var entrydepth = lastSessionID - 1;
             if (entrydepth < 0)
                 return string.Empty;
+            if (LLMEngine.IsGroupConversation && LLMEngine.Bot is GroupPersonaBase groupPersona && groupPersona.CurrentBotId != groupPersona.PrimaryPersonaName && LLMEngine.Settings.GroupSecondaryPersonaSeePastSessions == GroupChatPastSessionMode.None)
+            {
+                return string.Empty;
+            }
 
             var usedGuid = ignoreList ?? [];
 
@@ -149,6 +153,13 @@ namespace LetheAISharp.Files
                     continue;
                 if (!allowRP && session.MetaData.IsRoleplaySession)
                     continue;
+                // if we're dealing with group conversation, and we're having a secondary persona playing we have more checks
+                if (LLMEngine.IsGroupConversation && LLMEngine.Bot is GroupPersonaBase group && group.CurrentBotId != group.PrimaryPersonaName && LLMEngine.Settings.GroupSecondaryPersonaSeePastSessions == GroupChatPastSessionMode.ActiveOnly)
+                {
+                    if (!session.ContainsPersona(group.GetCurrentPersona()))
+                        continue;
+                }
+
                 sb.Clear();
                 sb.AppendLinuxLine($"{sectionHeader} {session.Name}");
                 sb.AppendLinuxLine(session.ToSnippet(TitleInsertType.None, LLMEngine.Bot.DatesInSessionSummaries, false, true)).AppendLinuxLine();

@@ -14,7 +14,7 @@ namespace LetheAISharp
     internal class TextPromptBuilder : IPromptBuilder
     {
         private List<string> vlm_pictures = [];
-        private readonly List<string> _prompt = [];
+        private readonly List<SingleMessage> _prompt = [];
         private string grammar = string.Empty;
 
         public int Count => _prompt.Count;
@@ -23,7 +23,7 @@ namespace LetheAISharp
         {
             var msg = LLMEngine.Instruct.FormatSinglePrompt(role, LLMEngine.User, LLMEngine.Bot, message);
             var res = LLMEngine.GetTokenCount(msg);
-            _prompt.Add(msg);
+            _prompt.Add(new SingleMessage(role, message));
             return res;
         }
 
@@ -31,7 +31,7 @@ namespace LetheAISharp
         {
             var msg = LLMEngine.Instruct.FormatSinglePrompt(message.Role, message.User, message.Bot, message.Message);
             var res = LLMEngine.GetTokenCount(msg);
-            _prompt.Add(msg);
+            _prompt.Add(message);
             return res;
         }
 
@@ -40,7 +40,7 @@ namespace LetheAISharp
             var fullprompt = new StringBuilder();
             foreach (var prompt in _prompt) 
             {
-                fullprompt.Append(prompt);
+                fullprompt.Append(LLMEngine.Instruct.FormatSingleMessage(prompt));
             }
             return fullprompt.ToString();
         }
@@ -93,9 +93,36 @@ namespace LetheAISharp
             grammar = string.Empty;
         }
 
-        public object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null)
+        public object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null, bool forceAltRoles = false)
         {
-            var fullquery = (string)GetFullPrompt();
+            string fullquery;
+            if (!forceAltRoles)
+            {
+                fullquery = (string)GetFullPrompt();
+            }
+            else 
+            {
+                // Use alternate roles for group conversations so it needs to end with User if responserole is Assistant
+                var fullprompt = new StringBuilder();
+                var currentrole = responserole == AuthorRole.Assistant ? AuthorRole.User : AuthorRole.Assistant;
+                // let's go in reverse to flip roles
+                for (int i = _prompt.Count - 1; i >= 0; i--)
+                {
+                    var prompt = _prompt[i];
+                    // System prompts are always added as-is
+                    if (prompt.Role == AuthorRole.System || prompt.Role == AuthorRole.SysPrompt)
+                    {
+                        fullprompt.Insert(0, LLMEngine.Instruct.FormatSingleMessage(prompt));
+                        continue;
+                    }
+                    var roleToUse = currentrole;
+                    fullprompt.Insert(0, LLMEngine.Instruct.FormatSingleMessage(new SingleMessage(roleToUse, prompt.Message)));
+                    // flip role for next message
+                    currentrole = currentrole == AuthorRole.User ? AuthorRole.Assistant : AuthorRole.User;
+                }
+                fullquery = fullprompt.ToString();
+            }
+
 
             if (responserole == AuthorRole.User)
             {
@@ -133,7 +160,7 @@ namespace LetheAISharp
 
             var msg = LLMEngine.Instruct.FormatSinglePrompt(role, LLMEngine.User, LLMEngine.Bot, message);
             var res = LLMEngine.GetTokenCount(msg);
-            _prompt.Insert(index, LLMEngine.Instruct.FormatSinglePrompt(role, LLMEngine.User, LLMEngine.Bot, message));
+            _prompt.Insert(index, new SingleMessage(role, message));
             return res;
         }
 
@@ -148,7 +175,7 @@ namespace LetheAISharp
 
             var msg = LLMEngine.Instruct.FormatSinglePrompt(message.Role, message.User, message.Bot, message.Message);
             var res = LLMEngine.GetTokenCount(msg);
-            _prompt.Insert(index, msg);
+            _prompt.Insert(index, message);
             return res;
         }
 
@@ -177,7 +204,6 @@ namespace LetheAISharp
 
         public string PromptToText()
         {
-
             return (string)GetFullPrompt();
         }
 
