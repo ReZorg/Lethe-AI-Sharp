@@ -26,6 +26,7 @@ namespace LetheAISharp.Files
             "SystemStart", "SystemEnd",
             "UserStart", "UserEnd",
             "BotStart", "BotEnd",
+            "BotStartOverride", "BotEndOverride",
             "BoSToken", "StopSequence",
             "ThinkingStart", "ThinkingEnd",
             "ThinkingForcedThought",
@@ -33,6 +34,7 @@ namespace LetheAISharp.Files
             "ForceRAGToThinkingPrompt",
             "AddNamesToPrompt",
             "NewLinesBetweenMessages",
+            "NoInstructInStopString",
             "StopStrings"
             ];
 
@@ -130,6 +132,31 @@ namespace LetheAISharp.Files
         /// </summary>
         public bool ForceRAGToThinkingPrompt { get; set; } = false;
 
+        /// <summary>
+        /// Overrides the entirety of the generated bot header with this post generation. This is useful for some modern CoT systems with multi channel formatting.
+        /// This will only impact the older messages, not the one being currently generated. 
+        /// </summary>
+        // Example: 
+        // with GPT OSS The bot generates the following output (including thinkinking)
+        // <|start|>assistant<|channel|>analysis<|message|>{thinking block}<|end|><|start|>assistant<|channel|>final<|message|>{actual message} {{EOS_Token}}
+        // we don't want to store all that as is, this is where BotStartOverride and BotEndOverride come into play, it'll store the actual message between those tags instead
+        // [BotStartOverride]{actual message}[BotEndOverride]
+        // <|start|>assistant<|channel|>final<|message|>{actual message}<|end|>
+        public string BotStartOverride { get; set; } = string.Empty;
+
+
+        /// <summary>
+        /// Overrides the entirety of the generated bot footer with this post generation. This is useful for some modern CoT systems with multi channel formatting.
+        /// This will only impact the older messages, not the one being currently generated. 
+        /// </summary>
+        public string BotEndOverride { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Normally all Bot/User start and end tags are added to stop strings as "security", however this is not how some instruct format work. 
+        /// Setting this to true disables the behavior
+        /// </summary>
+        public bool NoInstructInStopString { get; set; } = false;
+
         [JsonIgnore] private bool RealAddNameToPrompt => LLMEngine.NamesInPromptOverride ?? AddNamesToPrompt;
         [JsonIgnore] public bool IsThinkFormat => !string.IsNullOrEmpty(ThinkingEnd);
 
@@ -190,7 +217,8 @@ namespace LetheAISharp.Files
             var res = talker.IsUser ? LLMEngine.Bot.ReplaceMacros(BotStart, talker) : talker.ReplaceMacros(BotStart);
             if (RealAddNameToPrompt)
                 res += talker.Name + ":";
-
+            if (talker.IsUser)
+                return res;
             var doprefill = overridePrefill ?? PrefillThinking;
             if (doprefill)
                 res += GetThinkPrefill();
@@ -223,7 +251,9 @@ namespace LetheAISharp.Files
                     realprompt = bot.ReplaceMacros(UserStart + realprompt + UserEnd, user);
                     break;
                 case AuthorRole.Assistant:
-                    realprompt = bot.ReplaceMacros(BotStart + realprompt + BotEnd, user);
+                    var start = string.IsNullOrEmpty(BotStartOverride) ? BotStart : BotStartOverride;
+                    var end = string.IsNullOrEmpty(BotEndOverride) ? BotEnd : BotEndOverride;
+                    realprompt = bot.ReplaceMacros(start + realprompt + end, user);
                     break;
                 case AuthorRole.SysPrompt:
                     realprompt = bot.ReplaceMacros(SysPromptStart + realprompt + SysPromptEnd, user);
@@ -245,17 +275,17 @@ namespace LetheAISharp.Files
         {
             var res = string.IsNullOrEmpty(ThinkingStart) ? [LLMEngine.NewLine + user.Name + ":", LLMEngine.NewLine + bot.Name + ":"] : new List<string>();
 
-            if (!string.IsNullOrEmpty(BotStart))
-                res.Add(BotStart);
-            if (!string.IsNullOrEmpty(BotEnd))
+            //if (!string.IsNullOrEmpty(BotStart))
+            //    res.Add(BotStart);
+            if (!string.IsNullOrEmpty(BotEnd) && !NoInstructInStopString)
                 res.Add(BotEnd);
-            if (!string.IsNullOrEmpty(SystemStart))
+            if (!string.IsNullOrEmpty(SystemStart) && !NoInstructInStopString)
                 res.Add(SystemStart);
-            if (!string.IsNullOrEmpty(SystemEnd))
+            if (!string.IsNullOrEmpty(SystemEnd) && !NoInstructInStopString)
                 res.Add(SystemEnd);
-            if (!string.IsNullOrEmpty(UserStart))
+            if (!string.IsNullOrEmpty(UserStart) && !NoInstructInStopString)
                 res.Add(UserStart);
-            if (!string.IsNullOrEmpty(UserEnd))
+            if (!string.IsNullOrEmpty(UserEnd) && !NoInstructInStopString)
                 res.Add(UserEnd);
             if (!string.IsNullOrEmpty(StopSequence))
                 res.Add(StopSequence);
@@ -265,6 +295,14 @@ namespace LetheAISharp.Files
 
             // Remove duplicates from the list
             res = [.. res.Distinct()];
+            if (IsThinkFormat)
+            {
+                if (!string.IsNullOrEmpty(ThinkingEnd) && (ThinkingEnd == BotEnd || ThinkingEnd == UserEnd))
+                {
+                    res.Remove(ThinkingEnd);
+                }
+            }
+
 
             return res;
         }
