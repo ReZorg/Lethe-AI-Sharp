@@ -203,7 +203,7 @@ namespace LetheAISharp
             // Turn weird quotes into normal quotes
             workstring = workstring.Replace("“", "\"");
             workstring = workstring.Replace("”", "\"");
-            workstring = workstring.Replace("—", " - ");
+            //workstring = workstring.Replace("—", " - ");
             if (fix.RemoveAllBoldedText)
             {
                 // Remove all bolded text
@@ -225,18 +225,30 @@ namespace LetheAISharp
                     var prefix = startid > 0 ? workstring[..startid] : string.Empty;
                     workstring = startid > 0 ? workstring[startid..].TrimStart() : workstring;
 
-                    var endIdx = workstring.IndexOf('*', 1);
-                    if (endIdx != -1)
+                    if (workstring.StartsWith('*'))
                     {
-                        var between = workstring[1..endIdx];
-                        if (between.Split(' ').Length < 4)
+                        var endIdx = workstring.IndexOf('*', 1);
+                        if (endIdx != -1)
                         {
-                            workstring = workstring[(endIdx + 1)..].TrimStart();
+                            var between = workstring[1..endIdx];
+                            if (between.Split(' ').Length < 4)
+                            {
+                                workstring = workstring[(endIdx + 1)..].TrimStart();
+                            }
                         }
                     }
 
+
                     var reg = new Regex(@"^Oh,\s+(\p{L}+)\.\.\.\s*");
                     var match = reg.Match(workstring);
+                    if (match.Success && workstring.Length > match.Length)
+                    {
+                        workstring = workstring[match.Length..].TrimStart();
+                        workstring = workstring.TrimStart();
+                        workstring = char.ToUpper(workstring[0]) + workstring[1..];
+                    }
+                    reg = new Regex(@"^Oh,\s+(\p{L}+)\.\s*");
+                    match = reg.Match(workstring);
                     if (match.Success && workstring.Length > match.Length)
                     {
                         workstring = workstring[match.Length..].TrimStart();
@@ -317,12 +329,12 @@ namespace LetheAISharp
                 if (paragraphs.Count >= 3)
                 {
                     var list = paragraphs.Take(paragraphs.Count - 1)
-                                                         .Any(p => p.TrimStart().StartsWith('-') || p.TrimStart().StartsWith("1)") || p.TrimStart().StartsWith("a)"));
+                                                         .Any(p => p.TrimStart().StartsWith('-') || p.TrimStart().StartsWith("1)") || p.TrimStart().StartsWith("a)") || p.TrimStart().StartsWith("1."));
 
                     bool earlierHasQuestion = paragraphs.Take(paragraphs.Count - 1)
                                                          .Any(p => p.Contains('?'));
                    
-                    bool deleteLast = !list && (earlierHasQuestion || LLMEngine.RNG.NextDouble() < (0.05f * (float)paragraphs.Count) );
+                    bool deleteLast = !list && (earlierHasQuestion || LLMEngine.RNG.NextDouble() > (1 - 0.1f * (float)paragraphs.Count) );
 
                     if (deleteLast)
                     {

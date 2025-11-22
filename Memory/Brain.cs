@@ -758,9 +758,9 @@ namespace LetheAISharp.Memory
             return false;
         }
 
-        public virtual SingleMessage? BuildAwayMessage()
+        public virtual SingleMessage? BuildAwayMessage(bool forced = false)
         {
-            if (LLMEngine.Settings.DisableDateAndMoodIfNotLastSession && LLMEngine.History.CurrentSession != LLMEngine.History.Sessions.Last())
+            if (LLMEngine.Settings.DisableDateAndMoodIfNotLastSession && LLMEngine.History.CurrentSession != LLMEngine.History.Sessions.Last() && !forced)
                 return null;
 
             // no previous user message, nothing to do either, chat just started
@@ -769,22 +769,22 @@ namespace LetheAISharp.Memory
                 return null;
 
             // check if we have a previous message in current session, and if it's already a system msg, gtfo
-            if (LLMEngine.History.CurrentSession.Messages.Count > 1 && LLMEngine.History.CurrentSession.Messages[^2].Role == AuthorRole.System)
+            if (LLMEngine.History.CurrentSession.Messages.Count > 1 && LLMEngine.History.CurrentSession.Messages[^2].Role == AuthorRole.System && !forced)
                 return null;
 
-            if (!Owner.SenseOfTime && !MoodHandling && Inserts.Count == 0)
+            if (!Owner.SenseOfTime && !MoodHandling && Inserts.Count == 0 && !forced)
                 return null;
 
             var totalmessage = string.Empty;
 
             var timeSinceLast = (DateTime.Now - lastmsg.Date);
-            if (timeSinceLast < TimeSpan.FromHours(HoursBeforeAFK))
+            if (timeSinceLast < TimeSpan.FromHours(HoursBeforeAFK) && !forced)
                 return null;
 
 
             if (Owner.SenseOfTime)
             {
-                var awaystr = GetAwayString();
+                var awaystr = GetTimeSinceLastMessage();
                 if (!string.IsNullOrWhiteSpace(awaystr))
                 {
                     totalmessage = awaystr;
@@ -831,15 +831,13 @@ namespace LetheAISharp.Memory
         /// Returns an away string depending on the last chat's date.
         /// </summary>
         /// <returns></returns>
-        protected virtual string GetAwayString()
+        protected virtual string GetTimeSinceLastMessage()
         {
             var lastusermsg = Owner.History.GetLastMessageFrom(AuthorRole.User);
             if (lastusermsg == null || Owner.History.CurrentSession != Owner.History.Sessions.Last())
                 return string.Empty;
 
             var timespan = DateTime.Now - lastusermsg.Date;
-            if (timespan <= new TimeSpan(2, 0, 0))
-                return string.Empty;
 
             var msgtxt = (DateTime.Now.Date != lastusermsg.Date.Date) || (timespan > new TimeSpan(12, 0, 0)) ?
                 $"We're {DateTime.Now.DayOfWeek} {StringExtensions.DateToHumanString(DateTime.Now)}." : string.Empty;
