@@ -214,6 +214,23 @@ namespace LetheAISharp
                 workstring = workstring.Replace("\"", "");
             }
 
+            if (LLMEngine.Instruct.IsThinkFormat && (LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt) && workstring.Contains(LLMEngine.Instruct.ThinkingEnd))
+            {
+                var startid = workstring.IndexOf(LLMEngine.Instruct.ThinkingEnd) + LLMEngine.Instruct.ThinkingEnd.Length + LLMEngine.NewLine.Length;
+                if (startid + 5 < workstring.Length)
+                {
+                    var prefix = startid > 0 ? workstring[..startid] : string.Empty;
+                    workstring = startid > 0 ? workstring[startid..].TrimStart() : workstring;
+                    var toremove = $"{LLMEngine.Bot.Name}: ";
+                    // check if workstring starts with the bot name
+                    if (workstring.StartsWith(toremove) && workstring.Length > toremove.Length)
+                    {
+                        workstring = workstring[toremove.Length..].TrimStart();
+                    }
+                    workstring = prefix + workstring;
+                }
+            }
+
             // If the text starts with * and has less than 4 words before the next *, remove the asterisks and what's in between
             if (fix.RemoveStartingSlop && (!streamed || !LLMEngine.Instruct.IsThinkFormat) && workstring.Length > 8)
             {

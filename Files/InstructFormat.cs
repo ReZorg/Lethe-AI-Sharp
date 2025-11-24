@@ -215,13 +215,19 @@ namespace LetheAISharp.Files
         public string GetResponseStart(BasePersona talker, bool? overridePrefill = null)
         {
             var res = talker.IsUser ? LLMEngine.Bot.ReplaceMacros(BotStart, talker) : talker.ReplaceMacros(BotStart);
-            if (RealAddNameToPrompt)
+            if (RealAddNameToPrompt && (!IsThinkFormat || LLMEngine.Settings.DisableThinking))
                 res += talker.Name + ":";
             if (talker.IsUser)
                 return res;
             var doprefill = overridePrefill ?? PrefillThinking;
             if (doprefill)
+            {
                 res += GetThinkPrefill();
+                if (RealAddNameToPrompt)
+                {
+                    res += $" It's {talker.Name} turn to talk.";
+                }
+            }
             return res;
         }
 

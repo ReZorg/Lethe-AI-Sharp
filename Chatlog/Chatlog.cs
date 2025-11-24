@@ -202,8 +202,16 @@ namespace LetheAISharp.Files
             if (sessionHandling == SessionHandling.FitAll)
             {
                 for (int i = 0; i <= curSessionID; i++)
+                {
+                    if (LLMEngine.IsGroupConversation && LLMEngine.Bot is GroupPersonaBase group && group.CurrentBotId != group.PrimaryPersonaName && LLMEngine.Settings.GroupSecondaryPersonaSeePastSessions == GroupChatPastSessionMode.ActiveOnly)
+                    {
+                        if (i != curSessionID && !Sessions[i].ContainsPersona(group.GetCurrentPersona()))
+                            continue;
+                    }
+
                     foreach (var msg in Sessions[i].Messages)
                         messagelist.Add((i, msg));
+                }
             }
             else
             {
