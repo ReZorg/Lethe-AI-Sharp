@@ -116,7 +116,17 @@ namespace LetheAISharp
                         continue;
                     }
                     var roleToUse = currentrole;
-                    fullprompt.Insert(0, LLMEngine.Instruct.FormatSingleMessage(new SingleMessage(roleToUse, prompt.Message)));
+                    
+                    var userID = prompt.UserID;
+                    var charID = prompt.CharID;
+
+                    // If the original message was Assistant but we are flipping roles, we need to swap user and bot personas
+                    if (prompt.Role == AuthorRole.Assistant && roleToUse == AuthorRole.User)
+                    {
+                        userID = prompt.CharID;
+                        charID = prompt.UserID;
+                    }
+                    fullprompt.Insert(0, LLMEngine.Instruct.FormatSingleMessage(new SingleMessage(roleToUse, DateTime.Now, prompt.Message, charID, userID)));
                     // flip role for next message
                     currentrole = currentrole == AuthorRole.User ? AuthorRole.Assistant : AuthorRole.User;
                 }

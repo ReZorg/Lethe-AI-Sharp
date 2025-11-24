@@ -74,6 +74,13 @@ namespace LetheAISharp.Files
         [JsonIgnore]
         public override bool SenseOfTime { get => PrimaryBot?.SenseOfTime ?? false; set => PrimaryBot!.SenseOfTime = value; }
 
+        [JsonIgnore] 
+        public override List<string> ExampleDialogs { get => CurrentBot?.ExampleDialogs ?? []; set => CurrentBot!.ExampleDialogs = value; }
+
+        [JsonIgnore] 
+        public override string Scenario { get => PrimaryBot?.Scenario ?? string.Empty; set => PrimaryBot!.Scenario = value; }
+
+
         /// <summary>
         /// The primary bot persona who owns the chatlog and acts as the main participant.
         /// This is populated dynamically during BeginChat() from LLMEngine.LoadedPersonas.
