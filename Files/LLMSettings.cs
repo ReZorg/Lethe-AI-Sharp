@@ -65,6 +65,9 @@ namespace LetheAISharp.Files
         /// <summary> Max length for the bot's reply. </summary>
         public int MaxReplyLength { get; set; } = 512;
 
+        /// <summary> Image embedding size (depends on the embedding model, but 768 is the most common one) </summary>
+        public int ImageEmbeddingSize { get; set; } = 768;
+
         /// <summary> Overrides the scenario field of the currently loaded character </summary>
         public string ScenarioOverride { get; set; } = string.Empty;
 

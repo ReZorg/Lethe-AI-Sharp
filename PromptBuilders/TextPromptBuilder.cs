@@ -197,7 +197,7 @@ namespace LetheAISharp
 
         public int GetTokenUsage()
         {
-            return LLMEngine.GetTokenCount((string)GetFullPrompt());
+            return LLMEngine.GetTokenCount((string)GetFullPrompt()) + vlm_pictures.Count * LLMEngine.Settings.ImageEmbeddingSize;
         }
 
         public int GetTokenCount(AuthorRole role, string message)

@@ -30,7 +30,12 @@ namespace LetheAISharp
         {
             var msg = FormatSingleMessage(message);
             _prompt.Add(msg);
-            return LLMEngine.GetTokenCount(msg);
+            var cost = LLMEngine.GetTokenCount(msg) + 4;
+            if (message.ImagePath is not null && File.Exists(message.ImagePath))
+            {
+                cost += LLMEngine.Settings.ImageEmbeddingSize;
+            }
+            return cost;
         }
 
         private int GetTokenCountMsg(Message msg)
@@ -40,9 +45,11 @@ namespace LetheAISharp
                 var total = 0;
                 foreach (var content in lst)
                 {
-                    total += LLMEngine.GetTokenCount(content.ToString()) + 4;
+                    if (content.Type == ContentType.ImageUrl)
+                        total += LLMEngine.Settings.ImageEmbeddingSize;
+                    else
+                        total += LLMEngine.GetTokenCount(content.ToString());
                 }
-                return total + 4;
             }
             return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
         }
@@ -57,7 +64,7 @@ namespace LetheAISharp
             var total = 0;
             foreach (var message in _prompt)
             {
-                total += LLMEngine.GetTokenCount(message);
+                total += GetTokenCountMsg(message);
             }
             return total;
         }
@@ -81,7 +88,12 @@ namespace LetheAISharp
             }
             var msg = FormatSingleMessage(message);
             _prompt.Insert(index, msg);
-            return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
+            var cost = LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
+            if (message.ImagePath is not null && File.Exists(message.ImagePath))
+            {
+                cost += LLMEngine.Settings.ImageEmbeddingSize;
+            }
+            return cost;
         }
 
         public object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null, bool forceAltRoles = false)
@@ -114,6 +126,10 @@ namespace LetheAISharp
         public int GetTokenCount(SingleMessage message)
         {
             var msg = FormatSingleMessage(message);
+            if (message.ImagePath is not null && File.Exists(message.ImagePath))
+            {
+                return LLMEngine.GetTokenCount(msg.Content.ToString()) + LLMEngine.Settings.ImageEmbeddingSize;
+            }
             return LLMEngine.GetTokenCount(msg.Content.ToString());
         }
 
