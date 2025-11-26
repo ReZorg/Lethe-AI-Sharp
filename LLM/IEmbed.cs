@@ -1,7 +1,6 @@
-﻿using LetheAISharp.LLM;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
-namespace LetheAISharp.Files
+namespace LetheAISharp.LLM
 {
     public interface IEmbed
     {

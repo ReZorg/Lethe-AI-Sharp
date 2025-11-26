@@ -1,6 +1,6 @@
-﻿using LetheAISharp.LLM;
+﻿using LetheAISharp.Files;
 
-namespace LetheAISharp.Files
+namespace LetheAISharp.LLM
 {
     public class PluginResponse
     {

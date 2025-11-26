@@ -1,14 +1,12 @@
 ﻿using LetheAISharp.Agent;
-using LetheAISharp.LLM;
+using LetheAISharp.Files;
 using LetheAISharp.Memory;
-using CommunityToolkit.HighPerformance;
 using Newtonsoft.Json;
 using System;
 using System.Globalization;
-using System.Reflection.PortableExecutable;
 using System.Text;
 
-namespace LetheAISharp.Files
+namespace LetheAISharp.LLM
 {
     /// <summary>
     /// Represents a base persona, which serves as a customizable character or user profile with attributes, behaviors,

@@ -2,7 +2,6 @@
 using LLama.Common;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
-using LetheAISharp.Files;
 using LetheAISharp.Memory;
 
 namespace LetheAISharp.LLM

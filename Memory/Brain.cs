@@ -73,8 +73,15 @@ namespace LetheAISharp.Memory
         /// </summary>
         public bool MoodHandling { get; set; } = false;
 
+        /// <summary>
+        /// If mood handling is enabled, setting this to true will keep the mood static and not update it over time.
+        /// </summary>
+        public bool StaticMood { get; set; } = false;
+
+
         public DateTime LastInsertTime { get; protected set; }
         public int CurrentDelay { get; protected set; } = 0;
+
 
         [JsonProperty] public List<MemoryUnit> Memories { get; set; } = [];
         [JsonProperty] protected List<UserReturnInsert> Inserts { get; set; } = [];
@@ -147,8 +154,11 @@ namespace LetheAISharp.Memory
             if (LLMEngine.Settings.DisableDateAndMoodIfNotLastSession && LLMEngine.History.CurrentSession != LLMEngine.History.Sessions.Last())
                 return;
 
-            Mood.Update();
-            Mood.Interpret(message.Message);
+            if (MoodHandling && !StaticMood)
+            {
+                Mood.Update();
+                Mood.Interpret(message.Message);
+            }
 
             // Prepare away message if need be.
             var msg = BuildAwayMessage();

@@ -1,6 +1,7 @@
 ﻿using LetheAISharp.Memory;
+using LetheAISharp.Files;
 
-namespace LetheAISharp.Files
+namespace LetheAISharp.LLM
 {
     public interface IBasePersona
     {

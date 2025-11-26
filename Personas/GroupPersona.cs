@@ -1,11 +1,11 @@
 using LetheAISharp.Agent;
-using LetheAISharp.LLM;
+using LetheAISharp.Files;
 using LetheAISharp.Memory;
 using Newtonsoft.Json;
 using System.Globalization;
 using System.Text;
 
-namespace LetheAISharp.Files
+namespace LetheAISharp.LLM
 {
 
     public abstract class GroupPersonaBase : BasePersona 
