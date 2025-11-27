@@ -466,6 +466,8 @@ namespace LetheAISharp.LLM
             return CurrentBot?.UniqueName ?? string.Empty;
         }
 
+
+
         /// <summary>
         /// Internal method that performs the actual macro replacement logic for group personas.
         /// </summary>
@@ -551,6 +553,19 @@ namespace LetheAISharp.LLM
             }
 
             return res.ToString();
+        }
+
+        public override void SaveToFile(string pPath, string? fileName = null)
+        {
+            base.SaveToFile(pPath, fileName);
+            // do persona files for all bots in the group
+            foreach (var persona in AllPersonas)
+            {
+                if (string.IsNullOrEmpty(persona.UniqueName))
+                    continue; // skip temporary or invalid personas
+                var personaFileName = $"{persona.UniqueName}.json";
+                persona.SaveToFile(pPath, personaFileName);
+            }
         }
     }
 }

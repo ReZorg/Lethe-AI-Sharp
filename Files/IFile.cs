@@ -10,7 +10,7 @@ namespace LetheAISharp.Files
 
         string ExportToString() => JsonConvert.SerializeObject(this, JsonSettings);
 
-        void SaveToFile(string pPath)
+        virtual void SaveToFile(string pPath)
         {
             var dir = Path.GetDirectoryName(pPath);
             if (!string.IsNullOrEmpty(dir))

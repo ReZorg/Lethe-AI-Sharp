@@ -698,8 +698,7 @@ namespace LetheAISharp.LLM
         {
             InvalidatePromptCache();
             bot.EndChat(backup: true);
-            if (!string.IsNullOrEmpty(bot.UniqueName))
-                (bot as IFile).SaveToFile(LLMEngine.Settings.DataPath + bot.UniqueName + ".json");
+            bot.SaveToFile(Settings.DataPath);
             bot = newbot;
 
             OnBotChanged?.Invoke(null, bot);

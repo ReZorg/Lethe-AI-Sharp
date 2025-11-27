@@ -546,5 +546,27 @@ namespace LetheAISharp.LLM
             sb.AppendLinuxLine(GetBio(userName).CleanupAndTrim());
             return sb.ToString().CleanupAndTrim();
         }
+
+        public virtual void SaveToFile(string pPath, string? fileName = null)
+        {
+            if (string.IsNullOrEmpty(pPath))
+                throw new ArgumentException("Path cannot be null or empty.", nameof(pPath));
+            if (string.IsNullOrEmpty(fileName))
+            {
+                if (string.IsNullOrEmpty(UniqueName))
+                    return;
+                fileName = UniqueName + ".json";
+            }
+
+            if (Path.Exists(pPath) && !Directory.Exists(pPath))
+                throw new ArgumentException("The provided path is not a directory.", nameof(pPath));
+
+            if (!Directory.Exists(pPath))
+                Directory.CreateDirectory(pPath);
+
+            var fullPath = Path.Combine(pPath, fileName);
+            ((IFile)this).SaveToFile(fullPath);
+        }
+
     }
 }

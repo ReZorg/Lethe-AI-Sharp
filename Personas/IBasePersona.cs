@@ -37,6 +37,7 @@ namespace LetheAISharp.LLM
         string ReplaceMacros(string inputText);
         string ReplaceMacros(string inputText, BasePersona user);
         void SaveChatHistory(bool backup = false);
+        void SaveToFile(string path, string? fileName = null);
         Task UpdateSelfEditSection();
     }
 }
