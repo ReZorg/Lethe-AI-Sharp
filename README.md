@@ -116,6 +116,9 @@ Right now, the best way to use the library is to add this repo as a submodule or
 git submodule add https://github.com/SerialKicked/Lethe-AI-Sharp.git
 ````
 
+### Manual Install
+git clone, or download the project files in a new folder, and add it directly to your solution's project list. This gives you more control and full access to the source code.
+
 ### Optional Models & Data Files
 Place them into `data/classifiers/` (configure their *build action* to “Copy if newer”):
 | File | Purpose | Required? |
