@@ -9,6 +9,8 @@ This guide will get you up and running with the LetheAISharp LLMEngine in just a
    - [LM Studio](https://lmstudio.ai/) 
    - [Text Generation WebUI](https://github.com/oobabooga/text-generation-webui)
 
+You can also use the integrated backend, LLamaSharp. In that case replace the URL field by the path toward the GGUF model. But for this demonstration, just use KoboldCpp, it's a reliable backend.
+
 2. **Model**: Load a model in your backend server
 
 3. **API Access**: Ensure the API is enabled and note the port number
