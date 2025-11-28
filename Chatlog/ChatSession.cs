@@ -93,9 +93,12 @@ namespace LetheAISharp.Files
             {
                 var meta = await GetSessionInfo().ConfigureAwait(false);
                 MetaData = meta;
-                var sum = await GenerateSummary().ConfigureAwait(false);
-                if (sum.Length > MetaData.Summary.Length)
-                    MetaData.Summary = sum;
+                if (LLMEngine.Settings.SessionDetailedSummary)
+                {
+                    var sum = await GenerateSummary().ConfigureAwait(false);
+                    if (sum.Length > MetaData.Summary.Length)
+                        MetaData.Summary = sum;
+                }
             }
             else
             {

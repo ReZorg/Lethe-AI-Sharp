@@ -425,31 +425,6 @@ namespace LetheAISharp.LLM
             }
         }
 
-        /// <summary>
-        /// Send a system message to the bot and wait for a response. Message log is optional. No text streaming. This can be useful when the program needs to ask the LLM for something between user inputs.
-        /// </summary>
-        /// <param name="systemMessage">Message from sender</param>
-        /// <param name="logSystemPrompt">Log the message to the chat history or not</param>
-        /// <returns></returns>
-        public static async Task<string> QuickInferenceForSystemPrompt(string systemMessage, bool logSystemPrompt, CancellationToken ct = default)
-        {
-            if (Client == null)
-                return string.Empty;
-            using var _ = await AcquireModelSlotAsync(ct).ConfigureAwait(false);
-            if (Status == SystemStatus.Busy)
-                return string.Empty;
-
-            var inputText = systemMessage;
-            StreamingTextProgress = Instruct.GetThinkPrefill();
-            var genparams = await GenerateFullPrompt(new SingleMessage(AuthorRole.System, inputText)).ConfigureAwait(false);
-            if (!string.IsNullOrEmpty(systemMessage) && logSystemPrompt)
-                Bot.History.LogMessage(AuthorRole.System, systemMessage, User, Bot);
-            Status = SystemStatus.Busy;
-            var result = await Client.GenerateText(genparams).ConfigureAwait(false);
-            Status = SystemStatus.Ready;
-            return string.IsNullOrEmpty(result) ? string.Empty : result;
-        }
-
         #endregion
 
         #region *** Simple LLM Queries (provide full prompt, get response) ***
@@ -636,7 +611,7 @@ namespace LetheAISharp.LLM
 
         #endregion
 
-        #region *** Group Chat Management (WIP) ***
+        #region *** Group Chat Management ***
 
         /// <summary>
         /// Checks if the current bot is a group persona.

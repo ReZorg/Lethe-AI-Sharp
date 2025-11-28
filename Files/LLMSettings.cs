@@ -119,6 +119,12 @@ namespace LetheAISharp.Files
         /// </summary>
         public bool AntiHallucinationMemoryFormat { get; set; } = true;
 
+        /// <summary> 
+        /// If false, the standard summary from the structured output will be used instead (generally more concise and faster to generate).
+        /// If true, a second more detailed summary will be generated for session memory purpose. It provides more details about the session, but use more tokens and time to generate.
+        /// </summary>
+        public bool SessionDetailedSummary { get; set; } = false;
+
         #endregion
 
 
