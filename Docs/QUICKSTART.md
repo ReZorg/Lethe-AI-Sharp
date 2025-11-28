@@ -48,6 +48,7 @@ Console.WriteLine(response);
 LLMEngine.OnInferenceStreamed += (_, token) => Console.Write(token);
 
 var streamBuilder = LLMEngine.GetPromptBuilder();
+streamBuilder.AddMessage(AuthorRole.SysPrompt, "You are a helpful assistant.");
 streamBuilder.AddMessage(AuthorRole.User, "Write a haiku about programming.");
 var streamQuery = streamBuilder.PromptToQuery(AuthorRole.Assistant);
 await LLMEngine.SimpleQueryStreaming(streamQuery);
@@ -82,7 +83,11 @@ class Program
             Bio = "A friendly AI assistant",
             IsUser = false
         };
-        
+
+        // Technically you should also set LLMEngine.Instruct to the correct instruction template for your model.
+        // The default is Alpaca wwhich will probably work anyway, but will give less good results. We're just skipping
+        // this part for demonstration purposes.
+       
         // Setup events
         LLMEngine.OnInferenceStreamed += (_, token) => Console.Write(token);
         LLMEngine.OnStatusChanged += (_, status) => 
