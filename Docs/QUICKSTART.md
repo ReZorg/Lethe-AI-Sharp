@@ -38,6 +38,7 @@ if (LLMEngine.Status == SystemStatus.Ready)
 ```csharp
 // Non-streaming query
 var builder = LLMEngine.GetPromptBuilder();
+builder.AddMessage(AuthorRole.SysPrompt, "You are a helpful assistant.");
 builder.AddMessage(AuthorRole.User, "What is artificial intelligence?");
 var query = builder.PromptToQuery(AuthorRole.Assistant);
 var response = await LLMEngine.SimpleQuery(query);
