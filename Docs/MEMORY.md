@@ -59,7 +59,11 @@ persona with external information. The type doesn't have to 1:1 match the functi
 
 - **Trigger** - Memory is activated by RAG similarity in user input. It stays in the prompt for "Duration" (unless it's a chat session, which is always 1)
 - **Natural** - Automatically inserted when relevant just before the user input message, it behaves like a normal message and scrolls until it gets out of the context window. It's converted to Trigger after use.
+- **NaturalForced** - Will be forcefully injected into the prompt (no RAG check) in a timed fashion and behave like **Natural** memory otherwise. May lead to jarring disconnect during conversation
+- **UserReturn** - Will be inserted as part of the system message generated when the user comes back after being AFK. Memory is set to None after use to avoid  re-insertion on subsequent returns. Content will be inserted "as is" with no title, it is recommended to keep it brief.
 - **None** - Disabled memory
+
+In all cases, the "Added" field is checked, meaning that if the memory's Added field is set in the future, this memory won't surface until the date is correct. This allows for features like future planning, and make calendar type applications easier to build.
 
 ## Chat Session Summaries
 
@@ -258,7 +262,21 @@ The library supports multiple strategies for inserting memories into conversatio
 - **Use Case**: Fresh insights or temporary information 
 - **Behavior**: Inserted like a system message (just above the last user message), scrolls out of context over time
 
-### Memory Lifecycle
+### NaturalForced Insertion
+
+- **Activation**: Memories are automatically inserted independantly of context, but the system will prevent overload by spacing them by a few messages
+- **Conversion**: After being used once, NaturalForced memories become Trigger memories
+- **Use Case**: Critical messages that need to be addressed
+- **Behavior**: Inserted like a system message (just above the last user message), scrolls out of context over time
+
+### UserReturn Insertion
+
+- **Activation**: Automatically triggered when the user returns after being AFK
+- **Conversion**: After being used once, UserReturn memories become None memories to prevent further recall
+- **Use Case**: Important messages, topic conversation steering, calendar events
+- **Behavior**: Integrated in the system message that would normally be generated there, scrolls out of context over time
+
+## Memory Lifecycle
 
 1. **Creation**: Memory is created with appropriate `MemoryType` and `Insertion` strategy
 2. **Embedding**: Content is converted to vector embedding if RAG is enabled
