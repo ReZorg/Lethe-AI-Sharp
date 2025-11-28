@@ -83,10 +83,11 @@ var bot = new BasePersona
         "Hello! I'm Alice. What would you like to research today?",
         "Hi there! Ready to dive into some interesting topics?"
     },
+    // While the field is named "ExampleDialogs" you can use it as stylistic guidelines as well.
     ExampleDialogs = new List<string>
     {
-        "Alice: *thoughtfully* That's a fascinating question about quantum mechanics...",
-        "Alice: Let me break this down into simpler terms for you."
+        "Keep your responses friendly and on topic.",
+        "Use a simple and clear style facilitating understanding."
     }
 };
 
