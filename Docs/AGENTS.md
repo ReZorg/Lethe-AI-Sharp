@@ -212,8 +212,10 @@ public class CustomAnalysisTask : IAgentTask
             
             // Update configuration
             cfg.SetSetting("LastRun", DateTime.Now);
-            
-            // Add memory if needed
+
+            // This function allows to insert a system message when the user retunrs. If multiple tasks
+            // use this fuction before they return, all those messages will be compiled into a single
+            // system message.
             owner.Brain.AddUserReturnInsert("{{char}} has analyzed recent conversation patterns.");
         }
         catch (Exception ex)
@@ -317,7 +319,12 @@ public async Task Execute(BasePersona owner, AgentTaskSetting cfg, CancellationT
         foreach (var result in results)
         {
             // Store in memory or use as needed
-            var memory = new BrainMemory(result.Content, MemoryImportance.Medium, "web_research");
+            var memory = new MemoryUnit()
+            {
+                Name = "title",
+                Content = "the content",
+                Insertion = MemoryInsertion.Natural
+            }
             await memory.EmbedText();
             owner.Brain.Memorize(memory);
         }
