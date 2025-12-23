@@ -11,7 +11,7 @@ using System.Globalization;
 
 namespace LetheAISharp
 {
-    public class StringFix(bool removeAllBoldedText, bool fixQuotes, bool removeSingleWorldEmphasis, bool removeAllQuotes, bool removeItalic, float removeItalicRatio, int removeItalicMaxWords, bool lastParagraphDeleter, bool removeStartingSlop)
+    public class StringFix(bool removeAllBoldedText, bool fixQuotes, bool removeSingleWorldEmphasis, bool removeAllQuotes, bool removeItalic, float removeItalicRatio, int removeItalicMaxWords, bool lastParagraphDeleter, bool removeStartingSlop, bool parenthesizeToItalic)
     {
         public bool RemoveAllBoldedText = removeAllBoldedText;
         public bool RemoveAllQuotes = removeAllQuotes;
@@ -22,6 +22,7 @@ namespace LetheAISharp
         public int RemoveItalicMaxWords = removeItalicMaxWords;
         public bool LastParagraphDeleter = lastParagraphDeleter;
         public bool RemoveStartingSlop = removeStartingSlop;
+        public bool ParenthesizeToItalic = parenthesizeToItalic;
     }
 
     public static class StringExtensions
@@ -212,6 +213,15 @@ namespace LetheAISharp
             if (fix.RemoveAllQuotes)
             {
                 workstring = workstring.Replace("\"", "");
+            }
+            if (fix.ParenthesizeToItalic)
+            {
+                // Find all occurences of (some text) and turn them into *some text*
+                var matches = Regex.Matches(workstring, @"\(([^)]+)\)");
+                foreach (Match match in matches)
+                {
+                    workstring = workstring.Replace(match.Value, $"*{match.Groups[1].Value}*");
+                }
             }
 
             if (LLMEngine.Instruct.IsThinkFormat && (LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt) && workstring.Contains(LLMEngine.Instruct.ThinkingEnd))

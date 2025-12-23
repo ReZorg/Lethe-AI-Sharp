@@ -219,6 +219,13 @@ namespace LetheAISharp.Files
         /// </summary>
         public bool GroupInstructFormatAdapter { get; set; } = false;
 
+        /// <summary>
+        /// Indicates whether group session data should be committed to the secondary personas' history when ending or starting a new chat session.
+        /// By default, only the main persona's history will be updated (false). If you want group chat activities to be added to the secondary personas's
+        /// memory, set this to true. In that case they'll remember group activity, even when you're using them outside of the group.
+        /// </summary>
+        public bool CommitGroupSessionToSecondaryPersonaHistory { get; set; } = false;
+
         #endregion
 
     }

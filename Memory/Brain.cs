@@ -364,13 +364,13 @@ namespace LetheAISharp.Memory
 
                 foreach (var item in Memories)
                 {
-                    if (!item.Sticky && item.CheckKeywords(keywordsearch) && item.Added <= DateTime.Now && !DisableRAG.Contains(item.Category))
+                    if (!item.Sticky && item.Insertion != MemoryInsertion.None && item.CheckKeywords(keywordsearch) && item.Added <= DateTime.Now && !DisableRAG.Contains(item.Category))
                     {
                         _currentWorldEntries.Add(item);
                     }
                 }
 
-                var list = Memories.FindAll(e => e.Added <= DateTime.Now && (e.Category == MemoryType.Person || e.Category == MemoryType.Location) && searchmessage.Contains(e.Name, StringComparison.InvariantCultureIgnoreCase));
+                var list = Memories.FindAll(e => e.Insertion != MemoryInsertion.None && e.Added <= DateTime.Now && (e.Category == MemoryType.Person || e.Category == MemoryType.Location) && searchmessage.Contains(e.Name, StringComparison.InvariantCultureIgnoreCase));
                 _currentWorldEntries.AddRange(list);
 
 

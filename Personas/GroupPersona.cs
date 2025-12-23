@@ -228,6 +228,11 @@ namespace LetheAISharp.LLM
             var persona = SecondaryBots.FirstOrDefault(p => p.UniqueName == uniqueName);
             if (persona != null)
             {
+                if (LLMEngine.Settings.CommitGroupSessionToSecondaryPersonaHistory)
+                {
+                    // Save chat history to this persona before removing
+                    SaveSecondaryPersonaHistory(persona, true);
+                }
                 SecondaryPersonaNames.Remove(uniqueName);
                 SecondaryBots.Remove(persona);
 
@@ -431,6 +436,32 @@ namespace LetheAISharp.LLM
         public override void SaveChatHistory(bool backup = false)
         {
             PrimaryBot?.SaveChatHistory(backup);
+            if (LLMEngine.Settings.CommitGroupSessionToSecondaryPersonaHistory)
+            {
+                // Also save chat history to secondary personas
+                foreach (var persona in SecondaryBots)
+                {
+                    SaveSecondaryPersonaHistory(persona, backup);
+                }
+            }
+        }
+
+        private void SaveSecondaryPersonaHistory(TPersona persona, bool backup)
+        {
+            // find sessions involving this persona and save them
+            var sessions = LLMEngine.History.Sessions.FindAll(e => e.ContainsPersona(persona));
+            if (sessions.Count > 0)
+            {
+                persona.LoadChatHistory();
+                foreach (var session in sessions)
+                {
+                    if (persona.History.Sessions.Find(e => e.Guid == session.Guid) != null)
+                        continue;
+                    persona.History.Sessions.Add(session);
+                }
+                persona.History.Sessions.Sort((a, b) => a.StartTime.CompareTo(b.StartTime));
+                persona.SaveChatHistory(backup);
+            }
         }
 
         /// <summary>
