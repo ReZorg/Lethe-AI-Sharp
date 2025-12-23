@@ -9,7 +9,7 @@
   "StopSequence": "",
   "SysPromptStart": "<|im_start|>system\n",
   "SysPromptEnd": "<|im_end|>",
-  "AddNamesToPrompt": true,
+  "AddNamesToPrompt": false,
   "NewLinesBetweenMessages": true,
   "StopStrings": [],
   "ThinkingStart": "<think>\n",
