@@ -88,6 +88,10 @@ namespace LetheAISharp.Memory
 
         public List<TopicSearch> RecentSearches { get; set; } = [];
 
+
+        public string DailySchedulePrefix { get; set; } = "Today's Schedule:";
+        public string[] DailySchedule { get; set; } = new string[7];
+
         [JsonIgnore] protected List<MemoryUnit> Eurekas { get; set; } = [];
 
         [JsonIgnore] protected MemoryVault MindPalace { get; set; } = new MemoryVault();
@@ -636,6 +640,17 @@ namespace LetheAISharp.Memory
             return await MindPalace!.Search(LLMEngine.Settings.RAGConvertTo3rdPerson ? message.ConvertToThirdPerson() : message, maxRes, maxDist).ConfigureAwait(false);
         }
 
+        public virtual bool ReplaceMemory(MemoryUnit source, MemoryUnit replacement)
+        {
+            var idx = Memories.IndexOf(source);
+            if (idx != -1)
+            {
+                Memories[idx] = replacement;
+                return true;
+            }
+            return false;
+        }
+
         #endregion
 
         #region *** Eureka Management ***
@@ -799,6 +814,17 @@ namespace LetheAISharp.Memory
                 {
                     totalmessage = awaystr;
                 }
+
+                var dayschedule = GetDailySchedule(DateTime.Now.DayOfWeek);
+                if (!string.IsNullOrWhiteSpace(dayschedule))
+                {
+                    if (!string.IsNullOrWhiteSpace(totalmessage))
+                        totalmessage += " ";
+                    totalmessage += $"{DailySchedulePrefix} {dayschedule}";
+                    // add ". " if the message doesn't end by a dot.
+                    if (!totalmessage.EndsWith('.'))
+                        totalmessage += ".";
+                }
             }
 
             if (MoodHandling)
@@ -863,5 +889,18 @@ namespace LetheAISharp.Memory
 
         #endregion
 
+        #region *** Daily Schedule ***
+
+        public virtual void SetDailySchedule(DayOfWeek day, string schedule)
+        {
+            DailySchedule[(int)day] = schedule;
+        }
+
+        public virtual string GetDailySchedule(DayOfWeek day)
+        {
+            return DailySchedule[(int)day];
+        }
+
+        #endregion
     }
 }

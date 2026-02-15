@@ -601,8 +601,6 @@ namespace LetheAISharp.Files
             foreach (var session in Sessions)
             {
                 await session.EmbedText().ConfigureAwait(false);
-                if (SentimentAnalysis.Enabled)
-                    await session.UpdateSentiment().ConfigureAwait(false);
             }
         }
         public virtual void SaveToFile(string pPath) 
