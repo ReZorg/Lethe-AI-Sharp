@@ -61,6 +61,11 @@ namespace LetheAISharp.LLM
         /// </summary>
         public static bool? NamesInPromptOverride { get; set; } = null;
 
+        /// <summary>
+        /// This is a list of words that are banned during search queries. It's on the application to load and maintain this list.
+        /// </summary>
+        public static BanList BannedSearchWords { get; set; } = new();
+
         internal static Dictionary<string, BasePersona> LoadedPersonas = [];
 
         /// <summary> Called when the non streaming inference has completed, returns the raw and complete response from the model </summary>

@@ -27,6 +27,8 @@ namespace LetheAISharp.Agent.Actions
             // Execute searches for all the queries the LLM / Agent left for us to do
             foreach (var query in param.SearchQueries)
             {
+                if (!LLMEngine.BannedSearchWords.IsAllowed(query))
+                    continue;
                 if (ct.IsCancellationRequested)
                     return allResults;
                 var hits = await LLMEngine.WebSearch(query).ConfigureAwait(false);

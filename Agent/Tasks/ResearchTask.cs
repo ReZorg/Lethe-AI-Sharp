@@ -53,7 +53,7 @@ namespace LetheAISharp.Agent.Plugins
 
             if (webSearchAction == null || mergeAction == null || findTopicAction == null)
             {
-                LLMEngine.Logger?.LogWarning("Required actions not found in registry. ResearchTask cancelled.");
+                LLMEngine.Logger?.LogError("Required actions not found in registry. ResearchTask cancelled.");
                 return;
             }
 

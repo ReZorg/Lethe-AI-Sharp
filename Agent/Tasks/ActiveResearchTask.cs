@@ -70,7 +70,7 @@ namespace LetheAISharp.Agent.Plugins
 
             if (findTopicsAction == null || mergeAction == null || webSearchAction == null)
             {
-                LLMEngine.Logger?.LogWarning("ActiveResearchTask cancelled due to missing action.");
+                LLMEngine.Logger?.LogError("ActiveResearchTask cancelled due to missing action.");
                 return;
             }
             var param = new FindResearchTopicsParams
