@@ -589,6 +589,35 @@ namespace LetheAISharp.Files
         }
 
         /// <summary>
+        /// Retrieves the raw dialog content from the chat log, formatted according to specified parameters and adhering to token limits.
+        /// This will go over multiple chat sessions if needed, starting from the current one and going back until the token limit is reached. 
+        /// </summary>
+        /// <param name="maxTokens">Maximum number of tokens to include in the dialog content.</param>
+        /// <param name="ignoresystem">A value indicating whether system messages should be excluded from the output. Set to <see langword="true"/> to ignore system messages; otherwise, <see langword="false"/>.</param>
+        /// <param name="showHidden">A value indicating whether hidden messages should be included in the output. Set to <see langword="true"/> to include hidden messages; otherwise, <see langword="false"/>.</param>
+        /// <param name="middleCut">A value indicating whether to perform a middle cut when truncating messages to fit within the token limit, or cut the end</param>
+        /// <returns>The raw dialog content as a string.</returns>
+        public string GetRawDialogs(int maxTokens, bool ignoresystem, bool showHidden = false, bool middleCut = false)
+        {
+            var currentSessionID = CurrentSessionID == -1 ? Sessions.Count - 1 : CurrentSessionID;
+            var sb = new StringBuilder();
+            var tokensleft = maxTokens;
+            while (tokensleft > 0 && currentSessionID >= 0) 
+            {
+                var session = Sessions[currentSessionID];
+                var sessionContent = session.GetRawDialogs(tokensleft, ignoresystem, false, showHidden, middleCut);
+                tokensleft -= LLMEngine.GetTokenCount(sessionContent);
+                if (tokensleft > 0)
+                    sb.Insert(0, sessionContent);
+                if (tokensleft <= 50)
+                    break;
+                currentSessionID--;
+            }
+            return sb.ToString();
+        }
+
+
+        /// <summary>
         /// Embedding of all the messages in the chatlog
         /// </summary>
         /// <param name="log"></param>
@@ -603,6 +632,7 @@ namespace LetheAISharp.Files
                 await session.EmbedText().ConfigureAwait(false);
             }
         }
+
         public virtual void SaveToFile(string pPath) 
         {
             var content = JsonConvert.SerializeObject(this, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });

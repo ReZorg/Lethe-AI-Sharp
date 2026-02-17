@@ -15,17 +15,17 @@
      <PackageIcon>Sarah.png</PackageIcon>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="HNSW" Version="25.7.60036" />
-    <PackageReference Include="LLamaSharp" Version="0.25.0" />
-    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.25.0" />
-    <PackageReference Include="LLamaSharp.Backend.Cuda12" Version="0.25.0" />
-    <PackageReference Include="LLamaSharp.Backend.Vulkan" Version="0.25.0" />
+    <PackageReference Include="HNSW" Version="26.1.63669" />
+    <PackageReference Include="LLamaSharp" Version="0.26.0" />
+    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.26.0" />
+    <PackageReference Include="LLamaSharp.Backend.Cuda12" Version="0.26.0" />
+    <PackageReference Include="LLamaSharp.Backend.Vulkan" Version="0.26.0" />
     <PackageReference Include="MessagePack" Version="3.1.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
-    <PackageReference Include="OpenAI-DotNet" Version="8.8.7" />
+    <PackageReference Include="OpenAI-DotNet" Version="8.8.8" />
     <PackageReference Include="SharpToken" Version="2.0.4" />
-    <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.3" />
   </ItemGroup>
   <ItemGroup>
     <None Update="data\classifiers\emotion-bert-classifier.gguf">

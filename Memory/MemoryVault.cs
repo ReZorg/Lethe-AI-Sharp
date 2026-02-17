@@ -42,28 +42,34 @@ namespace LetheAISharp.Memory
 
         private readonly Dictionary<int, MemoryUnit> LookupDB = [];
 
+        public SmallWorldParameters Parameters;
+
         public int Count => VectorDB?.Items?.Count ?? 0;
 
         public MemoryVault()
         {
-            VectorDB = new SmallWorld<float[], float>(Vector.IsHardwareAccelerated ? CosineDistance.SIMDForUnits : CosineDistance.ForUnits, new RNGPlus(), GetParams(), false);
-        }
-
-        private static SmallWorld<float[], float>.Parameters GetParams()
-        {
-            return new SmallWorld<float[], float>.Parameters()
+            Parameters = new()
             {
                 M = LLMEngine.Settings.RAGMValue,
                 LevelLambda = 1.0 / Math.Log(LLMEngine.Settings.RAGMValue),
                 ExpandBestSelection = true,
                 NeighbourHeuristic = LLMEngine.Settings.RAGHeuristic == RAGSelectionHeuristic.SelectHeuristic ? NeighbourSelectionHeuristic.SelectHeuristic : NeighbourSelectionHeuristic.SelectSimple,
             };
+            VectorDB = new SmallWorld<float[], float>(Vector.IsHardwareAccelerated ? CosineDistance.SIMDForUnits : CosineDistance.ForUnits, new RNGPlus(), Parameters, false);
         }
+
 
         public void Clear()
         {
             LookupDB.Clear();
-            VectorDB = new SmallWorld<float[], float>(Vector.IsHardwareAccelerated ? CosineDistance.SIMDForUnits : CosineDistance.ForUnits, new RNGPlus(), GetParams(), false);
+            Parameters = new()
+            {
+                M = LLMEngine.Settings.RAGMValue,
+                LevelLambda = 1.0 / Math.Log(LLMEngine.Settings.RAGMValue),
+                ExpandBestSelection = true,
+                NeighbourHeuristic = LLMEngine.Settings.RAGHeuristic == RAGSelectionHeuristic.SelectHeuristic ? NeighbourSelectionHeuristic.SelectHeuristic : NeighbourSelectionHeuristic.SelectSimple,
+            };
+            VectorDB = new SmallWorld<float[], float>(Vector.IsHardwareAccelerated ? CosineDistance.SIMDForUnits : CosineDistance.ForUnits, new RNGPlus(), Parameters, false);
         }
 
         public void AddMemories(List<MemoryUnit> memories)

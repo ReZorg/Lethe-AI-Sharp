@@ -503,6 +503,11 @@ namespace LetheAISharp
             return formattedDate;
         }
 
+        public static string ToHumanString(this DateTime date)
+        {
+            return DateToHumanString(date);
+        }
+
         /// <summary>
         /// Turn a time span into something clearly legible for a human
         /// </summary>

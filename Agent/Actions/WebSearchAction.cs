@@ -1,5 +1,6 @@
 ﻿using LetheAISharp.GBNF;
 using LetheAISharp.LLM;
+using Microsoft.Extensions.Logging;
 using static LetheAISharp.SearchAPI.WebSearchAPI;
 
 namespace LetheAISharp.Agent.Actions
@@ -28,7 +29,10 @@ namespace LetheAISharp.Agent.Actions
             foreach (var query in param.SearchQueries)
             {
                 if (!LLMEngine.BannedSearchWords.IsAllowed(query))
+                { 
+                    LLMEngine.Logger?.LogWarning($"Search Query Cancelled: {query}");
                     continue;
+                }
                 if (ct.IsCancellationRequested)
                     return allResults;
                 var hits = await LLMEngine.WebSearch(query).ConfigureAwait(false);
