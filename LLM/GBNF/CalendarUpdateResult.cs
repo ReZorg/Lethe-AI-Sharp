@@ -58,8 +58,8 @@ namespace LetheAISharp.LLM.GBNF
                 Update the calendar above using the transcript provided in the prompt. Respond using a JSON format containing the following format:
 
                 {
-                    "Sunday": "Schedule for Sunday",
-                    "Monday": "Schedule for Monday",
+                    "Sunday": "Schedule for the next Sunday",
+                    "Monday": "Schedule for the next Monday",
                     ...
                 }
 

@@ -596,8 +596,9 @@ namespace LetheAISharp.Files
         /// <param name="ignoresystem">A value indicating whether system messages should be excluded from the output. Set to <see langword="true"/> to ignore system messages; otherwise, <see langword="false"/>.</param>
         /// <param name="showHidden">A value indicating whether hidden messages should be included in the output. Set to <see langword="true"/> to include hidden messages; otherwise, <see langword="false"/>.</param>
         /// <param name="middleCut">A value indicating whether to perform a middle cut when truncating messages to fit within the token limit, or cut the end</param>
+        /// <param name="maxAge">The maximum age of messages to include in the dialog content. Messages older than this will be excluded.</param>
         /// <returns>The raw dialog content as a string.</returns>
-        public string GetRawDialogs(int maxTokens, bool ignoresystem, bool showHidden = false, bool middleCut = false)
+        public string GetRawDialogs(int maxTokens, bool ignoresystem, bool showHidden = false, bool middleCut = false, TimeSpan? maxAge = null)
         {
             var currentSessionID = CurrentSessionID == -1 ? Sessions.Count - 1 : CurrentSessionID;
             var sb = new StringBuilder();
@@ -605,6 +606,8 @@ namespace LetheAISharp.Files
             while (tokensleft > 0 && currentSessionID >= 0) 
             {
                 var session = Sessions[currentSessionID];
+                if (maxAge.HasValue && DateTime.Now - session.EndTime > maxAge.Value)
+                    break;
                 var sessionContent = session.GetRawDialogs(tokensleft, ignoresystem, false, showHidden, middleCut);
                 tokensleft -= LLMEngine.GetTokenCount(sessionContent);
                 if (tokensleft > 0)

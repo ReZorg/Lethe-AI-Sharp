@@ -67,7 +67,7 @@ namespace LetheAISharp.Agent.Actions
 
             var req = new StringBuilder();
             req.AppendLinuxLine($"Current Date: {DateTime.Now.ToHumanString()}").AppendLinuxLine();
-            req.AppendLinuxLine("# Weekly Schedule").AppendLinuxLine();
+            req.AppendLinuxLine("# Current Schedule").AppendLinuxLine();
             for (int i = 0; i < curcalendar.Length; i++)
             {
                 req.AppendLinuxLine($"- **{(DayOfWeek)i}:** {(string.IsNullOrEmpty(curcalendar[i]) ? "no schedule" : curcalendar[i])}");
@@ -76,11 +76,11 @@ namespace LetheAISharp.Agent.Actions
 
             tokenleft -= promptbuild.GetTokenCount(AuthorRole.User, req.ToString());
 
-            var transcript = LLMEngine.History.GetRawDialogs(tokenleft, true, true, false);
+            var transcript = LLMEngine.History.GetRawDialogs(tokenleft - 2000, false, true, false, TimeSpan.FromDays(7));
             str.Append(transcript);
 
             promptbuild.AddMessage(AuthorRole.SysPrompt, str.ToString());
-            promptbuild.AddMessage(AuthorRole.User, request);
+            promptbuild.AddMessage(AuthorRole.User, req.ToString());
 
             return promptbuild;
         }
