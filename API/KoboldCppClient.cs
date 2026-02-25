@@ -507,7 +507,10 @@ namespace LetheAISharp.API
 
                     // If this was the last attempt, rethrow
                     if (attempt == MaxRetryAttempts)
-                        throw new ApiException("Request failed after maximum retry attempts", 0, ex.Message, new Dictionary<string, IEnumerable<string>>(), ex);
+                    {
+                        LLMEngine.Logger?.LogError($"TTS Failure max retry: {ex.Message}");
+                        return [];
+                    }
                 }
                 catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException && attempt <= MaxRetryAttempts)
                 {
