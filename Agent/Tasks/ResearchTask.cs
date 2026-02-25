@@ -100,7 +100,7 @@ namespace LetheAISharp.Agent.Plugins
                 await mem.EmbedText().ConfigureAwait(false);
                 owner.Brain.Memorize(mem);
             }
-            owner.Brain.AddUserReturnInsert("{{mchar}} has done some research about the previous chat sessions.");
+            owner.Brain.AddUserReturnInsert("{{mchar}} has done some research about the previous chat sessions.", this.Id);
             cfg.SetSetting<Guid>("LastSessionGuid", session.Guid);
         }
 

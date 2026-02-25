@@ -15,6 +15,7 @@ namespace LetheAISharp.Memory
         public Guid ID { get; set; } = new Guid();
         public DateTime Added { get; set; } = DateTime.Now;
         public string Info { get; set; } = info;
+        public string? UID { get; set; } = null;
     }
 
     /// <summary>
@@ -753,28 +754,55 @@ namespace LetheAISharp.Memory
         /// <summary>
         /// Add a message to be inserted when the user returns after a long absence. This is inserted in the same block as the mood and time message.
         /// </summary>
-        /// <param name="info"></param>
-        public UserReturnInsert? AddUserReturnInsert(string info)
+        /// <param name="info">text to be inserted</param>
+        /// <param name="uid">optional unique identifier for the insert, if it exists in current inserts, it'll be updated</param>
+        public UserReturnInsert? AddUserReturnInsert(string info, string? uid = null)
         {
             if (string.IsNullOrWhiteSpace(info))
                 return null;
+            // Check if an insert with the same info already exists, if so, update its timestamp and return it
             var existing = Inserts.Find(i => i.Info.Equals(info, StringComparison.InvariantCultureIgnoreCase));
-            if (existing != null)
+            if (existing is not null)
             {
+                existing.UID = uid;
                 existing.Added = DateTime.Now;
                 return existing;
             }
-            else
+            // If a UID is provided, check for an existing insert with the same UID, if so, update its info and timestamp and return it
+            if (!string.IsNullOrWhiteSpace(uid))
             {
-                var x = new UserReturnInsert(info);
-                Inserts.Add(x);
-                return x;
+                existing = Inserts.Find(i => i.UID == uid);
+                if (existing is not null)
+                {
+                    existing.Info = info;
+                    existing.Added = DateTime.Now;
+                    return existing;
+                }
             }
+            // If no existing insert is found or no uid, create a new one and add it to the list
+            var x = new UserReturnInsert(info)
+            {
+                UID = uid,
+                Added = DateTime.Now
+            };
+            Inserts.Add(x);
+            return x;
         }
 
         public bool RemoveUserReturnInsert(Guid id)
         {
             var existing = Inserts.Find(i => i.ID == id);
+            if (existing != null)
+            {
+                Inserts.Remove(existing);
+                return true;
+            }
+            return false;
+        }
+
+        public bool RemoveUserReturnInsert(string id)
+        {
+            var existing = Inserts.Find(i => i.UID == id);
             if (existing != null)
             {
                 Inserts.Remove(existing);
