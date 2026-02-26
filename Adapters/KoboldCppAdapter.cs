@@ -204,6 +204,12 @@ namespace LetheAISharp.API
 
         public async Task<string> SchemaToGrammar(Type jsonclass)
         {
+            if (LLMEngine.Settings.ForceInternalGrammar)
+            {
+                var gram = GbnfConverter.Convert(jsonclass);
+                return await Task.FromResult(gram);
+            }
+
             // Using NewtonSoft
             var schemanewton = schemaGenerator.Generate(jsonclass);
             var jsonnewton = schemanewton.ToString(); // <- note it returns a json, it's not the default tostring.
