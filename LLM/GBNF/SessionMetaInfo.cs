@@ -25,13 +25,13 @@ namespace LetheAISharp.GBNF
         [Required][Description("A boolean to say if this chat correspond to a roleplay session or a normal chat (roleplay sessions have physical actions and a lot of *narrative text in asterisks like this*). Only mark a session as roleplay if it's practically entirely roleplay.")]
         public bool IsRoleplaySession { get; set; } = false;
         
-        [MinLength(0)][MaxLength(5)][Description("An optional list of future plans and goals set during the discussion. It can contain anywhere from 0 to 5 elements, and can be empty if no particular goals were set during the session. Each item should explicitely state who is meant to complete the goal.")]
+        [MinLength(0)][MaxLength(5)][Description("An optional list of short-term plans and goals set during the discussion. It can contain anywhere from 0 to 5 elements, and can be empty if no particular goals were set during the session. Each item should explicitely state who is meant to complete the goal.")]
         public List<string> FutureGoals { get; set; } = [];
 
         [Required][MinLength(4)][MaxLength(6)][Description("A list of 4 to 6 keywords for this chat session, used for filtering and searching.")]
         public List<string> Keywords { get; set; } = [];
 
-        [MaxLength(10)][Description("An optional list of concise, single-sentence facts about {{user}} learned or confirmed during this session. Each fact should be self-contained and specific (e.g. 'The user works as a night-shift nurse', 'The user dislikes crowded places'). Include 0 to 10 facts, or an empty list if no new personal facts were established.")]
+        [MaxLength(10)][Description("An optional list of concise, single-sentence facts about {{user}} learned or confirmed during this session. Each fact should be self-contained and specific (e.g. '{{user}} works as a night-shift nurse', '{{user}} dislikes crowded places'). Include 0 to 10 facts, or an empty list if no new personal facts were established.")]
         public List<string> ExtractedFacts { get; set; } = [];
 
         // Note: Due to LLM bias, relevance will be converted to 1-5 value

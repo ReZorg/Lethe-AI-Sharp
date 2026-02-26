@@ -49,7 +49,7 @@ namespace LetheAISharp.Files
         /// knowledge of the user that persists across sessions without relying on RAG similarity alone.
         /// Set to empty to disable the section header.
         /// </summary>
-        public string CoreFactsTitle { get; set; } = "# What {{char}} knows about {{user}}";
+        public string CoreFactsTitle { get; set; } = "# Facts about {{user}}";
 
         /// <summary>
         /// Category separator for other custom sections that may be added to the system prompt.
