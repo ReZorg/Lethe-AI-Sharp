@@ -167,8 +167,11 @@ namespace LetheAISharp.Files
         public string GetThinkPrefill()
         {
             var res = string.Empty;
-            if (LLMEngine.Client?.CompletionType == API.CompletionType.Chat)
-                return res;
+            // --
+            // Chat completion mode should handle prefill normally now, so it's commented out.
+            // if (LLMEngine.Client?.CompletionType == API.CompletionType.Chat)
+            //     return res;
+            // --
             if (PrefillThinking && !string.IsNullOrEmpty(ThinkingStart))
             {
                 res = ThinkingStart;

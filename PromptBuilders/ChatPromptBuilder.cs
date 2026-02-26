@@ -98,7 +98,18 @@ namespace LetheAISharp
 
         public object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null, bool forceAltRoles = false)
         {
-            var chatrq = new ChatRequest(_prompt,
+            var finalprompt = new List<Message>(_prompt);
+            var prefill = overridePrefill ?? LLMEngine.Instruct.PrefillThinking;
+
+            if (prefill)
+            {
+                var info = LLMEngine.Instruct.GetThinkPrefill();
+                if (!string.IsNullOrEmpty(info))
+                {
+                    finalprompt.Add(new Message(role: Role.Assistant, content: info, name: "prefix"));
+                }
+            }
+            var chatrq = new ChatRequest(finalprompt,
                 topP: LLMEngine.Sampler.Top_p,
                 frequencyPenalty: LLMEngine.Sampler.Rep_pen - 1,
                 seed: LLMEngine.Sampler.Sampler_seed != -1 ? LLMEngine.Sampler.Sampler_seed : null,
