@@ -73,6 +73,9 @@ namespace LetheAISharp.Files
         /// <summary> Image embedding size (depends on the embedding model, but 768 is the most common one) </summary>
         public int ImageEmbeddingSize { get; set; } = 768;
 
+        /// <summary> Maximum number of images to be sent in the prompt, this will save tokens when sending many images. Set to 0 for no limit. </summary>
+        public int MaxImageCount { get; set; } = 4;
+
         /// <summary> Overrides the scenario field of the currently loaded character </summary>
         public string ScenarioOverride { get; set; } = string.Empty;
 

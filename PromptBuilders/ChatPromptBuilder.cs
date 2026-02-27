@@ -99,6 +99,36 @@ namespace LetheAISharp
         public object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null, bool forceAltRoles = false)
         {
             var finalprompt = new List<Message>(_prompt);
+            if (LLMEngine.Settings.MaxImageCount > 0)
+            {
+                // traverse the list and remove oldest images until we are within the limit
+                var count = 0;
+                for (int i = finalprompt.Count - 1; i >= 0; i--)
+                {
+                    var mess = finalprompt[i];
+                    if (mess.Content is List<Content> lst)
+                    {
+                        var hasimage = false;
+                        foreach (var content in lst)
+                        {
+                            if (content.Type == ContentType.ImageUrl)
+                            {
+                                hasimage = true;
+                                break;
+                            }
+                        }
+                        if (hasimage)
+                        {
+                            count++;
+                            if (count > LLMEngine.Settings.MaxImageCount)
+                            {
+                                lst.RemoveAll(c => c.Type == ContentType.ImageUrl);
+                            }
+                        }
+                    }
+                }
+            }
+
             var prefill = overridePrefill ?? LLMEngine.Instruct.PrefillThinking;
 
             if (prefill)
