@@ -11,9 +11,14 @@ using OpenAI;
 
 namespace LetheAISharp
 {
-    internal class ChatPromptBuilder : IPromptBuilder
+
+    /// <summary>
+    /// Improved Chat Completion prompt builder that should be more token accurate, while properly handling image limits.
+    /// SingleMessage are converted to the OpenAI Message format when building the prompt itself
+    /// </summary>
+    internal class NewChatPromptBuilder : IPromptBuilder
     {
-        private readonly List<Message> _prompt = [];
+        private readonly List<SingleMessage> _prompt = [];
         private OpenAI.JsonSchema? _currentSchema = null;
         private List<string> imagefilepath = [];
 
@@ -21,21 +26,15 @@ namespace LetheAISharp
 
         public int AddMessage(AuthorRole role, string message)
         {
-            var single = new SingleMessage(role, message);
-            var msg = FormatSingleMessage(single);
+            var msg = new SingleMessage(role, message);
             _prompt.Add(msg);
-            return LLMEngine.GetTokenCount(single);
+            return LLMEngine.GetTokenCount(msg) + 2;
         }
 
         public int AddMessage(SingleMessage message)
         {
-            var msg = FormatSingleMessage(message);
-            _prompt.Add(msg);
-            var cost = LLMEngine.GetTokenCount(message);
-            if (message.ImagePath is not null && File.Exists(message.ImagePath))
-            {
-                cost += LLMEngine.Settings.ImageEmbeddingSize;
-            }
+            _prompt.Add(message);
+            var cost = LLMEngine.GetTokenCount(message) + 2;
             return cost;
         }
 
@@ -65,7 +64,7 @@ namespace LetheAISharp
             var total = 0;
             foreach (var message in _prompt)
             {
-                total += GetTokenCountMsg(message);
+                total += LLMEngine.GetTokenCount(message);
             }
             return total;
         }
@@ -76,9 +75,9 @@ namespace LetheAISharp
             {
                 return AddMessage(new SingleMessage(role, message));
             }
-            var msg = FormatSingleMessage(new SingleMessage(role, message));
+            var msg = new SingleMessage(role, message);
             _prompt.Insert(index, msg);
-            return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
+            return LLMEngine.GetTokenCount(msg) + 2;
         }
 
         public int InsertMessage(int index, SingleMessage message)
@@ -87,16 +86,10 @@ namespace LetheAISharp
             {
                 return AddMessage(message);
             }
-            var msg = FormatSingleMessage(message);
-            _prompt.Insert(index, msg);
-            var cost = LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
-            if (message.ImagePath is not null && File.Exists(message.ImagePath))
-            {
-                cost += LLMEngine.Settings.ImageEmbeddingSize;
-            }
+            _prompt.Insert(index, message);
+            var cost = LLMEngine.GetTokenCount(message) + 2;
             return cost;
         }
-
 
         private string GetResponseStart(BasePersona talker, bool? overridePrefill = null)
         {
@@ -120,7 +113,13 @@ namespace LetheAISharp
 
         public object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null, bool forceAltRoles = false)
         {
-            var finalprompt = new List<Message>(_prompt);
+            var finalprompt = new List<Message>();
+            var tokensleft = LLMEngine.MaxContextLength - (responseoverride == -1 ? LLMEngine.Settings.MaxReplyLength : responseoverride);
+
+            // So we need the first message always as it's the system prompt, but after that we can remove messages until we are within the token limit
+            tokensleft -= LLMEngine.GetTokenCount(_prompt[0]);
+            finalprompt.Add(FormatSingleMessage(_prompt[0]));
+
             if (LLMEngine.Settings.MaxImageCount > 0)
             {
                 // traverse the list and remove oldest images until we are within the limit
@@ -199,15 +198,15 @@ namespace LetheAISharp
         public string PromptToText()
         {
             var sb = new StringBuilder();
-            foreach (var message in _prompt)
-            {
-                if (message.Role == OpenAI.Role.User)
-                    sb.AppendLine(LLMEngine.User.Name + ": " + message.Content.ToString());
-                else if (message.Role == OpenAI.Role.Assistant)
-                    sb.AppendLine(LLMEngine.Bot.Name + ": " + message.Content.ToString());
-                else
-                    sb.AppendLine("SYSTEM" + ": " + message.Content.ToString());
-            }
+            //foreach (var message in _prompt)
+            //{
+            //    if (message.Role == OpenAI.Role.User)
+            //        sb.AppendLine(LLMEngine.User.Name + ": " + message.Content.ToString());
+            //    else if (message.Role == OpenAI.Role.Assistant)
+            //        sb.AppendLine(LLMEngine.Bot.Name + ": " + message.Content.ToString());
+            //    else
+            //        sb.AppendLine("SYSTEM" + ": " + message.Content.ToString());
+            //}
             return sb.ToString();
         }
 

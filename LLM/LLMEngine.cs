@@ -502,7 +502,25 @@ namespace LetheAISharp.LLM
                 return TokenTools.CountTokens(text);
             }
         }
-          
+
+        public static int GetTokenCount(SingleMessage mess)
+        {
+            var realmessage = mess.ToTextCompletion();
+            if (string.IsNullOrEmpty(realmessage))
+                return 0;
+            else if (Client == null || Status != SystemStatus.Ready || realmessage.Length > MaxContextLength * 8)
+                return TokenTools.CountTokens(realmessage);
+            try
+            {
+                return Client.CountTokensSync(realmessage);
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "Failed to count tokens. Falling back to failsafe");
+                return TokenTools.CountTokens(realmessage);
+            }
+        }
+
         /// <summary>
         /// Called to clear the prompt cache and force a rebuild of the prompt on next generation. Must be called when changing any setting that affects the prompt.
         /// </summary>

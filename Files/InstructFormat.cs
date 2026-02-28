@@ -157,7 +157,7 @@ namespace LetheAISharp.Files
         /// </summary>
         public bool NoInstructInStopString { get; set; } = false;
 
-        [JsonIgnore] private bool RealAddNameToPrompt => LLMEngine.NamesInPromptOverride ?? AddNamesToPrompt;
+        [JsonIgnore] internal bool RealAddNameToPrompt => LLMEngine.NamesInPromptOverride ?? AddNamesToPrompt;
         [JsonIgnore] public bool IsThinkFormat => !string.IsNullOrEmpty(ThinkingEnd);
 
         // Functions in this class are set as public for testing and experimentation purpose.
