@@ -90,10 +90,12 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 - Framework for group chat functionalities (one user and multiple AI characters)
 
 ## 📝 Long Term Memory and RAG
+- United MemoryUnit format used by all long term memory systems
 - Summaries of recent chat sessions into the system prompt
 - Keyword-triggered text insertions (also known as "world info" in many frontends)
 - Automatic and configurable insertion of relevant chat summaries into the context
 - Customizable RAG system using the Small World implementation
+- Fact-based discovery: the bot learns about the user over time, helping with the recall of other memory units.
 
 ## 🧠 Agentic System
 - Customizable tasks can run in the background (while the user is AFK for instance)
