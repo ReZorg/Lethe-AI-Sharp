@@ -193,11 +193,7 @@ namespace LetheAISharp.LLM
         private static ILogger? logger = null;
         private static BasePersona bot = new() { IsUser = false, Name = "Bot", Bio = "You are a helpful AI assistant whose goal is to answer questions and complete tasks.", UniqueName = string.Empty };
         private static BasePersona user = new() { IsUser = true, Name = "User", UniqueName = string.Empty };
-#if DEBUG
         public static PromptInserts dataInserts = [];
-#else
-        private static PromptInserts dataInserts = [];
-#endif
         internal static readonly Random RNG = new();
 
         #region *** Semaphore for model access control (Internal) ***
