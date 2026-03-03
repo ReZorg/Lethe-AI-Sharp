@@ -18,7 +18,7 @@ namespace LetheAISharp.Files
     /// <param name="charID"> Character ID associated with the bot persona </param>
     /// <param name="userID"> User ID associated with the user persona </param>
     /// <param name="hidden"> Indicates if the message is hidden from standard views </param>
-    public class SingleMessage(AuthorRole role, DateTime date, string mess, string charID, string userID, bool hidden = false, string imagePath = "")
+    public class SingleMessage(AuthorRole role, DateTime date, string mess, string charID, string userID, bool hidden = false, string imagePath = "", List<ToolCallRecord>? toolCalls = null)
     {
         public Guid Guid { get; set; } = Guid.NewGuid();
         public AuthorRole Role = role;
@@ -29,6 +29,7 @@ namespace LetheAISharp.Files
         public string ImagePath = imagePath;
         public bool Hidden = hidden;
         public string Note = string.Empty;
+        public List<ToolCallRecord> ToolCalls { get; set; } = toolCalls ?? [];
         [JsonIgnore] public BasePersona User => 
             !string.IsNullOrEmpty(UserID) && LLMEngine.LoadedPersonas.TryGetValue(UserID, out var u) ? u : LLMEngine.User;
         [JsonIgnore] public BasePersona Bot => 
@@ -36,8 +37,8 @@ namespace LetheAISharp.Files
         [JsonIgnore] public BasePersona? Sender => 
             Role == AuthorRole.User? User : Role == AuthorRole.Assistant ? Bot : null;
 
-        public SingleMessage(AuthorRole role, string mess, string img = "") : 
-            this(role, DateTime.Now, mess, LLMEngine.Bot.GetIdentifier(), LLMEngine.User.GetIdentifier(), false, img)
+        public SingleMessage(AuthorRole role, string mess, string img = "", List<ToolCallRecord>? toolCalls = null) : 
+            this(role, DateTime.Now, mess, LLMEngine.Bot.GetIdentifier(), LLMEngine.User.GetIdentifier(), false, img, toolCalls)
         { }
 
         public SingleMessage() : this(AuthorRole.User, DateTime.Now, "", "", "", false, "")

@@ -1,4 +1,5 @@
 ﻿using LetheAISharp.LLM;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OpenAI;
@@ -75,15 +76,16 @@ namespace LetheAISharp.API
         public virtual async Task StreamChatCompletion(ChatRequest request, CancellationToken cancellationToken = default)
         {
             var cumulativeDelta = string.Empty;
-            var nostopfix = true; // some backends don't return "stop" at the end of completion. It handles this case.
+            //var nostopfix = true; // some backends don't return "stop" at the end of completion. It handles this case.
             var toolCallRecords = new List<ToolCallRecord>();
             var toolRound = 0;
             const int maxToolRounds = 10;
             var currentRequest = request;
+            var isYappingOver = false;
             try
             {
-                bool continueLoop;
-                do
+                bool continueLoop = true;
+                while (continueLoop)
                 {
                     continueLoop = false;
                     await foreach (var partialResponse in API.ChatEndpoint.StreamCompletionEnumerableAsync(currentRequest, cancellationToken: cancellationToken))
@@ -91,7 +93,6 @@ namespace LetheAISharp.API
                         // Handle tool_calls
                         if (partialResponse.FirstChoice.FinishReason == "tool_calls" && partialResponse.FirstChoice.Message?.ToolCalls != null)
                         {
-                            nostopfix = false;
                             if (toolRound < maxToolRounds)
                             {
                                 var toolmsgs = new List<OpenAI.Chat.Message>();
@@ -134,7 +135,6 @@ namespace LetheAISharp.API
                                 updatedMessages.AddRange(toolmsgs);
 
                                 // Create a new request preserving all original parameters
-#pragma warning disable CS0618 // ChatRequest.MaxTokens is obsolete since OpenAI-DotNet 8.x (use MaxCompletionTokens); preserved here to match what ChatPromptBuilder sets
                                 currentRequest = new ChatRequest(
                                     messages: updatedMessages,
                                     tools: currentRequest.Tools,
@@ -151,8 +151,6 @@ namespace LetheAISharp.API
                                     jsonSchema: currentRequest.ResponseFormatObject?.JsonSchema,
                                     user: currentRequest.User
                                 );
-#pragma warning restore CS0618
-
                                 toolRound++;
                                 continueLoop = true;
                             }
@@ -163,9 +161,9 @@ namespace LetheAISharp.API
                             // handle message stuff
                             cumulativeDelta += partialResponse.FirstChoice.Delta.Content;
                             var hasFinishReason = !string.IsNullOrEmpty(partialResponse.FirstChoice.FinishReason);
-                            if (hasFinishReason)
+                            if (hasFinishReason && partialResponse.FirstChoice.FinishReason == "stop")
                             {
-                                nostopfix = false;
+                                isYappingOver = true;
                             }
                             RaiseOnStreamingResponse(new OpenTokenResponse
                             {
@@ -174,17 +172,16 @@ namespace LetheAISharp.API
                                 ToolCallRecords = hasFinishReason && toolCallRecords.Count > 0 ? toolCallRecords : null
                             });
                         }
+                        else if (!string.IsNullOrEmpty(partialResponse.FirstChoice.FinishReason) && partialResponse.FirstChoice.FinishReason != "null" && !isYappingOver)
+                        {
+                            RaiseOnStreamingResponse(new OpenTokenResponse
+                            {
+                                Token = "",
+                                FinishReason = partialResponse.FirstChoice.FinishReason,
+                                ToolCallRecords = toolCallRecords.Count > 0 ? toolCallRecords : null
+                            });
+                        }
                     }
-                } while (continueLoop);
-
-                if (nostopfix)
-                {
-                    RaiseOnStreamingResponse(new OpenTokenResponse
-                    {
-                        Token = "",
-                        FinishReason = "stop",
-                        ToolCallRecords = toolCallRecords.Count > 0 ? toolCallRecords : null
-                    });
                 }
             }
             catch (System.Text.Json.JsonException ex)

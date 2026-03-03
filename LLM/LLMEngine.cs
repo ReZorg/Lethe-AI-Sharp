@@ -629,7 +629,10 @@ namespace LetheAISharp.LLM
                 logger?.LogError("Tool calls are not supported by the current backend.");
                 return false;
             }
-            PromptBuilder.SetTools(tools);
+            if (tools.Count > 0)
+                PromptBuilder.SetTools(tools);
+            else
+                OpenAI.Tool.ClearRegisteredTools();
             return true;
         }
 
