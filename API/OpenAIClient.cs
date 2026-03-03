@@ -4,6 +4,8 @@ using Newtonsoft.Json;
 using OpenAI;
 using OpenAI.Chat;
 using OpenAI.Models;
+using OpenAI.Responses;
+using OpenAI.Threads;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -72,22 +74,39 @@ namespace LetheAISharp.API
             {
                 await foreach (var partialResponse in API.ChatEndpoint.StreamCompletionEnumerableAsync(request, cancellationToken: cancellationToken))
                 {
-                    foreach (var choice in partialResponse.Choices.Where(choice => choice.Delta?.Content != null))
+                    // Handle tool_calls
+                    if (partialResponse.FirstChoice.FinishReason == "tool_calls" && partialResponse.FirstChoice.Message?.ToolCalls != null)
                     {
-                        cumulativeDelta += choice.Delta.Content;
-                        if (!string.IsNullOrEmpty(choice.FinishReason))
+                        nostopfix = false;
+                        var toolmsgs = new List<OpenAI.Chat.Message>();
+                        // call the tools
+                        foreach (var toolcall in partialResponse.FirstChoice.Message.ToolCalls)
+                        {
+                            var functionResult = await toolcall.InvokeFunctionAsync<string>(cancellationToken);
+                            // log the results
+                            toolmsgs.Add(new OpenAI.Chat.Message(toolcall, functionResult));
+                        }
+                        // Welp I probably should do something here but I'm not sure why
+                        // probably rebuild the ChatRequest "request" with the results and resend that thing to this very function?
+                    }
+                    else if (partialResponse.FirstChoice.Delta?.Content != null)
+                    {
+                        // handle message stuff
+                        cumulativeDelta += partialResponse.FirstChoice.Delta.Content;
+                        if (!string.IsNullOrEmpty(partialResponse.FirstChoice.FinishReason))
                         {
                             nostopfix = false;
                         }
                         RaiseOnStreamingResponse(new OpenTokenResponse
                         {
-                            Token = choice.Delta.Content,
-                            FinishReason = choice.FinishReason
+                            Token = partialResponse.FirstChoice.Delta.Content,
+                            FinishReason = partialResponse.FirstChoice.FinishReason
                         });
                     }
                 }
                 if (nostopfix)
                 {
+
                     RaiseOnStreamingResponse(new OpenTokenResponse
                     {
                         Token = "",

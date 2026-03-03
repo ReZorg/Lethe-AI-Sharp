@@ -47,6 +47,8 @@ namespace LetheAISharp.API
 
         public bool SupportsStateSave => false;
 
+        public bool SupportsToolCalls => false;
+
         public bool SupportsSchema => true;
 
         public event EventHandler<LLMTokenStreamingEventArgs>? TokenReceived;

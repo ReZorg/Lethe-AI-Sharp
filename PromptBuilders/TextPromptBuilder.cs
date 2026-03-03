@@ -2,6 +2,7 @@
 using LetheAISharp.API;
 using LetheAISharp.Files;
 using LetheAISharp.LLM;
+using OpenAI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -189,7 +190,6 @@ namespace LetheAISharp
             return res;
         }
 
-
         public void Clear()
         {
             _prompt.Clear();
@@ -231,5 +231,16 @@ namespace LetheAISharp
 
         public int VLM_GetImageCount() => vlm_pictures.Count;
 
+        public bool SetTools(List<Tool> tools)
+        {
+            // tools are not supported in text prompt builder
+            // this is only relevant for structured output builders that can use tool calls as part of the structured output
+            return false; 
+        }
+
+        public void RemoveTools()
+        {
+            return;
+        }
     }
 }

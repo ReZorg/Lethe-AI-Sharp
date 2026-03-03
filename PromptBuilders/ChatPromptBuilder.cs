@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OpenAI;
+using LetheAISharp.Agent.Tools;
 
 namespace LetheAISharp
 {
@@ -16,6 +17,7 @@ namespace LetheAISharp
         private readonly List<Message> _prompt = [];
         private OpenAI.JsonSchema? _currentSchema = null;
         private List<string> imagefilepath = [];
+        private List<Tool> toolList = [];
 
         public int Count => _prompt.Count;
 
@@ -161,18 +163,53 @@ namespace LetheAISharp
                     finalprompt.Add(new Message(role: Role.Assistant, content: info, name: "prefix"));
                 }
             }
-            var chatrq = new ChatRequest(finalprompt,
-                topP: LLMEngine.Sampler.Top_p,
-                frequencyPenalty: LLMEngine.Sampler.Rep_pen - 1,
-                seed: LLMEngine.Sampler.Sampler_seed != -1 ? LLMEngine.Sampler.Sampler_seed : null,
-                user: LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt ? LLMEngine.User.Name : null,
-                stops: [.. LLMEngine.Instruct.GetStoppingStrings(LLMEngine.User, LLMEngine.Bot)],
-                responseFormat: _currentSchema is not null ? OpenAI.TextResponseFormat.JsonSchema : OpenAI.TextResponseFormat.Auto,
-                jsonSchema: _currentSchema,
-                maxTokens: responseoverride == -1 ? LLMEngine.Settings.MaxReplyLength : responseoverride,
-                temperature: tempoverride >= 0 ? tempoverride : (LLMEngine.ForceTemperature >= 0) ? LLMEngine.ForceTemperature : LLMEngine.Sampler.Temperature);
 
-            return chatrq;
+            if (LLMEngine.SupportsToolCalls && toolList.Count > 0)
+            {
+                return new ChatRequest(finalprompt,
+                    tools: toolList,
+                    toolChoice: "auto",
+                    topP: LLMEngine.Sampler.Top_p,
+                    frequencyPenalty: LLMEngine.Sampler.Rep_pen - 1,
+                    seed: LLMEngine.Sampler.Sampler_seed != -1 ? LLMEngine.Sampler.Sampler_seed : null,
+                    user: LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt ? LLMEngine.User.Name : null,
+                    stops: [.. LLMEngine.Instruct.GetStoppingStrings(LLMEngine.User, LLMEngine.Bot)],
+                    responseFormat: _currentSchema is not null ? OpenAI.TextResponseFormat.JsonSchema : OpenAI.TextResponseFormat.Auto,
+                    jsonSchema: _currentSchema,
+                    maxTokens: responseoverride == -1 ? LLMEngine.Settings.MaxReplyLength : responseoverride,
+                    temperature: tempoverride >= 0 ? tempoverride : (LLMEngine.ForceTemperature >= 0) ? LLMEngine.ForceTemperature : LLMEngine.Sampler.Temperature);
+            }
+            else
+            {
+                return new ChatRequest(finalprompt,
+                    topP: LLMEngine.Sampler.Top_p,
+                    frequencyPenalty: LLMEngine.Sampler.Rep_pen - 1,
+                    seed: LLMEngine.Sampler.Sampler_seed != -1 ? LLMEngine.Sampler.Sampler_seed : null,
+                    user: LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt ? LLMEngine.User.Name : null,
+                    stops: [.. LLMEngine.Instruct.GetStoppingStrings(LLMEngine.User, LLMEngine.Bot)],
+                    responseFormat: _currentSchema is not null ? OpenAI.TextResponseFormat.JsonSchema : OpenAI.TextResponseFormat.Auto,
+                    jsonSchema: _currentSchema,
+                    maxTokens: responseoverride == -1 ? LLMEngine.Settings.MaxReplyLength : responseoverride,
+                    temperature: tempoverride >= 0 ? tempoverride : (LLMEngine.ForceTemperature >= 0) ? LLMEngine.ForceTemperature : LLMEngine.Sampler.Temperature);
+            }
+
+        }
+
+        public bool SetTools(List<Tool> tools)
+        {
+            if (!LLMEngine.SupportsToolCalls)
+                return false;
+            Tool.ClearRegisteredTools();
+            toolList = tools;
+            return true;
+        }
+
+        public void RemoveTools()
+        {
+            toolList.Clear();
+            if (!LLMEngine.SupportsToolCalls)
+                return;
+            Tool.ClearRegisteredTools();
         }
 
         public void Clear()

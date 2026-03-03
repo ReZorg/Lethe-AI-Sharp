@@ -80,6 +80,7 @@ namespace LetheAISharp.API
         bool SupportsWebSearch { get; }
         bool SupportsStateSave { get; }
         bool SupportsSchema { get; }
+        bool SupportsToolCalls { get; }
 
     }
 }

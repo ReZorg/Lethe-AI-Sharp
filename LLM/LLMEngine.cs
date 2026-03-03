@@ -100,6 +100,9 @@ namespace LetheAISharp.LLM
         /// <summary> Set to true if the backend supports GBNF grammar output </summary>
         public static bool SupportsSchema => Client?.SupportsSchema ?? false;
 
+        /// <summary> Set to true if the backend supports tool calls (like function calling in OpenAI) </summary>
+        public static bool SupportsToolCalls => Client?.SupportsToolCalls ?? false;
+
         public static CompletionType CompletionAPIType => Client?.CompletionType ?? CompletionType.Text;
 
         private static void RaiseOnFullPromptReady(string fullprompt) => OnFullPromptReady?.Invoke(Bot, fullprompt);
