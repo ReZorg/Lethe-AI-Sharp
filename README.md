@@ -64,16 +64,19 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 | Basic text generation | ✅ | ✅ | ✅ |
 | Streaming | ✅ | ✅ | ✅ |
 | Structured output | ✅ GBNF Grammar | ✅ JSON Schema | ✅ GBNF Grammar |
-| CoT / “thinking” models | ✅ | ✅ | ✅ |
+| Chain of Thoughts | ✅ | ✅ | ✅ |
 | Personas & chat sessions | ✅ | ✅ | ✅ |
-| RAG / Memory integration | ✅ | ✅ | ✅ |
-| New Model arch support | ✅ Backend dependent  | ✅ Backend dependent  | ⚠️ May lag behind |
+| Memory integration | ✅ | ✅ | ✅ |
+| New arch. support | ✅ Backend dependent  | ✅ Backend dependent  | ⚠️ May lag behind |
 | Token Management | ✅ Exact | ⚠️ Estimated  | ✅ Exact |
-| Web search integration | ✅ | ✅ | ✅ |
+| Function Calling* | ✅ | ✅ | ✅ |
+| Web search integration | ❌ | ✅ (WIP) | ❌ |
 | Text To Speech | ✅ (if loaded) | ❌ | ❌ |
-| VLM (image input)* | ✅ (if loaded) | ✅ | ❌ |
+| VLM (image input)** | ✅ (if loaded) | ✅ | ❌ |
 
-\* VLM support depends entirely on underlying server and LLM capabilities. KoboldAPI has notoriously bad image input support.
+\* Function calling depends on the model being used, not all LLM support the feature. Support is also experimental at the moment.
+
+\*\* VLM support depends entirely on underlying server and LLM capabilities. KoboldAPI has notoriously bad image input support.
 
 ## ⭐ Core Features
 
@@ -104,6 +107,7 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 
 ## 🛠️ Experimental Features (work in progress)
 - Sentiment analysis
+- Function calling (tool calling)
 
 ## 👀 See it in action
 
