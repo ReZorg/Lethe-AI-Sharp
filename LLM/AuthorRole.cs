@@ -6,7 +6,8 @@
         User,
         Assistant,
         Unknown,
-        SysPrompt
+        SysPrompt,
+        Tool
     }
 
 }
