@@ -622,6 +622,17 @@ namespace LetheAISharp.LLM
             return res;
         }
 
+        public static bool SetTools(List<OpenAI.Tool> tools)
+        {
+            if (Client == null || !SupportsToolCalls || PromptBuilder == null)
+            {
+                logger?.LogError("Tool calls are not supported by the current backend.");
+                return false;
+            }
+            PromptBuilder.SetTools(tools);
+            return true;
+        }
+
         #endregion
 
         #region *** Visual Language Model Management ***

@@ -141,7 +141,7 @@ namespace LetheAISharp.API
                                     toolChoice: "auto",
                                     model: currentRequest.Model,
                                     frequencyPenalty: currentRequest.FrequencyPenalty,
-                                    maxTokens: currentRequest.MaxTokens,
+                                    maxTokens: currentRequest.MaxCompletionTokens,
                                     presencePenalty: currentRequest.PresencePenalty,
                                     responseFormat: currentRequest.ResponseFormat,
                                     seed: currentRequest.Seed,
@@ -220,8 +220,15 @@ namespace LetheAISharp.API
 
         public virtual async Task<Choice?> ChatCompletion(ChatRequest request, CancellationToken cancellationToken = default)
         {
-            var response = await API.ChatEndpoint.GetCompletionAsync(request, cancellationToken).ConfigureAwait(false);
-            return response?.FirstChoice;
+            try
+            {
+                var response = await API.ChatEndpoint.GetCompletionAsync(request, cancellationToken).ConfigureAwait(false);
+                return response?.FirstChoice;
+            }
+            catch (TaskCanceledException)
+            {
+                return null;
+            }
         }
 
         /// <summary>

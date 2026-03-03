@@ -155,7 +155,7 @@ namespace LetheAISharp
 
             var prefill = overridePrefill ?? LLMEngine.Instruct.PrefillThinking;
 
-            if (prefill)
+            if (prefill && (toolList.Count == 0 || !LLMEngine.SupportsToolCalls))
             {
                 var info = GetResponseStart(LLMEngine.Bot);
                 if (!string.IsNullOrWhiteSpace(info))
@@ -164,7 +164,7 @@ namespace LetheAISharp
                 }
             }
 
-            if (LLMEngine.SupportsToolCalls && toolList.Count > 0)
+            if (LLMEngine.SupportsToolCalls && toolList.Count > 0 && _currentSchema is null)
             {
                 return new ChatRequest(finalprompt,
                     tools: toolList,
@@ -174,8 +174,7 @@ namespace LetheAISharp
                     seed: LLMEngine.Sampler.Sampler_seed != -1 ? LLMEngine.Sampler.Sampler_seed : null,
                     user: LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt ? LLMEngine.User.Name : null,
                     stops: [.. LLMEngine.Instruct.GetStoppingStrings(LLMEngine.User, LLMEngine.Bot)],
-                    responseFormat: _currentSchema is not null ? OpenAI.TextResponseFormat.JsonSchema : OpenAI.TextResponseFormat.Auto,
-                    jsonSchema: _currentSchema,
+                    responseFormat: TextResponseFormat.Auto,
                     maxTokens: responseoverride == -1 ? LLMEngine.Settings.MaxReplyLength : responseoverride,
                     temperature: tempoverride >= 0 ? tempoverride : (LLMEngine.ForceTemperature >= 0) ? LLMEngine.ForceTemperature : LLMEngine.Sampler.Temperature);
             }
@@ -199,7 +198,6 @@ namespace LetheAISharp
         {
             if (!LLMEngine.SupportsToolCalls)
                 return false;
-            Tool.ClearRegisteredTools();
             toolList = tools;
             return true;
         }
@@ -207,8 +205,6 @@ namespace LetheAISharp
         public void RemoveTools()
         {
             toolList.Clear();
-            if (!LLMEngine.SupportsToolCalls)
-                return;
             Tool.ClearRegisteredTools();
         }
 
