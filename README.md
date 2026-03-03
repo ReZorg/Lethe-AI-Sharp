@@ -69,8 +69,8 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 | Memory integration | ✅ | ✅ | ✅ |
 | New arch. support | ✅ Backend dependent  | ✅ Backend dependent  | ⚠️ May lag behind |
 | Token Management | ✅ Exact | ⚠️ Estimated  | ✅ Exact |
-| Function Calling* | ✅ | ✅ | ✅ |
-| Web search integration | ❌ | ✅ (WIP) | ❌ |
+| Web search integration | ✅ | ✅ | ✅ |
+| Function Calling* | ❌ | ✅ (WIP) | ❌ |
 | Text To Speech | ✅ (if loaded) | ❌ | ❌ |
 | VLM (image input)** | ✅ (if loaded) | ✅ | ❌ |
 
