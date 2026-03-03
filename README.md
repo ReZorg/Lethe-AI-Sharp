@@ -111,6 +111,8 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 
 ## 👀 See it in action
 
+<img width="1920" height="1032" alt="LetheChat_QrSGcp5ZBb" src="https://github.com/user-attachments/assets/7a81b84c-4c64-4249-9dfc-e5e210213787" />
+
 To demonstrate how powerful **Lethe AI** can be, check out [Lethe AI Chat](https://github.com/SerialKicked/Lethe-AI-Chat/). This is a powerful AI chat program for _Windows_ that uses most of the features present in the library. It comes with its own integrated editors, extended agentic tasks, and extensive settings. It can rival with most of the dedicated AI chat programs currently available.
 
 ## 📦 Installation
