@@ -4,6 +4,7 @@ using LetheAISharp.LLM;
 using LetheAISharp.Memory;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.Serialization;
 using System.Text;
 
@@ -350,6 +351,8 @@ namespace LetheAISharp.Files
                 var text = string.Empty;
                 switch (msg.Role)
                 {
+                    case AuthorRole.Tool:
+                        continue;// skip messages that are just tool calls, as they add little value to the analysis and can be very long.
                     case AuthorRole.System:
                     case AuthorRole.SysPrompt:
                         if (ignoresystem)
@@ -358,6 +361,8 @@ namespace LetheAISharp.Files
                         break;
                     case AuthorRole.User:
                     case AuthorRole.Assistant:
+                        if (msg.ToolCalls?.Count > 0)
+                            continue; // skip messages that are just tool calls, as they add little value to the analysis and can be very long.
                         if (lightDialogs)
                             text = LLMEngine.NewLine + msg.Sender?.Name + ": " + msg.Message.Trim().Replace(LLMEngine.NewLine, " ") + LLMEngine.NewLine;
                         else
@@ -392,6 +397,8 @@ namespace LetheAISharp.Files
                 var text = string.Empty;
                 switch (msg.Role)
                 {
+                    case AuthorRole.Tool:
+                        continue;// skip messages that are just tool calls, as they add little value to the analysis and can be very long.
                     case AuthorRole.System:
                     case AuthorRole.SysPrompt:
                         if (ignoresystem)
@@ -403,6 +410,8 @@ namespace LetheAISharp.Files
 
                     case AuthorRole.User:
                     case AuthorRole.Assistant:
+                        if (msg.ToolCalls?.Count > 0)
+                            continue; // skip messages that are just tool calls, as they add little value to the analysis and can be very long.
                         if (lightDialogs)
                             text = LLMEngine.NewLine + msg.Sender?.Name + ": " + msg.Message.Trim().Replace(LLMEngine.NewLine, " ") + LLMEngine.NewLine;
                         else

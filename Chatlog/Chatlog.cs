@@ -551,7 +551,7 @@ namespace LetheAISharp.Files
         /// <returns></returns>
         public SingleMessage? GetLastFromInSession(AuthorRole author)
         {
-            return CurrentSession.Messages.LastOrDefault(m => m.Role == author);
+            return CurrentSession.Messages.LastOrDefault(m => m.Role == author && (m.ToolCalls == null || m.ToolCalls.Count == 0));
         }
 
         /// <summary>
@@ -567,7 +567,7 @@ namespace LetheAISharp.Files
             {
                 for (int i = Sessions.Count - 2; i >= 0; i--)
                 {
-                    res = Sessions[i].Messages.LastOrDefault(m => m.Role == author);
+                    res = Sessions[i].Messages.LastOrDefault(m => m.Role == author && (m.ToolCalls == null || m.ToolCalls.Count == 0));
                     if (res != null)
                         break;
                 }
@@ -582,7 +582,7 @@ namespace LetheAISharp.Files
             {
                 for (int i = Sessions.Count - 2; i >= 0; i--)
                 {
-                    res = Sessions[i].Messages.LastOrDefault(m => m.Sender == author);
+                    res = Sessions[i].Messages.LastOrDefault(m => m.Sender == author && (m.ToolCalls == null || m.ToolCalls.Count == 0));
                     if (res != null)
                         break;
                 }
