@@ -81,7 +81,6 @@ namespace LetheAISharp.API
             var toolRound = 0;
             const int maxToolRounds = 10;
             var currentRequest = request;
-            var isYappingOver = false;
             try
             {
                 bool continueLoop = true;
@@ -112,7 +111,7 @@ namespace LetheAISharp.API
                                         success = false;
                                     }
                                     sw.Stop();
-                                    toolCallRecords.Add(new ToolCallRecord
+                                    toolCallRecords?.Add(new ToolCallRecord
                                     {
                                         CallId = toolcall.Id ?? string.Empty,
                                         FunctionName = toolcall.Function?.Name ?? string.Empty,
@@ -161,18 +160,16 @@ namespace LetheAISharp.API
                             // handle message stuff
                             cumulativeDelta += partialResponse.FirstChoice.Delta.Content;
                             var hasFinishReason = !string.IsNullOrEmpty(partialResponse.FirstChoice.FinishReason);
-                            if (hasFinishReason && partialResponse.FirstChoice.FinishReason == "stop")
-                            {
-                                isYappingOver = true;
-                            }
                             RaiseOnStreamingResponse(new OpenTokenResponse
                             {
                                 Token = partialResponse.FirstChoice.Delta.Content,
                                 FinishReason = partialResponse.FirstChoice.FinishReason,
-                                ToolCallRecords = hasFinishReason && toolCallRecords.Count > 0 ? toolCallRecords : null
+                                ToolCallRecords = hasFinishReason && toolCallRecords?.Count > 0 ? toolCallRecords : null
                             });
+                            if (hasFinishReason && partialResponse.FirstChoice.FinishReason == "stop" || partialResponse.FirstChoice.FinishReason == "length")
+                                break;
                         }
-                        else if (!string.IsNullOrEmpty(partialResponse.FirstChoice.FinishReason) && partialResponse.FirstChoice.FinishReason != "null" && !isYappingOver)
+                        else if (!string.IsNullOrEmpty(partialResponse.FirstChoice.FinishReason) && partialResponse.FirstChoice.FinishReason != "null")
                         {
                             if (partialResponse.FirstChoice.FinishReason != "tool_calls" || toolCallRecords?.Count >0)
                                 RaiseOnStreamingResponse(new OpenTokenResponse

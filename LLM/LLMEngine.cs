@@ -650,7 +650,7 @@ namespace LetheAISharp.LLM
             if (tools.Count > 0)
                 PromptBuilder.SetTools(tools);
             else
-                OpenAI.Tool.ClearRegisteredTools();
+                PromptBuilder.RemoveTools();
             return true;
         }
 
@@ -718,11 +718,12 @@ namespace LetheAISharp.LLM
                         }
                     }
                 }
-                foreach (var ctxplug in ContextPlugins)
-                {
-                    if (ctxplug.Enabled && ctxplug.ReplaceOutput(Bot.ReplaceMacros(response), History, out var editedresponse))
-                        response = editedresponse;
-                }
+                if (e.FinishReason != "tool_calls")
+                    foreach (var ctxplug in ContextPlugins)
+                    {
+                        if (ctxplug.Enabled && ctxplug.ReplaceOutput(Bot.ReplaceMacros(response), History, out var editedresponse))
+                            response = editedresponse;
+                    }
 
                 // Emit tool call and tool result segments for each recorded tool invocation (BEFORE final response)
                 if (e.ToolCallRecords != null)
@@ -757,10 +758,10 @@ namespace LetheAISharp.LLM
                 }
 
                 // Log tool calls to history only in full-chat mode (not simple queries)
-                if (!_isSimpleQuery && e.ToolCallRecords != null && e.ToolCallRecords.Count > 0)
+                if (!_isSimpleQuery && e.ToolCallRecords?.Count > 0)
                 {
                     // ONE assistant message with ALL tool calls from this inference
-                    var assistantToolMsg = new SingleMessage(AuthorRole.Assistant, string.Empty, toolCalls: e.ToolCallRecords.ToList());
+                    var assistantToolMsg = new SingleMessage(AuthorRole.Assistant, string.Empty, toolCalls: [.. e.ToolCallRecords]);
                     Bot.History.LogMessage(assistantToolMsg);
 
                     // One ToolResult message per tool call
@@ -768,7 +769,7 @@ namespace LetheAISharp.LLM
                     {
                         var resultMsg = new SingleMessage(AuthorRole.Tool,
                             record.Success ? record.ResultJson : (record.Error ?? "Error"),
-                            toolCalls: new List<ToolCallRecord> { record });
+                            toolCalls: [.. new List<ToolCallRecord> { record }]);
                         Bot.History.LogMessage(resultMsg);
                     }
                 }

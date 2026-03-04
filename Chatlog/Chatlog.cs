@@ -447,7 +447,7 @@ namespace LetheAISharp.Files
                 else
                     msgtxt += " The last chat was " + ((int)timespan.TotalMinutes).ToString() + " minutes ago.";
             }
-            LogMessage(new SingleMessage(AuthorRole.System, LLMEngine.Bot.ReplaceMacros(msgtxt));
+            LogMessage(new SingleMessage(AuthorRole.System, LLMEngine.Bot.ReplaceMacros(msgtxt)));
         }
 
         /// <summary>
