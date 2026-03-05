@@ -953,6 +953,9 @@ namespace LetheAISharp.LLM
                 availtokens -= PromptBuilder.GetTokenCount(AuthorRole.System, pluginMessage);
             }
 
+            if (UseToolCallsInPrompt)
+                availtokens -= ToolManager.EstimatedTokenCost();
+
             var searchstring = string.IsNullOrEmpty(message.Message) ? History.GetLastFromInSession(AuthorRole.User)?.Message : message.Message;
 
             // update the RAG, world info, and summary stuff

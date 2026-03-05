@@ -154,8 +154,9 @@ namespace LetheAISharp
             }
 
             var prefill = overridePrefill ?? LLMEngine.Instruct.PrefillThinking;
-
-            if (prefill && (toolList.Count == 0 || !LLMEngine.SupportsToolCalls))
+            // prefilling is not available when using tool calls in prompt or when a structured output schema is set,
+            // as it would interfere with the format of the response
+            if (prefill && (!LLMEngine.UseToolCallsInPrompt || !LLMEngine.ToolManager.HasTools()) && _currentSchema is null)
             {
                 var info = GetResponseStart(LLMEngine.Bot);
                 if (!string.IsNullOrWhiteSpace(info))

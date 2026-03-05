@@ -24,6 +24,7 @@ namespace LetheAISharp.Agent.Tools
             }
             toolList.Add(Tool.GetOrCreateTool(this, nameof(GetWeather), "Gets the current weather for a given city and country."));
             toolList.Add(Tool.GetOrCreateTool(this, nameof(WebSearch), "Performs a web search for the given query and returns a summary of the results."));
+            toolList.Add(Tool.GetOrCreateTool(this, nameof(GetCurrentDate), "Gets the current date and time."));
         }
 
         public void UnloadTools()
@@ -40,6 +41,13 @@ namespace LetheAISharp.Agent.Tools
             await Task.Delay(5).ConfigureAwait(false);
             // This is a placeholder implementation. In a real implementation, you would call a weather API to get the actual weather data.
             return $"The current weather in {city}, {country} is sunny with a temperature of {LLMEngine.RNG.Next(10, 40)}°C.";
+        }
+
+        public async Task<string> GetCurrentDate()
+        {
+            await Task.Delay(5).ConfigureAwait(false);
+            // This is a placeholder implementation. In a real implementation, you would call a date API to get the actual date.
+            return $"The current date is {DateTime.Now:MMMM dd, yyyy}. The time is {DateTime.Now:hh:mm tt}.";
         }
 
         public async Task<string> WebSearch(string query)
@@ -82,6 +90,10 @@ namespace LetheAISharp.Agent.Tools
                 // This is for demonstration purpose, here getWeather doesn't need a confirmation.
                 // but you can set it to true if you want to require confirmation before calling this tool.
                 return false; 
+            }
+            else if (functionName.StartsWith(nameof(GetCurrentDate)))
+            {
+                return false;
             }
             else if (functionName.StartsWith(nameof(WebSearch)))
             {
