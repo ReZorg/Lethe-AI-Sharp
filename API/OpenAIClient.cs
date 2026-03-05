@@ -111,6 +111,7 @@ namespace LetheAISharp.API
                                         success = false;
                                     }
                                     sw.Stop();
+                                    LLMEngine.Logger?.LogInformation($"[OpenAI API] Tool Call: {toolcall.Function?.Name}");
                                     toolCallRecords?.Add(new ToolCallRecord
                                     {
                                         CallId = toolcall.Id ?? string.Empty,
@@ -194,7 +195,7 @@ namespace LetheAISharp.API
             }
             catch (OperationCanceledException ex)
             {
-                LLMEngine.Logger?.LogInformation(ex, "Message stream stopped by user: {Message}", ex.Message);
+                LLMEngine.Logger?.LogInformation(ex, "[OpenAI API] Message stream stopped by user: {Message}", ex.Message);
                 RaiseOnStreamingResponse(new OpenTokenResponse
                 {
                     Token = $"The response was manually interrupted or cancelled. ({ex.Message})",
@@ -203,7 +204,7 @@ namespace LetheAISharp.API
             }
             catch (Exception ex)
             {
-                LLMEngine.Logger?.LogError(ex, "Error during streaming chat completion: {Message}", ex.Message);
+                LLMEngine.Logger?.LogError(ex, "[OpenAI API] Error during streaming chat completion: {Message}", ex.Message);
                 RaiseOnStreamingResponse(new OpenTokenResponse
                 {
                     Token = $"Error during streaming chat completion: {ex.Message}",
@@ -224,7 +225,13 @@ namespace LetheAISharp.API
             }
             catch (TaskCanceledException)
             {
+                LLMEngine.Logger?.LogInformation("[OpenAI API] ChatCompletion Canceled");
                 return null;
+            }
+            catch (Exception ex)
+            {
+                LLMEngine.Logger?.LogError(ex, "[OpenAI API] Error during chat completion: {Message}", ex.Message);
+                throw;
             }
         }
 

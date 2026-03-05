@@ -399,7 +399,7 @@ namespace LetheAISharp.LLM
         {
             if (History.CurrentSession.Messages.Count == 0 || History.LastMessage()?.Role != AuthorRole.Assistant || Client == null || PromptBuilder == null)
                 return;
-            History.RemoveLast();
+            History.RemoveLast(true);
             if (PromptBuilder.Count == 0)
             {
                 await StartGeneration(new SingleMessage(AuthorRole.Assistant, string.Empty)).ConfigureAwait(false);

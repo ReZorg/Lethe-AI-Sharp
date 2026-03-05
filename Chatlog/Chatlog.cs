@@ -351,11 +351,16 @@ namespace LetheAISharp.Files
         /// Removes the last message from the current chat session, if any messages exist.
         /// </summary>
         /// <returns></returns>
-        public bool RemoveLast()
+        public bool RemoveLast(bool hidden = false)
         {
             if (CurrentSession.Messages.Count > 0)
             {
                 CurrentSession.Messages.RemoveAt(CurrentSession.Messages.Count - 1);
+                if (hidden)
+                {
+                    while (CurrentSession.Messages.Count > 0 && CurrentSession.Messages[^1].Hidden)
+                        CurrentSession.Messages.RemoveAt(CurrentSession.Messages.Count - 1);
+                }
                 return true;
             }
             return false;

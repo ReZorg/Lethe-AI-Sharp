@@ -1,6 +1,8 @@
 ﻿using LetheAISharp.Agent;
 using LetheAISharp.GBNF;
 using LetheAISharp.LLM;
+using Microsoft.Extensions.Logging;
+using OpenAI.Responses;
 
 namespace LetheAISharp.SearchAPI
 {
@@ -113,7 +115,7 @@ namespace LetheAISharp.SearchAPI
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in SearchAndEnrichAsync: {ex.Message}");
+                LLMEngine.Logger?.LogError(ex, "[WebSearch API] Error in SearchAndEnrichAsync: {Message}", ex.Message);
                 return [];
             }
         }
@@ -144,13 +146,13 @@ namespace LetheAISharp.SearchAPI
                 }
                 else
                 {
-                    Console.WriteLine($"Jina extraction failed for {url}: {response.StatusCode}");
+                    LLMEngine.Logger?.LogWarning("[WebSearch API] Jina extraction failed for {Url}: {StatusCode}", url, response.StatusCode);
                     return string.Empty;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Content extraction error for {url}: {ex.Message}");
+                LLMEngine.Logger?.LogError(ex, "[WebSearch API] Content extraction error: {Message}", ex.Message);
                 return string.Empty;
             }
         }
@@ -199,15 +201,9 @@ namespace LetheAISharp.SearchAPI
             // Search with DuckDuckGo
             var results = await searchService.SearchAndEnrichAsync("C# async programming", 3).ConfigureAwait(false);
 
-            foreach (var result in results)
-            {
-                Console.WriteLine($"[{result.SearchProvider}] {result.Title}");
-                Console.WriteLine($"Description: {result.Description}");
-                Console.WriteLine("---");
-            }
-
             // Switch to Brave if needed
             searchService.SwitchProvider(BackendSearchAPI.Brave, WebSearchAPI.BraveAPIKey);
+            
             Console.WriteLine($"Switched to {searchService.CurrentProviderName} provider");
 
             // Same search with Brave

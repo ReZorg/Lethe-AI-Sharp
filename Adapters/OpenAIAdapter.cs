@@ -88,9 +88,17 @@ namespace LetheAISharp.API
                 token = cts.Token;
             }
             var param = input;
-            var result = await _client.ChatCompletion(param, token).ConfigureAwait(false);
-            var res = result?.Message.Content.ToString();
-            return res ?? string.Empty;
+            try
+            {
+                var result = await _client.ChatCompletion(param, token).ConfigureAwait(false);
+                var res = result?.Message.Content.ToString();
+                return res ?? string.Empty;
+            }
+            catch (Exception ex)
+            {
+                LLMEngine.Logger?.LogError(ex, "[OpenAI API] Error during GenerateText: {Message}", ex.Message);
+                return string.Empty;
+            }
         }
 
         public async Task GenerateTextStreaming(object parameters)
