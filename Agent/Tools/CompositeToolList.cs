@@ -32,7 +32,10 @@ namespace LetheAISharp.Agent.Tools
 
     public class ToolManager
     {
+
         private readonly Dictionary<string, IToolList> _toolLists = new();
+
+        public List<Tool> GetToolList() => _toolLists.Count == 0 ? [] : [.. _toolLists.Values.SelectMany(tl => tl.GetToolList())];
 
         public void RegisterToolList(IToolList toolList)
         {
@@ -76,6 +79,16 @@ namespace LetheAISharp.Agent.Tools
         public bool RequiresConfirmation(string functionName)
         {
             return _toolLists.Values.Any(tl => tl.RequiresConfirmation(functionName));
+        }
+
+        public bool HasTools()
+        {
+            return _toolLists.Count > 0;
+        }
+
+        public int EstimatedTokenCost()
+        {
+            return _toolLists.Values.Sum(tl => tl.EstimatedTokenCost);
         }
     }
 }

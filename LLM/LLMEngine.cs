@@ -1,4 +1,5 @@
 ﻿using LetheAISharp.Agent;
+using LetheAISharp.Agent.Tools;
 using LetheAISharp.API;
 using LetheAISharp.Files;
 using LetheAISharp.Memory;
@@ -166,11 +167,6 @@ namespace LetheAISharp.LLM
             set => logger = value;
         }
 
-        /// <summary> 
-        /// Delegate to be called before executing a tool call, with the tool name and arguments. If it returns false, the tool call will be cancelled. 
-        /// If left null, all tool calls will be executed without confirmation.
-        /// </summary>
-        public static Func<string, string, Task<bool>>? ToolCallConfirmation { get; set; }
 
         /// <summary> Instruction format (important for KoboldAPI as it determines how to format the text in a way the model understands) </summary>
         /// <seealso cref="InstructFormat"/>"
@@ -192,6 +188,18 @@ namespace LetheAISharp.LLM
         /// </summary>
         /// <seealso cref="Files.SystemPrompt"/>"
         public static SystemPrompt SystemPrompt { get; set; } = new();
+
+
+        /// <summary> 
+        /// Delegate to be called before executing a tool call, with the tool name and arguments. If it returns false, the tool call will be cancelled. 
+        /// If left null, all tool calls will be executed without confirmation.
+        /// </summary>
+        public static Func<string, string, Task<bool>>? ToolCallConfirmation { get; set; }
+
+        /// <summary>
+        /// Used to register / unregister tools (for function calling persona) in a unified way across the system. 
+        /// </summary>
+        public static ToolManager ToolManager { get; } = new();
 
         /// <summary> Shortcut to the chat history of the currently loaded bot. </summary>
         public static Chatlog History => Bot.History;
@@ -494,8 +502,6 @@ namespace LetheAISharp.LLM
         {
             if (Client == null)
                 throw new InvalidOperationException("LLMEngine not initialized. Call Setup() and Connect() first.");
-
-            using var _ = await AcquireModelSlotAsync(ctx).ConfigureAwait(false);
             var oldst = status;
             Status = SystemStatus.Busy;
             _isSimpleQuery = true;
@@ -664,20 +670,6 @@ namespace LetheAISharp.LLM
                 Logger?.LogError(ex, "Failed to get grammar: {Message}", ex.Message);
             }
             return res;
-        }
-
-        public static bool SetTools(List<OpenAI.Tool> tools)
-        {
-            if (Client == null || !SupportsToolCalls || PromptBuilder == null)
-            {
-                logger?.LogError("Tool calls are not supported by the current backend.");
-                return false;
-            }
-            if (tools.Count > 0)
-                PromptBuilder.SetTools(tools);
-            else
-                PromptBuilder.RemoveTools();
-            return true;
         }
 
         #endregion

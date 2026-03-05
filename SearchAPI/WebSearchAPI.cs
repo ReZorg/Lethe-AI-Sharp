@@ -44,9 +44,10 @@ namespace LetheAISharp.SearchAPI
 
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-        public WebSearchAPI(HttpClient httpClient)
+        public WebSearchAPI()
         {
-            _httpClient = httpClient;
+            _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MyApp/1.0)");
             SwitchProvider(SearchAPI, BraveAPIKey);
         }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
@@ -131,8 +132,9 @@ namespace LetheAISharp.SearchAPI
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    LLMEngine.Logger?.LogInformation("[WebSearch API] Jina extraction success for {Url}: {StatusCode}", url, response.StatusCode);
 
+                    var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     // content is in markdown, remove all links completely (including the text or image or whatever is linked)
                     content = System.Text.RegularExpressions.Regex.Replace(content, @"\[.*?\]\(.*?\)", string.Empty); // Remove links
                     // remove lines that contains no text, no letter a-Z
@@ -140,7 +142,11 @@ namespace LetheAISharp.SearchAPI
                     // remove lines with only a * (and leading/trailing spaces)
                     content = System.Text.RegularExpressions.Regex.Replace(content, @"^\s*\*\s*$\n|\r", string.Empty, System.Text.RegularExpressions.RegexOptions.Multiline);
 
-
+                    if (LLMEngine.Settings.WebSearchDetailedMaxLength > 0 && content.Length > LLMEngine.Settings.WebSearchDetailedMaxLength) 
+                    { 
+                        content = content[..LLMEngine.Settings.WebSearchDetailedMaxLength];
+                        LLMEngine.Logger?.LogInformation("[WebSearch API] Jina extraction for {Url} was too long and got truncated to {MaxLength} characters", url, LLMEngine.Settings.WebSearchDetailedMaxLength);
+                    }
 
                     return content.CleanupAndTrim();;
                 }
@@ -194,7 +200,7 @@ namespace LetheAISharp.SearchAPI
 
             // Start with DuckDuckGo (since you prefer their summaries)
             WebSearchAPI.SearchAPI = BackendSearchAPI.DuckDuckGo;
-            var searchService = new WebSearchAPI(httpClient);
+            var searchService = new WebSearchAPI();
 
             Console.WriteLine($"Using {searchService.CurrentProviderName} provider");
 

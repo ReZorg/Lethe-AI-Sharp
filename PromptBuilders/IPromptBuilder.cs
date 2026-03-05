@@ -125,24 +125,6 @@ namespace LetheAISharp
         #endregion
 
 
-        #region *** Tool Calling ***
-
-        /// <summary>
-        /// Sets the list of tools that the LLM can call during its response generation. 
-        /// The exact way this is implemented depends on the backend.
-        /// </summary>
-        /// <param name="tools">list of tools</param>
-        /// <returns></returns>
-        bool SetTools(List<Tool> tools);
-
-        /// <summary>
-        /// Clear the tools
-        /// </summary>
-        void RemoveTools();
-
-        #endregion
-
-
         #region *** Visual Large Language Models (VLM) *** 
 
         /// <summary>

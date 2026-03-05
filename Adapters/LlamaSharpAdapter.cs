@@ -72,7 +72,7 @@ namespace LetheAISharp.API
             {
                 ApplyTemplate = false
             };
-            webSearchClient = new WebSearchAPI(new HttpClient());
+            webSearchClient = new WebSearchAPI();
         }
 
         public void Dispose()

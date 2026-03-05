@@ -253,6 +253,12 @@ namespace LetheAISharp.Files
         /// <summary> Attempt to scrape the most relevant search results for their full content. </summary>
         public bool WebSearchDetailedResults { get; set; } = true;
 
+        /// <summary>
+        /// Limits the length of the extracted content from web search results. To prevent making the context too long.
+        /// 0 to disable.
+        /// </summary>
+        public int WebSearchDetailedMaxLength { get; set; } = 5000;
+
         #endregion
 
         #region *** Group Chat Settings ***

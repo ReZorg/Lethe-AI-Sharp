@@ -26,7 +26,7 @@ namespace LetheAISharp.API
             _httpClient = httpClient;
             _httpClient.BaseAddress = new Uri(LLMEngine.Settings.BackendUrl);
             _client = new OpenAI_APIClient(_httpClient);
-            webSearchClient = new WebSearchAPI(httpClient);
+            webSearchClient = new WebSearchAPI();
 
             //Hook into the OpenAI streaming event and adapt it to our interface's event
             _client.StreamingMessageReceived += (sender, e) =>

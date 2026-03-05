@@ -8,7 +8,7 @@ using System.Text;
 
 namespace LetheAISharp.Agent.Tools
 {
-    internal class ToolDemo : IToolList
+    public class ToolDemo : IToolList
     {
         public string Id => "demo_tools";
         private List<Tool> toolList = [];
@@ -54,13 +54,22 @@ namespace LetheAISharp.Agent.Tools
                 SearchQueries = [query]
             };
             var serchresults = await searchaction.Execute(param, CancellationToken.None).ConfigureAwait(false);
-            var mergeaction = new MergeSearchResultsAction();
-            var mergeparams = new MergeSearchParams("This is a search done regarding the currently active discussion.", query, "{{char}} is assisting the user with a web search", serchresults);
-
-            var mergedResult = await mergeaction.Execute(mergeparams, CancellationToken.None).ConfigureAwait(false);
-
             // This is a placeholder implementation. In a real implementation, you would call a news API to get the actual news data.
-            return $"Result of the web search query: {query} \n\n {mergedResult}";
+            var result = new StringBuilder();
+            result.AppendLinuxLine($"Search results for query: '{query}'");
+            foreach (var item in serchresults)
+            {
+                if (string.IsNullOrWhiteSpace(item.Description) && string.IsNullOrWhiteSpace(item.FullContent))
+                    continue;
+                result.AppendLinuxLine($"## [{item.Title}]({item.Url})").AppendLinuxLine();
+                result.AppendLinuxLine($"{item.Description}").AppendLinuxLine();
+                if (item.ContentExtracted)
+                {
+                    result.AppendLinuxLine($"Full Content: {item.FullContent}").AppendLinuxLine();
+                }
+                result.AppendLinuxLine();
+            }
+            return result.ToString();
         }
 
         public bool RequiresConfirmation(string functionName)

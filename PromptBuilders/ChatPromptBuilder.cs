@@ -164,10 +164,10 @@ namespace LetheAISharp
                 }
             }
 
-            if (LLMEngine.UseToolCallsInPrompt && toolList.Count > 0 && _currentSchema is null)
+            if (LLMEngine.UseToolCallsInPrompt && LLMEngine.ToolManager.HasTools() && _currentSchema is null)
             {
                 return new ChatRequest(finalprompt,
-                    tools: toolList,
+                    tools: LLMEngine.ToolManager.GetToolList(),
                     toolChoice: "auto",
                     topP: LLMEngine.Sampler.Top_p,
                     frequencyPenalty: LLMEngine.Sampler.Rep_pen - 1,
@@ -192,20 +192,6 @@ namespace LetheAISharp
                     temperature: tempoverride >= 0 ? tempoverride : (LLMEngine.ForceTemperature >= 0) ? LLMEngine.ForceTemperature : LLMEngine.Sampler.Temperature);
             }
 
-        }
-
-        public bool SetTools(List<Tool> tools)
-        {
-            if (!LLMEngine.SupportsToolCalls)
-                return false;
-            toolList = tools;
-            return true;
-        }
-
-        public void RemoveTools()
-        {
-            toolList.Clear();
-            Tool.ClearRegisteredTools();
         }
 
         public void Clear()
