@@ -125,7 +125,7 @@ namespace LetheAISharp.API
                                         success = false;
                                     }
                                     sw.Stop();
-                                    LLMEngine.Logger?.LogInformation($"[OpenAI API] Tool Call: {toolcall.Function?.Name}");
+                                    LLMEngine.Logger?.LogInformation("[OpenAI API] Tool Call: {Name}", toolcall.Function?.Name);
                                     toolCallRecords?.Add(new ToolCallRecord
                                     {
                                         CallId = toolcall.Id ?? string.Empty,
