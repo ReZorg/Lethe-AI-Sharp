@@ -59,6 +59,8 @@ namespace LetheAISharp.Files
         /// </summary>
         public bool ForceInternalGrammar { get; set; } = false;
 
+        public bool ToolCallStreamingEnabled { get; set; } = true;
+
         #endregion
 
 

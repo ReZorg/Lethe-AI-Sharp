@@ -164,7 +164,7 @@ namespace LetheAISharp
                 }
             }
 
-            if (LLMEngine.SupportsToolCalls && toolList.Count > 0 && _currentSchema is null)
+            if (LLMEngine.UseToolCallsInPrompt && toolList.Count > 0 && _currentSchema is null)
             {
                 return new ChatRequest(finalprompt,
                     tools: toolList,

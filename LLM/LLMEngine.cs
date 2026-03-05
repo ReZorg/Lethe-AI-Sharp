@@ -54,12 +54,32 @@ namespace LetheAISharp.LLM
         public static string Backend { get; private set; } = string.Empty;
 
         /// <summary> If >= 0 it'll override the selected sampler's temperature setting.</summary>
-        public static double ForceTemperature { get; set; } = 0.7;
+        public static double ForceTemperature { get; set; } = -1;
 
         /// <summary> 
         /// Override the Instruct Format setting deciding if character names should be inserted into the prompts (null to disable) 
         /// </summary>
         public static bool? NamesInPromptOverride { get; set; } = null;
+
+        private static bool useToolCallsInPrompt { get => Settings.ToolCallStreamingEnabled; set => Settings.ToolCallStreamingEnabled = value; }
+        public static bool UseToolCallsInPrompt
+        {
+            get
+            {
+                if (Client == null || !Client.SupportsToolCalls)
+                    return false;
+                return useToolCallsInPrompt;
+            }
+            set
+            {
+                if (Client == null || !Client.SupportsToolCalls)
+                {
+                    logger?.LogError("Tool calls are not supported by the current backend. Cannot enable tool call streaming in prompt.");
+                    return;
+                }
+                useToolCallsInPrompt = value;
+            }
+        }
 
         /// <summary>
         /// This is a list of words that are banned during search queries. It's on the application to load and maintain this list.
