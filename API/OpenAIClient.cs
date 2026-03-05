@@ -102,8 +102,22 @@ namespace LetheAISharp.API
                                     var sw = Stopwatch.StartNew();
                                     try
                                     {
-                                        functionResult = (await toolcall.InvokeFunctionAsync<string>(cancellationToken)) ?? string.Empty;
-                                        success = true;
+                                        var allowed = true;
+                                        if (LLMEngine.ToolCallConfirmation != null)
+                                        {
+                                            // that's an UI call, so no ConfigureAwait(false) here, otherwise we might crash things at the UI level
+                                            allowed = await LLMEngine.ToolCallConfirmation(toolcall.Function?.Name ?? string.Empty, toolcall.Function?.Arguments?.ToJsonString() ?? string.Empty);
+                                        }
+                                        if (!allowed)
+                                        {
+                                            functionResult = "This tool call was denied by the user.";
+                                            success = false;
+                                        }
+                                        else
+                                        {
+                                            functionResult = (await toolcall.InvokeFunctionAsync<string>(cancellationToken)) ?? string.Empty;
+                                            success = true;
+                                        }
                                     }
                                     catch (Exception ex)
                                     {

@@ -146,6 +146,12 @@ namespace LetheAISharp.LLM
             set => logger = value;
         }
 
+        /// <summary> 
+        /// Delegate to be called before executing a tool call, with the tool name and arguments. If it returns false, the tool call will be cancelled. 
+        /// If left null, all tool calls will be executed without confirmation.
+        /// </summary>
+        public static Func<string, string, Task<bool>>? ToolCallConfirmation { get; set; }
+
         /// <summary> Instruction format (important for KoboldAPI as it determines how to format the text in a way the model understands) </summary>
         /// <seealso cref="InstructFormat"/>"
         public static InstructFormat Instruct { 
