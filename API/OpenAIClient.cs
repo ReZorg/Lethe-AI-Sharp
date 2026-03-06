@@ -92,82 +92,84 @@ namespace LetheAISharp.API
                         // Handle tool_calls
                         if (partialResponse.FirstChoice.FinishReason == "tool_calls" && partialResponse.FirstChoice.Message?.ToolCalls != null)
                         {
-                            if (toolRound < maxToolRounds)
+                            var toolmsgs = new List<OpenAI.Chat.Message>();
+                            foreach (var toolcall in partialResponse.FirstChoice.Message.ToolCalls)
                             {
-                                var toolmsgs = new List<OpenAI.Chat.Message>();
-                                foreach (var toolcall in partialResponse.FirstChoice.Message.ToolCalls)
+                                string functionResult;
+                                bool success;
+                                var sw = Stopwatch.StartNew();
+                                try
                                 {
-                                    string functionResult;
-                                    bool success;
-                                    var sw = Stopwatch.StartNew();
-                                    try
+                                    var allowed = true;
+                                    if (LLMEngine.ToolCallConfirmation != null)
                                     {
-                                        var allowed = true;
-                                        if (LLMEngine.ToolCallConfirmation != null)
-                                        {
-                                            // that's an UI call, so no ConfigureAwait(false) here, otherwise we might crash things at the UI level
-                                            allowed = await LLMEngine.ToolCallConfirmation(toolcall.Function?.Name ?? string.Empty, toolcall.Function?.Arguments?.ToJsonString() ?? string.Empty);
-                                        }
-                                        if (!allowed)
-                                        {
-                                            functionResult = "This tool call was denied by the user.";
-                                            success = false;
-                                        }
-                                        else
-                                        {
-                                            functionResult = (await toolcall.InvokeFunctionAsync<string>(cancellationToken)) ?? string.Empty;
-                                            success = true;
-                                        }
+                                        // that's an UI call, so no ConfigureAwait(false) here, otherwise we might crash things at the UI level
+                                        allowed = await LLMEngine.ToolCallConfirmation(toolcall.Function?.Name ?? string.Empty, toolcall.Function?.Arguments?.ToJsonString() ?? string.Empty);
                                     }
-                                    catch (Exception ex)
+                                    if (toolRound >= maxToolRounds)
                                     {
-                                        functionResult = $"Error: {ex.Message}";
+                                        functionResult = "Max amount of tool calls reached. You must finish your thoughts and produce the response now.";
+                                        success = true;
+                                    }
+                                    else if (!allowed)
+                                    {
+                                        functionResult = "This tool call was denied by the user.";
                                         success = false;
                                     }
-                                    sw.Stop();
-                                    LLMEngine.Logger?.LogInformation("[OpenAI API] Tool Call: {Name}", toolcall.Function?.Name);
-                                    toolCallRecords?.Add(new ToolCallRecord
+                                    else
                                     {
-                                        CallId = toolcall.Id ?? string.Empty,
-                                        FunctionName = toolcall.Function?.Name ?? string.Empty,
-                                        ArgumentsJson = toolcall.Function?.Arguments?.ToJsonString() ?? string.Empty,
-                                        ResultJson = success ? functionResult : string.Empty,
-                                        Error = success ? null : functionResult,
-                                        Success = success,
-                                        Duration = sw.Elapsed
-                                    });
-                                    toolmsgs.Add(new OpenAI.Chat.Message(toolcall, functionResult));
+                                        functionResult = (await toolcall.InvokeFunctionAsync<string>(cancellationToken)) ?? string.Empty;
+                                        success = true;
+                                    }
                                 }
-
-                                // Build updated message list: original messages + assistant tool-call message + tool results.
-                                // The assistant message is included as-is (thinking/CoT content, if any, is preserved
-                                // since Message properties are not publicly mutable in this library version).
-                                var updatedMessages = new List<OpenAI.Chat.Message>(currentRequest.Messages)
+                                catch (Exception ex)
                                 {
-                                    partialResponse.FirstChoice.Message
-                                };
-                                updatedMessages.AddRange(toolmsgs);
-
-                                // Create a new request preserving all original parameters
-                                currentRequest = new ChatRequest(
-                                    messages: updatedMessages,
-                                    tools: currentRequest.Tools,
-                                    toolChoice: "auto",
-                                    model: currentRequest.Model,
-                                    frequencyPenalty: currentRequest.FrequencyPenalty,
-                                    maxTokens: currentRequest.MaxCompletionTokens,
-                                    presencePenalty: currentRequest.PresencePenalty,
-                                    responseFormat: currentRequest.ResponseFormat,
-                                    seed: currentRequest.Seed,
-                                    stops: currentRequest.Stops,
-                                    temperature: currentRequest.Temperature,
-                                    topP: currentRequest.TopP,
-                                    jsonSchema: currentRequest.ResponseFormatObject?.JsonSchema,
-                                    user: currentRequest.User
-                                );
-                                toolRound++;
-                                continueLoop = true;
+                                    functionResult = $"Error: {ex.Message}";
+                                    success = false;
+                                }
+                                sw.Stop();
+                                LLMEngine.Logger?.LogInformation("[OpenAI API] Tool Call: {Name}", toolcall.Function?.Name);
+                                toolCallRecords?.Add(new ToolCallRecord
+                                {
+                                    CallId = toolcall.Id ?? string.Empty,
+                                    FunctionName = toolcall.Function?.Name ?? string.Empty,
+                                    ArgumentsJson = toolcall.Function?.Arguments?.ToJsonString() ?? string.Empty,
+                                    ResultJson = success ? functionResult : string.Empty,
+                                    Error = success ? null : functionResult,
+                                    Success = success,
+                                    Duration = sw.Elapsed
+                                });
+                                toolmsgs.Add(new OpenAI.Chat.Message(toolcall, functionResult));
                             }
+
+                            // Build updated message list: original messages + assistant tool-call message + tool results.
+                            // The assistant message is included as-is (thinking/CoT content, if any, is preserved
+                            // since Message properties are not publicly mutable in this library version).
+                            var updatedMessages = new List<OpenAI.Chat.Message>(currentRequest.Messages)
+                            {
+                                partialResponse.FirstChoice.Message
+                            };
+                            updatedMessages.AddRange(toolmsgs);
+
+                            // Create a new request preserving all original parameters
+                            currentRequest = new ChatRequest(
+                                messages: updatedMessages,
+                                tools: currentRequest.Tools,
+                                toolChoice: toolRound < maxToolRounds ? "auto" : "none",
+                                model: currentRequest.Model,
+                                frequencyPenalty: currentRequest.FrequencyPenalty,
+                                maxTokens: currentRequest.MaxCompletionTokens,
+                                presencePenalty: currentRequest.PresencePenalty,
+                                responseFormat: currentRequest.ResponseFormat,
+                                seed: currentRequest.Seed,
+                                stops: currentRequest.Stops,
+                                temperature: currentRequest.Temperature,
+                                topP: currentRequest.TopP,
+                                jsonSchema: currentRequest.ResponseFormatObject?.JsonSchema,
+                                user: currentRequest.User
+                            );
+                            toolRound++;
+                            continueLoop = true;
                             break; // exit foreach — re-enter while loop (or stop if limit reached)
                         }
                         else if (partialResponse.FirstChoice.Delta?.Content != null)

@@ -210,8 +210,6 @@ namespace LetheAISharp.LLM
         private static SystemStatus status = SystemStatus.NotInit;
         private static string StreamingTextProgress = string.Empty;
         private static InferenceChannel _currentChannel = InferenceChannel.Text;
-        private static readonly StringBuilder _thinkingBuffer = new();
-        private static readonly StringBuilder _textBuffer = new();
         private static InstructFormat instruct = new() 
         { 
             AddNamesToPrompt = false,
@@ -226,6 +224,7 @@ namespace LetheAISharp.LLM
             NewLinesBetweenMessages = true,
             StopStrings = [ "### Instruction:", "### Input:", "### Response:" ],
         };
+        private static TextStreamReceiver textStreamReceiver = new();
 
         private static bool _isSimpleQuery = false;
         private static ILogger? logger = null;
@@ -593,6 +592,7 @@ namespace LetheAISharp.LLM
         {
             PromptBuilder?.Clear();
             dataInserts.Clear();
+            ResetStreamingState();
         }
 
         /// <summary>
@@ -721,8 +721,11 @@ namespace LetheAISharp.LLM
             if (e.IsComplete)
             {
                 if (!string.IsNullOrEmpty(e.Token))
+                {
                     StreamingTextProgress += e.Token;
-                var response = StreamingTextProgress.Trim();
+                    _currentChannel = textStreamReceiver.FeedToken(e.Token);
+                }
+                var response = textStreamReceiver.GetFormattedText();
                 if (e.FinishReason == "length")
                 {
                     var removelist = Instruct.GetStoppingStrings(User, Bot);
@@ -759,6 +762,7 @@ namespace LetheAISharp.LLM
                             },
                             IsComplete = true
                         });
+                        textStreamReceiver.ForceFeed(InferenceChannel.Thinking, $"\n[Tool {record.FunctionName} called]\n");
                         RaiseInferenceSegment(new InferenceSegment
                         {
                             Channel = InferenceChannel.ToolResult,
@@ -797,9 +801,11 @@ namespace LetheAISharp.LLM
                     Status = SystemStatus.Ready;
                     RaiseOnInferenceEnded(response);
 
+                    var answer = textStreamReceiver.GetCurrentBuffers();
+
                     // Build structured result for new event
-                    var thinkingContent = _thinkingBuffer.Length > 0 ? _thinkingBuffer.ToString().Trim() : null;
-                    var textResponse = Instruct.IsThinkFormat ? response.RemoveThinkingBlocks() : response;
+                    var thinkingContent = answer.ThinkContent.Length > 0 ? answer.ThinkContent.Trim() : null;
+                    var textResponse = answer.TalkContent.Trim();
                     var inferenceResult = new InferenceResult
                     {
                         Response = textResponse,
@@ -813,21 +819,7 @@ namespace LetheAISharp.LLM
             else
             {
                 StreamingTextProgress += e.Token;
-
-                // Detect channel transitions based on thinking delimiters
-                if (Instruct.IsThinkFormat)
-                {
-                    _currentChannel = Instruct.IsThinkingPrompt(StreamingTextProgress)
-                        ? InferenceChannel.Thinking
-                        : InferenceChannel.Text;
-                }
-
-                // Route token to the appropriate content buffer
-                if (_currentChannel == InferenceChannel.Thinking)
-                    _thinkingBuffer.Append(e.Token);
-                else
-                    _textBuffer.Append(e.Token);
-
+                _currentChannel = textStreamReceiver.FeedToken(e.Token);
                 RaiseInferenceSegment(new InferenceSegment { Channel = _currentChannel, Text = e.Token, IsComplete = false });
                 RaiseOnInferenceStreamed(e.Token);
             }
@@ -838,10 +830,8 @@ namespace LetheAISharp.LLM
         /// </summary>
         private static void ResetStreamingState()
         {
-            _currentChannel = InferenceChannel.Text;
-            _thinkingBuffer.Clear();
-            _textBuffer.Clear();
             StreamingTextProgress = string.Empty;
+            textStreamReceiver.Reset();
         }
 
         /// <summary>
@@ -1068,7 +1058,8 @@ namespace LetheAISharp.LLM
             var genparams = await GenerateFullPrompt(message, pluginmessage).ConfigureAwait(false);
 
             ResetStreamingState();
-            StreamingTextProgress = Instruct.GetThinkPrefill();
+            if (CompletionAPIType == CompletionType.Text || !UseToolCallsInPrompt || !ToolManager.HasTools())
+                StreamingTextProgress = Instruct.GetThinkPrefill();
             if (Instruct.PrefillThinking && !string.IsNullOrEmpty(Instruct.ThinkingStart))
             {
                 RaiseOnInferenceStreamed(StreamingTextProgress);
