@@ -786,26 +786,29 @@ namespace LetheAISharp.LLM
                     foreach (var record in e.ToolCallRecords)
                     {
                         var resultMsg = new SingleMessage(AuthorRole.Tool,
-                            record.Success ? record.ResultJson : (record.Error ?? "Error"),
+                            record.Success ? record.ResultJson : (record.Error ?? $"Error calling {record.FunctionName}"),
                             toolCalls: [.. new List<ToolCallRecord> { record }]);
                         Bot.History.LogMessage(resultMsg);
                     }
                 }
 
-                Status = SystemStatus.Ready;
-                RaiseOnInferenceEnded(response);
-
-                // Build structured result for new event
-                var thinkingContent = _thinkingBuffer.Length > 0 ? _thinkingBuffer.ToString().Trim() : null;
-                var textResponse = Instruct.IsThinkFormat ? response.RemoveThinkingBlocks() : response;
-                var inferenceResult = new InferenceResult
+                if (e.FinishReason != "tool_calls")
                 {
-                    Response = textResponse,
-                    ThinkingContent = thinkingContent,
-                    ToolCalls = e.ToolCallRecords ?? [],
-                    FinishReason = e.FinishReason
-                };
-                RaiseInferenceCompleted(inferenceResult);
+                    Status = SystemStatus.Ready;
+                    RaiseOnInferenceEnded(response);
+
+                    // Build structured result for new event
+                    var thinkingContent = _thinkingBuffer.Length > 0 ? _thinkingBuffer.ToString().Trim() : null;
+                    var textResponse = Instruct.IsThinkFormat ? response.RemoveThinkingBlocks() : response;
+                    var inferenceResult = new InferenceResult
+                    {
+                        Response = textResponse,
+                        ThinkingContent = thinkingContent,
+                        ToolCalls = e.ToolCallRecords ?? [],
+                        FinishReason = e.FinishReason
+                    };
+                    RaiseInferenceCompleted(inferenceResult);
+                }
             }
             else
             {
