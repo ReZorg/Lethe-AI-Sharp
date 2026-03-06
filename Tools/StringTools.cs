@@ -385,7 +385,7 @@ namespace LetheAISharp
             if (!string.IsNullOrWhiteSpace(thinkstart) && workstring.Contains(thinkend))
             {
                 // remove everything before the thinking end tag (included)
-                var idx = workstring.IndexOf(thinkend);
+                var idx = workstring.LastIndexOf(thinkend);
                 workstring = workstring[(idx + thinkend.Length)..].CleanupAndTrim();
             }
             return workstring;
