@@ -59,7 +59,23 @@ namespace LetheAISharp.Files
         /// </summary>
         public bool ForceInternalGrammar { get; set; } = false;
 
-        public bool ToolCallStreamingEnabled { get; set; } = true;
+        #endregion
+
+
+        #region *** Tool Calling Settings ***
+
+        /// <summary>
+        /// Gets or sets a value indicating whether tool calls are allowed or not (tool calls only work in streaming mode). 
+        /// When set to true, the agent can call registered tools during generation, allowing for dynamic interactions and real-time data retrieval. 
+        /// When set to false, tool calls are disabled, and the agent will not be able to utilize any tools during generation.
+        /// </summary>
+        public bool ToolCallsAllowed { get; set; } = true;
+
+        /// <summary>
+        /// Maximum number of tool calls rounds the agent can perform during a single generation. 
+        /// This is a safeguard to prevent infinite loops with tool calling. Depending on the complexity of the task and the tools available, you might want to adjust this number.
+        /// </summary>
+        public int ToolCallLimit { get; set; } = 10;
 
         #endregion
 

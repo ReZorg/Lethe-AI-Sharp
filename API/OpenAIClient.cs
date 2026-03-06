@@ -79,7 +79,7 @@ namespace LetheAISharp.API
             //var nostopfix = true; // some backends don't return "stop" at the end of completion. It handles this case.
             var toolCallRecords = new List<ToolCallRecord>();
             var toolRound = 0;
-            const int maxToolRounds = 10;
+            int maxToolRounds = LLMEngine.Settings.ToolCallLimit;
             var currentRequest = request;
             try
             {
@@ -151,24 +151,46 @@ namespace LetheAISharp.API
                             };
                             updatedMessages.AddRange(toolmsgs);
 
-                            // Create a new request preserving all original parameters
-                            currentRequest = new ChatRequest(
-                                messages: updatedMessages,
-                                tools: currentRequest.Tools,
-                                toolChoice: toolRound < maxToolRounds ? "auto" : "none",
-                                model: currentRequest.Model,
-                                frequencyPenalty: currentRequest.FrequencyPenalty,
-                                maxTokens: currentRequest.MaxCompletionTokens,
-                                presencePenalty: currentRequest.PresencePenalty,
-                                responseFormat: currentRequest.ResponseFormat,
-                                seed: currentRequest.Seed,
-                                stops: currentRequest.Stops,
-                                temperature: currentRequest.Temperature,
-                                topP: currentRequest.TopP,
-                                jsonSchema: currentRequest.ResponseFormatObject?.JsonSchema,
-                                user: currentRequest.User
-                            );
+                            if (toolRound < maxToolRounds)
+                            {
+                                // Create a new request preserving all original parameters
+                                currentRequest = new ChatRequest(
+                                    messages: updatedMessages,
+                                    tools: currentRequest.Tools,
+                                    toolChoice: toolRound < maxToolRounds ? "auto" : "none",
+                                    model: currentRequest.Model,
+                                    frequencyPenalty: currentRequest.FrequencyPenalty,
+                                    maxTokens: currentRequest.MaxCompletionTokens,
+                                    presencePenalty: currentRequest.PresencePenalty,
+                                    responseFormat: currentRequest.ResponseFormat,
+                                    seed: currentRequest.Seed,
+                                    stops: currentRequest.Stops,
+                                    temperature: currentRequest.Temperature,
+                                    topP: currentRequest.TopP,
+                                    jsonSchema: currentRequest.ResponseFormatObject?.JsonSchema,
+                                    user: currentRequest.User
+                                );
+                            }
+                            else
+                            {
+                                currentRequest = new ChatRequest(
+                                    messages: updatedMessages,
+                                    model: currentRequest.Model,
+                                    frequencyPenalty: currentRequest.FrequencyPenalty,
+                                    maxTokens: currentRequest.MaxCompletionTokens,
+                                    presencePenalty: currentRequest.PresencePenalty,
+                                    responseFormat: currentRequest.ResponseFormat,
+                                    seed: currentRequest.Seed,
+                                    stops: currentRequest.Stops,
+                                    temperature: currentRequest.Temperature,
+                                    topP: currentRequest.TopP,
+                                    jsonSchema: currentRequest.ResponseFormatObject?.JsonSchema,
+                                    user: currentRequest.User
+                                );
+                            }
+                            // keep this here, otherwise the model doesn't receive a warning that tool calls have ended, and it'll imagine them instead.
                             toolRound++;
+                            // --
                             continueLoop = true;
                             break; // exit foreach — re-enter while loop (or stop if limit reached)
                         }

@@ -62,7 +62,7 @@ namespace LetheAISharp.LLM
         /// </summary>
         public static bool? NamesInPromptOverride { get; set; } = null;
 
-        private static bool useToolCallsInPrompt { get => Settings.ToolCallStreamingEnabled; set => Settings.ToolCallStreamingEnabled = value; }
+        private static bool useToolCallsInPrompt { get => Settings.ToolCallsAllowed; set => Settings.ToolCallsAllowed = value; }
         public static bool UseToolCallsInPrompt
         {
             get
