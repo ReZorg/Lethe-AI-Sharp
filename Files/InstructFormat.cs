@@ -218,7 +218,8 @@ namespace LetheAISharp.Files
         public string GetResponseStart(BasePersona talker, bool? overridePrefill = null)
         {
             var res = talker.IsUser ? LLMEngine.Bot.ReplaceMacros(BotStart, talker) : talker.ReplaceMacros(BotStart);
-            if (RealAddNameToPrompt && (!IsThinkFormat || LLMEngine.Settings.DisableThinking))
+            if ((RealAddNameToPrompt && (!IsThinkFormat || LLMEngine.Settings.DisableThinking)) || 
+                (LLMEngine.NamesInPromptBotOnlyOverride == true && !talker.IsUser))
                 res += talker.Name + ":";
             if (talker.IsUser)
                 return res;

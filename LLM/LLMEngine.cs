@@ -61,6 +61,7 @@ namespace LetheAISharp.LLM
         /// Override the Instruct Format setting deciding if character names should be inserted into the prompts (null to disable) 
         /// </summary>
         public static bool? NamesInPromptOverride { get; set; } = null;
+        public static bool? NamesInPromptBotOnlyOverride { get; set; } = null;
 
         private static bool useToolCallsInPrompt { get => Settings.ToolCallsAllowed; set => Settings.ToolCallsAllowed = value; }
         public static bool UseToolCallsInPrompt
@@ -1009,7 +1010,7 @@ namespace LetheAISharp.LLM
             {
                 if (!ctxplug.Enabled)
                     continue;
-                // Plugins may call LLMSystem.SimpleQuery here. We are intentionally NOT
+                // Plugins may call LLMEngine.SimpleQuery here. We are intentionally NOT
                 // holding the model semaphore yet to avoid re-entrancy deadlocks.
                 var plugres = await ctxplug.ReplaceUserInput(Bot.ReplaceMacros(lastuserinput)).ConfigureAwait(false);
                 if (plugres.IsHandled && !string.IsNullOrEmpty(plugres.Response))

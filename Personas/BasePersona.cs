@@ -87,7 +87,7 @@ namespace LetheAISharp.LLM
         public virtual List<string> ExampleDialogs { get; set; } = [];
 
         /// <summary> 
-        /// If set, this will override the system prompt selected in LLMSystem and use this instead. Can be useful for very custom characters. 
+        /// If set, this will override the system prompt selected in LLMEngine and use this instead. Can be useful for very custom characters. 
         /// </summary>
         /// <seealso cref="Files.SystemPrompt"/>
         public virtual string SystemPrompt { get; set; } = string.Empty;
