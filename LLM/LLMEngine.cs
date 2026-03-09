@@ -326,6 +326,8 @@ namespace LetheAISharp.LLM
                 LoadedPersonas.Add(item.UniqueName, item);
         }
 
+        public static bool HasPersona(string uniqueName) => LoadedPersonas.ContainsKey(uniqueName);
+
         /// <summary>
         /// Sets up the backend connection settings and initializes the system.
         /// </summary>
@@ -932,7 +934,7 @@ namespace LetheAISharp.LLM
         /// </summary>
         /// <param name="newMessage">Added message from the user</param>
         /// <returns></returns>
-        private static async Task<object> GenerateFullPrompt(SingleMessage message, string? pluginMessage = null)
+        public static async Task<object> GenerateFullPrompt(SingleMessage message, string? pluginMessage = null, bool? forceAltRolesAnyway = null)
         {
             var availtokens = MaxContextLength - Settings.MaxReplyLength;
             PromptBuilder!.Clear();
@@ -990,9 +992,9 @@ namespace LetheAISharp.LLM
                 logger?.LogWarning("The prompt is {Diff} tokens over the limit.", diff);
             }
             if (string.IsNullOrEmpty(message.Message) && message.Role == AuthorRole.User)
-                return PromptBuilder.PromptToQuery(AuthorRole.User, forceAltRoles: IsGroupConversation && Settings.GroupInstructFormatAdapter);
+                return PromptBuilder.PromptToQuery(AuthorRole.User, forceAltRoles: forceAltRolesAnyway ?? (IsGroupConversation && Settings.GroupInstructFormatAdapter));
             else
-                return PromptBuilder.PromptToQuery(AuthorRole.Assistant, forceAltRoles: IsGroupConversation && Settings.GroupInstructFormatAdapter);
+                return PromptBuilder.PromptToQuery(AuthorRole.Assistant, forceAltRoles: forceAltRolesAnyway ?? (IsGroupConversation && Settings.GroupInstructFormatAdapter));
         }
 
         /// <summary>
