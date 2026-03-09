@@ -127,6 +127,11 @@ namespace LetheAISharp
                         userID = prompt.CharID;
                         charID = prompt.UserID;
                     }
+                    else if (prompt.Role == AuthorRole.User && roleToUse == AuthorRole.Assistant)
+                    {
+                        userID = prompt.CharID;
+                        charID = prompt.UserID;
+                    }
                     fullprompt.Insert(0, LLMEngine.Instruct.FormatSingleMessage(new SingleMessage(roleToUse, DateTime.Now, prompt.Message, charID, userID)));
                     // flip role for next message
                     currentrole = currentrole == AuthorRole.User ? AuthorRole.Assistant : AuthorRole.User;

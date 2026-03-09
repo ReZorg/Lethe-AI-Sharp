@@ -381,6 +381,7 @@ namespace LetheAISharp.LLM
                 MaxContextLength = 4096;
                 CurrentModel = "Error";
                 Backend = "Error";
+                Status = SystemStatus.NotInit;
                 LLMEngine.Logger?.LogError(ex, "Failed to connect to LLM server: {Message}", ex.Message);
             }
         }
