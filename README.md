@@ -51,7 +51,7 @@ await LLMEngine.SimpleQueryStreaming(query, cts.Token);
 ```
 
 ## 🧩 Compatible Backends
-- **Llama.cpp:** Gold standard for local inference. [llama.cpp](https://github.com/ggml-org/llama.cpp) offers the most complete feature-set.
+- **Llama.cpp:** Gold standard for local inference. [Llama.cpp](https://github.com/ggml-org/llama.cpp) offers the most complete feature-set.
 - **Kobold API:** Powerful text completion API, used by [KoboldCpp](https://github.com/LostRuins/koboldcpp).
 - **OpenAI API:** Industry standard chat completion API, used by [LM Studio](https://lmstudio.ai/), [Text Gen WebUI](https://github.com/oobabooga/text-generation-webui), and many other backends.
 
@@ -60,8 +60,8 @@ Remote endpoints should work but primary focus remains local / LAN latency.
 Alternatively, if running an external backend is too much, **Lethe AI** also comes with its internal "backend" to load local models (in the GGUF format) directly from your application. It uses [LLamaSharp](https://github.com/SciSharp/LLamaSharp) as a base, a C# port of LLama.cpp.
 
 
-| Capability | Kobold API | Llama.Cpp | OpenAI-Compatible | LlamaSharp (internal) |
-|------------|------------|-----------|-------------------|-----------------------|
+| Capability | Kobold API | Llama.cpp | OpenAI-Compatible | Internal LlamaSharp |
+|------------|------------|-----------|-------------------|---------------------|
 | Text generation | ✅ Text | ✅ Chat | ✅ Chat | ✅ Text |
 | Streaming | ✅ | ✅ | ✅ | ✅ |
 | Structured output | ✅ GBNF Grammar | ✅ JSON Schema | ✅ JSON Schema | ✅ GBNF Grammar |
@@ -70,7 +70,7 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 | Memory integration | ✅ | ✅ | ✅ | ✅ |
 | Samplers | ✅ Advanced  | ✅ Basics |  ✅ Basics  | ✅ Advanced |
 | Token Management | ✅ Exact | ✅ Exact | ⚠️ Estimated  | ✅ Exact |
-| Web search integration | ✅ | ✅ | ✅ | ✅ |
+| Web search | ✅ | ✅ | ✅ | ✅ |
 | Function Calling* | ❌ | ✅ (WIP) | ✅ (WIP) | ❌ |
 | Text To Speech | ✅ (if loaded) | ❌ | ❌ | ❌ |
 | VLM (image input)** | ✅ (if loaded) | ✅ | ✅ | ❌ |
