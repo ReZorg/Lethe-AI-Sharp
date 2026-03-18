@@ -16,8 +16,8 @@ namespace LetheAISharp.LLM
         private StringBuilder thinkingBuffer = new();
         private StringBuilder talkingBuffer = new();
 
-        private string StartThinkingToken => LLMEngine.Instruct.ThinkingStart.RemoveNewLines();
-        private string EndThinkingToken => LLMEngine.Instruct.ThinkingEnd.RemoveNewLines();
+        private string StartThinkingToken => LLMEngine.Instruct.ThinkingStart.Replace("\n", "");
+        private string EndThinkingToken => LLMEngine.Instruct.ThinkingEnd.Replace("\n", "");
 
         public InferenceChannel FeedToken(string token)
         {

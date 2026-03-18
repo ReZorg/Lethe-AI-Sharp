@@ -17,6 +17,19 @@ namespace LetheAISharp.Files
         All,
     }
 
+    /// <summary>
+    /// On chat completion backends with thinking models (and on some jinja templates only), the initial "think" tag
+    /// may not be streamed at all, it's just silent and assumed (as it's prefilled internally). This setting is used to 
+    /// recognize the behavior so LetheAI's output stays consistant
+    /// </summary>
+    public enum BackendChatCompletionThinkTagBehavior
+    {
+        /// <summary> The backend emits the initial "think" tag as a token, nothing changes (LM Studio). </summary>
+        Emitted,
+        /// <summary> The backend doesn't emit the initial "think" tag as a token, LethAI will prepend it (llama.cpp). </summary>
+        Silent
+    }
+
     public class LLMSettings : BaseFile
     {
 
@@ -34,6 +47,8 @@ namespace LetheAISharp.Files
 
         /// <summary> API of the backend server, KoboldAPI (text completion) and OpenAI (chat completion) are both handled </summary>
         public BackendAPI BackendAPI { get; set; } = BackendAPI.KoboldAPI;
+
+        public BackendChatCompletionThinkTagBehavior BackendStartThinkTagBehavior { get; set; } = BackendChatCompletionThinkTagBehavior.Silent;
 
         /// <summary> API key for OpenAI (depends on the backend) </summary>
         public string OpenAIKey { get; set; } = "123";

@@ -799,7 +799,7 @@ namespace LetheAISharp.LLM
                         Bot.History.LogMessage(resultMsg);
                     }
                 }
-
+                StreamingTextProgress = string.Empty;
                 if (e.FinishReason != "tool_calls")
                 {
                     Status = SystemStatus.Ready;
@@ -822,9 +822,19 @@ namespace LetheAISharp.LLM
             }
             else
             {
+                var token = e.Token;
+                if (CompletionAPIType == CompletionType.Chat && 
+                    string.IsNullOrEmpty(StreamingTextProgress) && 
+                    Settings.BackendStartThinkTagBehavior == BackendChatCompletionThinkTagBehavior.Silent && 
+                    Instruct.IsThinkFormat && 
+                    e.Token != Instruct.ThinkingStart.Replace("\n", ""))
+                {
+                    StreamingTextProgress = Instruct.ThinkingStart;
+                    token = Instruct.ThinkingStart + token;
+                }
                 StreamingTextProgress += e.Token;
-                _currentChannel = textStreamReceiver.FeedToken(e.Token);
-                RaiseInferenceSegment(new InferenceSegment { Channel = _currentChannel, Text = e.Token, IsComplete = false });
+                _currentChannel = textStreamReceiver.FeedToken(token);
+                RaiseInferenceSegment(new InferenceSegment { Channel = _currentChannel, Text = token, IsComplete = false });
                 RaiseOnInferenceStreamed(e.Token);
             }
         }
