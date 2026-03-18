@@ -60,11 +60,11 @@ Remote endpoints should work but primary focus remains local / LAN latency.
 Alternatively, if running an external backend is too much, **Lethe AI** also comes with its internal "backend" to load local models (in the GGUF format) directly from your application. It uses [LLamaSharp](https://github.com/SciSharp/LLamaSharp) as a base, a C# port of LLama.cpp.
 
 
-| Capability | Kobold API | Llama.cpp | OpenAI-compatible | Internal LlamaSharp |
-|------------|------------|-----------|-------------------|---------------------|
+| Capability | Kobold API | Llama.cpp | OpenAI API | Internal |
+|------------|------------|-----------|------------|----------|
 | Text generation | ✅ Text | ✅ Chat | ✅ Chat | ✅ Text |
 | Streaming | ✅ | ✅ | ✅ | ✅ |
-| Structured output | ✅ Grammar | ✅ JSON | ✅ JSON | ✅ GBNF |
+| Structured output | ✅ GBNF | ✅ Schema | ✅ Schema | ✅ GBNF |
 | Chain of Thoughts | ✅ | ✅ | ✅ | ✅ |
 | Personas & chat sessions | ✅ | ✅ | ✅ | ✅ |
 | Memory integration | ✅ | ✅ | ✅ | ✅ |
