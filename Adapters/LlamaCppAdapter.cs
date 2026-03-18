@@ -7,13 +7,13 @@ using OpenAI.Chat;
 namespace LetheAISharp.API
 {
     /// <summary>
-    /// Adapter for OpenAI-compatible backends (we'll see later)
+    /// Adapter for the LlamaCpp backend (using OpenAI-compatible API + additional features)
     /// </summary>
-    public class OpenAIAdapter : ILLMServiceClient, IDisposable
+    public class LlamaCppAdapter : ILLMServiceClient, IDisposable
     {
         public event EventHandler<LLMTokenStreamingEventArgs>? TokenReceived;
 
-        private readonly OpenAI_APIClient _client;
+        private readonly LlamaCpp_APIClient _client;
         private readonly HttpClient _httpClient;
         private readonly WebSearchAPI webSearchClient;
         private CancellationTokenSource? cts;
@@ -21,11 +21,11 @@ namespace LetheAISharp.API
 
         public CompletionType CompletionType => CompletionType.Chat;
 
-        public OpenAIAdapter(HttpClient httpClient)
+        public LlamaCppAdapter(HttpClient httpClient)
         {
             _httpClient = httpClient;
             _httpClient.BaseAddress = new Uri(LLMEngine.Settings.BackendUrl);
-            _client = new OpenAI_APIClient(_httpClient);
+            _client = new LlamaCpp_APIClient(_httpClient);
             webSearchClient = new WebSearchAPI();
 
             //Hook into the OpenAI streaming event and adapt it to our interface's event
@@ -57,8 +57,8 @@ namespace LetheAISharp.API
             // Use model info to determine context length
             // var modelInfo = await _client.GetModelInfo("default").ConfigureAwait(false);
             // Parse context length from model info or use a default
-            LLMEngine.Logger?.LogWarning("GetMaxContextLength is not implemented for OpenAIAdapter, returning default 32768");
-            return await Task.FromResult(32768).ConfigureAwait(false);
+            LLMEngine.Logger?.LogWarning("GetMaxContextLength is not implemented for OpenAIAdapter, returning default 65536");
+            return await Task.FromResult(65536).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -141,12 +141,16 @@ namespace LetheAISharp.API
 
         public async Task<int> CountTokens(string text)
         {
-            return await Task.FromResult(_client.CountTokens(text));
+            var request = new TokenRequest { content = text };
+            var token = await _client.TokenizeAsync(request).ConfigureAwait(false);
+            return token.GetTokenCount();
         }
 
         public int CountTokensSync(string text)
         {
-            return _client.CountTokens(text);
+            var request = new TokenRequest { content = text };
+            var token = _client.TokenizeSync(request);
+            return token.GetTokenCount();
         }
 
         public async Task<byte[]> TextToSpeech(string text, string voice)
@@ -208,15 +212,12 @@ namespace LetheAISharp.API
         }
 
         public bool SupportsStreaming => true;
-        public bool SupportsTTS => false;  // TODO
+        public bool SupportsTTS => false;
         public bool SupportsVision => true;
         public bool SupportsWebSearch => true;
         public bool SupportsStateSave => false; // Not Available
         public bool SupportsSchema => true;
         public bool SupportsToolCalls { get; private set; } = true;
-
-        public BackendChatCompletionThinkTagBehavior ThinkTagBehavior => LLMEngine.Settings.BackendStartThinkTagBehavior ?? BackendChatCompletionThinkTagBehavior.Emitted;
-
-
+        public BackendChatCompletionThinkTagBehavior ThinkTagBehavior => LLMEngine.Settings.BackendStartThinkTagBehavior ?? BackendChatCompletionThinkTagBehavior.Silent;
     }
 }

@@ -24,7 +24,7 @@ namespace LetheAISharp.API
         private readonly WebSearchAPI webSearchClient;
 
         private CancellationTokenSource? cts;
-        private readonly object _ctsLock = new();
+        private readonly Lock _ctsLock = new();
 
         public string BaseUrl
         {
@@ -50,6 +50,8 @@ namespace LetheAISharp.API
         public bool SupportsToolCalls => false;
 
         public bool SupportsSchema => true;
+
+        public BackendChatCompletionThinkTagBehavior ThinkTagBehavior => LLMEngine.Settings.BackendStartThinkTagBehavior ?? BackendChatCompletionThinkTagBehavior.Emitted;
 
         public event EventHandler<LLMTokenStreamingEventArgs>? TokenReceived;
 

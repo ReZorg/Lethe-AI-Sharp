@@ -19,64 +19,9 @@ namespace LetheAISharp.API
 {
     /// I know the code is kinda cancer, but that's swagger generated code for you. And I fixed some parts.
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.1.0.0 (NJsonSchema v11.0.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public class KoboldCppClient 
+    public class KoboldCppClient : HttpClientBase
     {
-        public bool ReadResponseAsString { get; set; } = true;
-
-        /// <summary>
-        /// Maximum number of retry attempts for failed requests (0 = no retries)
-        /// </summary>
-        public int MaxRetryAttempts { get; set; } = 3;
-
-        /// <summary>
-        /// Base delay between retry attempts in milliseconds
-        /// </summary>
-        public int RetryDelayMs { get; set; } = 500;
-
-        /// <summary>
-        /// Whether to use exponential backoff for retries
-        /// </summary>
-        public bool UseExponentialBackoff { get; set; } = true;
-
-        /// <summary>
-        /// HTTP status codes that should trigger a retry
-        /// </summary>
-        public HashSet<int> RetryStatusCodes { get; } = new HashSet<int> { 404, 408, 429, 500, 502, 503, 504 };
-
-        public string BaseUrl
-        {
-            get { return _baseUrl; }
-            set
-            {
-                _baseUrl = value;
-                if (!string.IsNullOrEmpty(_baseUrl) && !_baseUrl.EndsWith("/"))
-                    _baseUrl += '/';
-            }
-        }
-
-        public JsonSerializerSettings JsonSerializerSettings => _settings.Value;
-
         public event EventHandler<TextStreamingEvenArg> StreamingMessageReceived;
-
-        protected struct ObjectResponseResult<T>
-        {
-            public ObjectResponseResult(T responseObject, string responseText)
-            {
-                this.Object = responseObject;
-                this.Text = responseText;
-            }
-
-            public T Object { get; }
-
-            public string Text { get; }
-        }
-
-        private string _baseUrl = string.Empty;
-
-        // Task-specific clients
-        private HttpClient _httpClient;
-
-        private static Lazy<JsonSerializerSettings> _settings = new Lazy<JsonSerializerSettings>(CreateSerializerSettings, true);
 
         protected virtual void OnStreamingMessageReceived(TextStreamingEvenArg e) => StreamingMessageReceived?.Invoke(this, e);
 
@@ -90,130 +35,6 @@ namespace LetheAISharp.API
             MaxRetryAttempts = maxRetryAttempts;
             RetryDelayMs = retryDelayMs;
         }
-
-        private static JsonSerializerSettings CreateSerializerSettings()
-        {
-            var settings = new JsonSerializerSettings();
-            return settings;
-        }
-
-        #region Core Internal Functions
-
-        /// <summary>
-        /// Sends a Post/Get request and returns the response
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="selectclient">HTTP CLient to use</param>
-        /// <param name="method">POST or GET method</param>
-        /// <param name="endpoint">API Endpoint to hit</param>
-        /// <param name="body">message to send for POST requests</param>
-        /// <param name="cancellationToken">cancel token thing</param>
-        /// <returns></returns>
-        /// <exception cref="ApiException"></exception>
-        /// <exception cref="ApiException{ServerBusyError}"></exception>
-        private async Task<T> SendRequestAsync<T>(HttpClient selectclient, HttpMethod method, string endpoint, object body = null, CancellationToken cancellationToken = default)
-        {
-            var client = selectclient;
-            int attempt = 0;
-
-            while (true)
-            {
-                attempt++;
-                try
-                {
-                    using var request = new HttpRequestMessage(method, new Uri(_baseUrl + endpoint, UriKind.RelativeOrAbsolute));
-
-                    if (body != null)
-                    {
-                        var json = JsonConvert.SerializeObject(body, JsonSerializerSettings);
-                        var content = new StringContent(json);
-                        content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                        request.Content = content;
-                    }
-
-                    request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse("application/json"));
-
-                    using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-
-                    var status = (int)response.StatusCode;
-                    if (status == 200)
-                    {
-                        var objectResponse = await ReadObjectResponseAsync<T>(response, new Dictionary<string, IEnumerable<string>>(), cancellationToken).ConfigureAwait(false);
-                        return objectResponse.Object;
-                    }
-                    else if (status == 503)
-                    {
-                        var objectResponse = await ReadObjectResponseAsync<ServerBusyError>(response, new Dictionary<string, IEnumerable<string>>(), cancellationToken).ConfigureAwait(false);
-                        if (objectResponse.Object == null)
-                        {
-                            throw new ApiException("Response was null which was not expected.", status, null, new Dictionary<string, IEnumerable<string>>(), null);
-                        }
-
-                        // Handle 503 with retry if configured
-                        if (attempt <= MaxRetryAttempts && RetryStatusCodes.Contains(status))
-                        {
-                            await DelayForRetryAsync(attempt).ConfigureAwait(false);
-                            continue;
-                        }
-
-                        throw new ApiException<ServerBusyError>("Server is busy", status, objectResponse.Text,
-                            new Dictionary<string, IEnumerable<string>>(), objectResponse.Object, null);
-                    }
-                    // For other status codes that should be retried
-                    else if (attempt <= MaxRetryAttempts && RetryStatusCodes.Contains(status))
-                    {
-                        await DelayForRetryAsync(attempt).ConfigureAwait(false);
-                        continue;
-                    }
-
-                    var responseData = response.Content == null ? null : await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    throw new ApiException($"HTTP status code {status} was not expected.", status, responseData, new Dictionary<string, IEnumerable<string>>(), null);
-                }
-                catch (HttpRequestException ex) when (attempt <= MaxRetryAttempts)
-                {
-                    // Network-level exceptions (connection refused, etc.)
-                    await DelayForRetryAsync(attempt).ConfigureAwait(false);
-
-                    // If this was the last attempt, rethrow
-                    if (attempt == MaxRetryAttempts)
-                        throw new ApiException("Request failed after maximum retry attempts", 0, ex.Message, new Dictionary<string, IEnumerable<string>>(), ex);
-                }
-                catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException && attempt <= MaxRetryAttempts)
-                {
-                    // Timeout exceptions
-                    await DelayForRetryAsync(attempt).ConfigureAwait(false);
-
-                    // If this was the last attempt, rethrow
-                    if (attempt == MaxRetryAttempts)
-                        throw new ApiException("Request timed out after maximum retry attempts", 0, ex.Message, new Dictionary<string, IEnumerable<string>>(), ex);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Calculates and waits for the appropriate delay between retry attempts
-        /// </summary>
-        private async Task DelayForRetryAsync(int attempt)
-        {
-            int delayMs = RetryDelayMs;
-
-            if (UseExponentialBackoff)
-            {
-                // Simple exponential backoff: delay * 2^(attempt-1)
-                delayMs = (int)(RetryDelayMs * Math.Pow(2, attempt - 1));
-
-                // Add some jitter (±20% randomization) to avoid thundering herd
-                double jitter = 0.8 + (LLMEngine.RNG.NextDouble() * 0.4); // 0.8 to 1.2
-                delayMs = (int)(delayMs * jitter);
-
-                // Cap at 30 seconds max delay
-                delayMs = Math.Min(delayMs, 30000);
-            }
-
-            await Task.Delay(delayMs).ConfigureAwait(false);
-        }
-
-        #endregion
 
         #region KoboldCpp API - Text Model Operations
 
@@ -263,7 +84,6 @@ namespace LetheAISharp.API
         /// </summary>
         public virtual async Task GenerateTextStreamAsync(GenerationInput body, CancellationToken cancellationToken = default)
         {
-            var client_ = _httpClient;
             var urlBuilder_ = new System.Text.StringBuilder();
             if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
             urlBuilder_.Append("api/extra/generate/stream");
@@ -277,9 +97,7 @@ namespace LetheAISharp.API
             content_.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
             request.Content = content_;
             request.Method = new HttpMethod("POST");
-            //request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse("application/json"));
-
-            using (var response = await client_.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false))
+            using (var response = await _httpClient!.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false))
             {
                 response.EnsureSuccessStatusCode();
 
@@ -480,7 +298,7 @@ namespace LetheAISharp.API
 
                     request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse("audio/wav"));
 
-                    using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    using var response = await _httpClient!.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
 
                     var status = (int)response.StatusCode;
                     if (status == 200)
@@ -538,7 +356,6 @@ namespace LetheAISharp.API
             if (body == null)
                 throw new System.ArgumentNullException("body");
 
-            var client_ = _httpClient;
             var disposeClient_ = false;
             try
             {
@@ -559,7 +376,7 @@ namespace LetheAISharp.API
                     var url_ = urlBuilder_.ToString();
                     request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
 
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var response_ = await _httpClient!.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                     var disposeResponse_ = true;
                     try
                     {
@@ -598,7 +415,7 @@ namespace LetheAISharp.API
             finally
             {
                 if (disposeClient_)
-                    client_.Dispose();
+                    _httpClient!.Dispose();
             }
         }
 
@@ -635,7 +452,6 @@ namespace LetheAISharp.API
         }
 
         #endregion
-
 
         #region KoboldCpp API - Image Generation API
 
@@ -695,49 +511,6 @@ namespace LetheAISharp.API
         public virtual async Task<PreloadedStoryResponse> PreloadstoryAsync(CancellationToken cancellationToken = default)
         {
             return await SendRequestAsync<PreloadedStoryResponse>(_httpClient, HttpMethod.Get, "api/extra/preloadstory", cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
-
-        protected virtual async Task<ObjectResponseResult<T>> ReadObjectResponseAsync<T>(HttpResponseMessage response, IReadOnlyDictionary<string, IEnumerable<string>> headers, CancellationToken cancellationToken)
-        {
-            if (response == null || response.Content == null)
-            {
-                return new ObjectResponseResult<T>(default(T), string.Empty);
-            }
-
-            if (ReadResponseAsString)
-            {
-                var responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                try
-                {
-                    var test = JsonConvert.DeserializeObject<T>(responseText, JsonSerializerSettings);
-                    // var typedBody = JsonConvert.DeserializeObject<T>(responseText, JsonSerializerSettings);
-                    return new ObjectResponseResult<T>(test, responseText);
-                }
-                catch (JsonException exception)
-                {
-                    LLMEngine.Logger?.LogError(exception, "Could not deserialize the response body string as {TypeName}. Response: {ResponseText}", typeof(T).FullName, responseText);
-                    return new ObjectResponseResult<T>(default(T), string.Empty);
-                }
-            }
-            else
-            {
-                try
-                {
-                    using (var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                    using (var streamReader = new System.IO.StreamReader(responseStream))
-                    using (var jsonTextReader = new JsonTextReader(streamReader))
-                    {
-                        var serializer = JsonSerializer.Create(JsonSerializerSettings);
-                        var typedBody = serializer.Deserialize<T>(jsonTextReader);
-                        return new ObjectResponseResult<T>(typedBody, string.Empty);
-                    }
-                }
-                catch (JsonException exception)
-                {
-                    LLMEngine.Logger?.LogError(exception, "Could not deserialize the response body stream as {TypeName}.", typeof(T).FullName);
-                    return new ObjectResponseResult<T>(default(T), string.Empty);
-                }
-            }
         }
     }
 
@@ -1850,41 +1623,6 @@ namespace LetheAISharp.API
             return JsonConvert.DeserializeObject<CaptionedImageResponse>(data, new JsonSerializerSettings());
         }
 
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.1.0.0 (NJsonSchema v11.0.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public class ApiException : System.Exception
-    {
-        public int StatusCode { get; private set; }
-
-        public string Response { get; private set; }
-
-        public System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> Headers { get; private set; }
-
-        public ApiException(string message, int statusCode, string response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Exception innerException)
-            : base(message + "\n\nStatus: " + statusCode + "\nResponse: \n" + ((response == null) ? "(null)" : response.Substring(0, response.Length >= 512 ? 512 : response.Length)), innerException)
-        {
-            StatusCode = statusCode;
-            Response = response ?? string.Empty;
-            Headers = headers;
-        }
-
-        public override string ToString()
-        {
-            return string.Format("HTTP Response: \n\n{0}\n\n{1}", Response, base.ToString());
-        }
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.1.0.0 (NJsonSchema v11.0.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public class ApiException<TResult> : ApiException
-    {
-        public TResult Result { get; private set; }
-
-        public ApiException(string message, int statusCode, string response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, TResult result, System.Exception innerException)
-            : base(message, statusCode, response, headers, innerException)
-        {
-            Result = result;
-        }
     }
 
     public class StreamingTokenResponse

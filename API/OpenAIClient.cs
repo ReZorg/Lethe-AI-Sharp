@@ -28,13 +28,18 @@ namespace LetheAISharp.API
         public List<ToolCallRecord>? ToolCallRecords { get; set; }
     }   
 
-    public class OpenAI_APIClient
+    public class OpenAI_APIClient : HttpClientBase
     {
-        private OpenAIClient API { get; set; }
-        private HttpClient _httpClient { get; set; }
+        protected OpenAIClient API { get; set; }
+
+        public int NetworkTimeoutSeconds
+        {
+            get => (int)_httpClient!.Timeout.TotalSeconds;
+            set => _httpClient!.Timeout = TimeSpan.FromSeconds(value);
+        }
 
         public event EventHandler<OpenTokenResponse>? StreamingMessageReceived;
-        private void RaiseOnStreamingResponse(OpenTokenResponse e) => StreamingMessageReceived?.Invoke(this, e);
+        protected void RaiseOnStreamingResponse(OpenTokenResponse e) => StreamingMessageReceived?.Invoke(this, e);
 
         public OpenAI_APIClient(HttpClient httpclient)
         {
@@ -42,7 +47,7 @@ namespace LetheAISharp.API
             _httpClient.DefaultRequestHeaders.ConnectionClose = false;
             _httpClient.Timeout = TimeSpan.FromMinutes(2);
             var settings = new OpenAISettings(LLMEngine.Settings.BackendUrl);
-            API = new OpenAIClient(new OpenAIAuthentication("123"), settings, _httpClient);
+            API = new OpenAIClient(new OpenAIAuthentication(LLMEngine.Settings.OpenAIKey), settings, _httpClient);
         }
 
         public virtual async Task<List<Model>> GetModelList()

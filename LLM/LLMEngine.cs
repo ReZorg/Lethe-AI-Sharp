@@ -15,7 +15,7 @@ using static LetheAISharp.SearchAPI.WebSearchAPI;
 namespace LetheAISharp.LLM
 {
     public enum SystemStatus { NotInit, Ready, Busy }
-    public enum BackendAPI { KoboldAPI, OpenAI, LlamaSharp }
+    public enum BackendAPI { KoboldAPI, LlamaCpp, OpenAI, LlamaSharp }
 
     /// <summary>
     /// System to handle communications with language models. 
@@ -129,10 +129,8 @@ namespace LetheAISharp.LLM
 
         private static void RaiseOnFullPromptReady(string fullprompt) => OnFullPromptReady?.Invoke(Bot, fullprompt);
         private static void RaiseOnStatusChange(SystemStatus newStatus) => OnStatusChanged?.Invoke(Bot, newStatus);
-#pragma warning disable CS0618 // backward-compat raise helpers for obsolete events
         private static void RaiseOnInferenceStreamed(string addedString) => OnInferenceStreamed?.Invoke(Bot, addedString);
         private static void RaiseOnInferenceEnded(string fullString) => OnInferenceEnded?.Invoke(Bot, fullString);
-#pragma warning restore CS0618
         private static void RaiseOnQuickInferenceEnded(string fullprompt) => OnQuickInferenceEnded?.Invoke(Bot, fullprompt);
         private static void RaiseInferenceSegment(InferenceSegment segment) => OnInferenceSegment?.Invoke(Bot, segment);
         private static void RaiseInferenceCompleted(InferenceResult result) => OnInferenceCompleted?.Invoke(Bot, result);
@@ -276,6 +274,7 @@ namespace LetheAISharp.LLM
                 BackendAPI.KoboldAPI => new KoboldCppAdapter(httpClient),
                 BackendAPI.OpenAI => new OpenAIAdapter(httpClient),
                 BackendAPI.LlamaSharp => new LlamaSharpAdapter(Settings.BackendUrl),
+                BackendAPI.LlamaCpp => new LlamaCppAdapter(httpClient),
                 _ => throw new NotSupportedException($"Backend {Settings.BackendAPI} is not supported")
             };
             // Subscribe to the TokenReceived event
@@ -719,6 +718,17 @@ namespace LetheAISharp.LLM
 
         #region *** Private and Internal Methods ***
 
+        /// <summary>
+        /// Handles streaming message events from the client, processing incoming tokens and managing the completion of
+        /// streamed responses.
+        /// </summary>
+        /// <remarks>This method processes both intermediate and final tokens received during a streaming
+        /// inference operation. On completion, it finalizes the response, handles tool call records, updates
+        /// conversation history, and raises relevant events. The method supports both simple and full-chat modes, and
+        /// integrates with context plugins to allow output modification.</remarks>
+        /// <param name="sender">The source of the event, typically the client instance that is streaming the message.</param>
+        /// <param name="e">An event argument containing details about the streamed token, completion status, and any associated tool
+        /// call records.</param>
         private static void Client_StreamingMessageReceived(object? sender, LLMTokenStreamingEventArgs e)
         {
             // "null", "stop", "length"
@@ -799,17 +809,16 @@ namespace LetheAISharp.LLM
                         Bot.History.LogMessage(resultMsg);
                     }
                 }
-                StreamingTextProgress = string.Empty;
                 if (e.FinishReason != "tool_calls")
                 {
                     Status = SystemStatus.Ready;
                     RaiseOnInferenceEnded(response);
 
-                    var answer = textStreamReceiver.GetCurrentBuffers();
+                    var (ThinkContent, TalkContent) = textStreamReceiver.GetCurrentBuffers();
 
                     // Build structured result for new event
-                    var thinkingContent = answer.ThinkContent.Length > 0 ? answer.ThinkContent.Trim() : null;
-                    var textResponse = answer.TalkContent.Trim();
+                    var thinkingContent = ThinkContent.Length > 0 ? ThinkContent.Trim() : null;
+                    var textResponse = TalkContent.Trim();
                     var inferenceResult = new InferenceResult
                     {
                         Response = textResponse,
@@ -819,13 +828,19 @@ namespace LetheAISharp.LLM
                     };
                     RaiseInferenceCompleted(inferenceResult);
                 }
+                // reset StreamingTextProgress to get it ready for next message (if any)
+                if (!string.IsNullOrEmpty(StreamingTextProgress))
+                {
+                    Logger?.LogInformation("[Message] {message}", StreamingTextProgress.RemoveNewLines());
+                }
+                StreamingTextProgress = string.Empty;
             }
             else
             {
                 var token = e.Token;
                 if (CompletionAPIType == CompletionType.Chat && 
                     string.IsNullOrEmpty(StreamingTextProgress) && 
-                    Settings.BackendStartThinkTagBehavior == BackendChatCompletionThinkTagBehavior.Silent && 
+                    Client!.ThinkTagBehavior == BackendChatCompletionThinkTagBehavior.Silent && 
                     Instruct.IsThinkFormat && 
                     e.Token != Instruct.ThinkingStart.Replace("\n", ""))
                 {
@@ -1055,7 +1070,6 @@ namespace LetheAISharp.LLM
                 message.Message;
 
             var pluginmessage = await BuildPluginSystemInsertAsync(lastuserinput).ConfigureAwait(false);
-
 
 
             // call the brain if there's no plugin interfering

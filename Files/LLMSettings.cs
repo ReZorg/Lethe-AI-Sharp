@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using LetheAISharp.Memory;
+using LetheAISharp.API;
 
 namespace LetheAISharp.Files
 {
@@ -15,19 +16,6 @@ namespace LetheAISharp.Files
         None,
         ActiveOnly,
         All,
-    }
-
-    /// <summary>
-    /// On chat completion backends with thinking models (and on some jinja templates only), the initial "think" tag
-    /// may not be streamed at all, it's just silent and assumed (as it's prefilled internally). This setting is used to 
-    /// recognize the behavior so LetheAI's output stays consistant.
-    /// </summary>
-    public enum BackendChatCompletionThinkTagBehavior
-    {
-        /// <summary> The backend emits the initial "think" tag as a token, nothing changes (LM Studio). </summary>
-        Emitted,
-        /// <summary> The backend doesn't emit the initial "think" tag as a token, LethAI will prepend it (llama.cpp). </summary>
-        Silent
     }
 
     public class LLMSettings : BaseFile
@@ -52,8 +40,9 @@ namespace LetheAISharp.Files
         /// On chat completion backends with thinking models (and on some jinja templates only), the initial "think" tag may not be streamed at all, 
         /// it's just silent and assumed (as it's prefilled internally). 
         /// This setting is used to recognize the behavior so LetheAI's output stays consistant.
+        /// Set null to auto-detect based on the backend and template used.
         /// </summary>
-        public BackendChatCompletionThinkTagBehavior BackendStartThinkTagBehavior { get; set; } = BackendChatCompletionThinkTagBehavior.Silent;
+        public BackendChatCompletionThinkTagBehavior? BackendStartThinkTagBehavior { get; set; } = null;
 
         /// <summary>
         /// When set to true, if the backend supports it, tool calls will be made in parallel instead of sequentially. 
