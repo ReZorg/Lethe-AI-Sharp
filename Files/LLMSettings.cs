@@ -20,7 +20,7 @@ namespace LetheAISharp.Files
     /// <summary>
     /// On chat completion backends with thinking models (and on some jinja templates only), the initial "think" tag
     /// may not be streamed at all, it's just silent and assumed (as it's prefilled internally). This setting is used to 
-    /// recognize the behavior so LetheAI's output stays consistant
+    /// recognize the behavior so LetheAI's output stays consistant.
     /// </summary>
     public enum BackendChatCompletionThinkTagBehavior
     {
@@ -48,7 +48,20 @@ namespace LetheAISharp.Files
         /// <summary> API of the backend server, KoboldAPI (text completion) and OpenAI (chat completion) are both handled </summary>
         public BackendAPI BackendAPI { get; set; } = BackendAPI.KoboldAPI;
 
+        /// <summary>
+        /// On chat completion backends with thinking models (and on some jinja templates only), the initial "think" tag may not be streamed at all, 
+        /// it's just silent and assumed (as it's prefilled internally). 
+        /// This setting is used to recognize the behavior so LetheAI's output stays consistant.
+        /// </summary>
         public BackendChatCompletionThinkTagBehavior BackendStartThinkTagBehavior { get; set; } = BackendChatCompletionThinkTagBehavior.Silent;
+
+        /// <summary>
+        /// When set to true, if the backend supports it, tool calls will be made in parallel instead of sequentially. 
+        /// This can speed up the generation when multiple tool calls are made, but can cause issues with some backends. 
+        /// Depending on the backend and model you use, you might want to experiment with this setting to see if it improves performance or causes issues.
+        /// </summary>
+        public bool? BackendParallelToolCalls { get; set; } = null;
+
 
         /// <summary> API key for OpenAI (depends on the backend) </summary>
         public string OpenAIKey { get; set; } = "123";
@@ -73,6 +86,7 @@ namespace LetheAISharp.Files
         /// Force the use of internal grammar rule generator, even if backend supports it.
         /// </summary>
         public bool ForceInternalGrammar { get; set; } = false;
+
 
         #endregion
 
