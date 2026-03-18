@@ -52,7 +52,7 @@ await LLMEngine.SimpleQueryStreaming(query, cts.Token);
 
 ## 🧩 Compatible Backends
 - **Kobold API:** Powerful text completion API, used by [KoboldCpp](https://github.com/LostRuins/koboldcpp).
-- **OpenAI API:** Industry standard chat completion API, used by [LM Studio](https://lmstudio.ai/), [Text Generation WebUI](https://github.com/oobabooga/text-generation-webui), and many more.
+- **OpenAI API:** Industry standard chat completion API, used by [llama.cpp](https://github.com/ggml-org/llama.cpp), [LM Studio](https://lmstudio.ai/), [Text Gen WebUI](https://github.com/oobabooga/text-generation-webui), and many more.
 
 Remote endpoints should work but primary focus remains local / LAN latency. 
 
