@@ -15,7 +15,7 @@ namespace LetheAISharp
 {
     internal class ChatPromptBuilder : IPromptBuilder
     {
-        private readonly List<Message> _prompt = [];
+        private readonly List<SingleMessage> _prompt = [];
         private OpenAI.JsonSchema? _currentSchema = null;
         private List<string> imagefilepath = [];
 
@@ -24,15 +24,13 @@ namespace LetheAISharp
         public int AddMessage(AuthorRole role, string message)
         {
             var single = new SingleMessage(role, message);
-            var msg = FormatSingleMessage(single);
-            _prompt.Add(msg);
+            _prompt.Add(single);
             return GetTokenCount(single);
         }
 
         public int AddMessage(SingleMessage message)
         {
-            var msg = FormatSingleMessage(message);
-            _prompt.Add(msg);
+            _prompt.Add(message);
             var cost = GetTokenCount(message);
             return cost;
         }
@@ -44,25 +42,33 @@ namespace LetheAISharp
 
         public int GetTokenUsage()
         {
+            return GetTokenUsage(_prompt);
+        }
+
+        private int GetTokenUsage(List<SingleMessage> messages)
+        {
             var total = 0;
             if (LLMEngine.UseToolCallsInPrompt)
                 total += LLMEngine.ToolManager.EstimatedTokenCost();
-            foreach (var message in _prompt)
+            if (LLMEngine.Client is not null)
+                return total + LLMEngine.Client.CountMessageTokens(messages);
+
+            foreach (var message in messages)
             {
-                total += GetTokenCountMsg(message);
+                total += GetTokenCount(message) + 2;
             }
             return total;
         }
 
         public int InsertMessage(int index, AuthorRole role, string message)
         {
+            var single = new SingleMessage(role, message);
             if (index == _prompt.Count)
             {
-                return AddMessage(new SingleMessage(role, message));
+                return AddMessage(single);
             }
-            var msg = FormatSingleMessage(new SingleMessage(role, message));
-            _prompt.Insert(index, msg);
-            return GetTokenCountMsg(msg);
+            _prompt.Insert(index, single);
+            return GetTokenCount(single);
         }
 
         public int InsertMessage(int index, SingleMessage message)
@@ -71,8 +77,7 @@ namespace LetheAISharp
             {
                 return AddMessage(message);
             }
-            var msg = FormatSingleMessage(message);
-            _prompt.Insert(index, msg);
+            _prompt.Insert(index, message);
             var cost = GetTokenCount(message);
             return cost;
         }
@@ -99,7 +104,17 @@ namespace LetheAISharp
 
         public object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null, bool forceAltRoles = false)
         {
-            var finalprompt = new List<Message>(_prompt);
+            // Let's make sure we don't overshoot token limits.
+            var workingprompt = new List<SingleMessage>(_prompt);
+            var total = GetTokenUsage(workingprompt);
+            var max = LLMEngine.MaxContextLength - (responseoverride == -1 ? LLMEngine.Settings.MaxReplyLength : responseoverride) - 15;
+            while (total > max && workingprompt.Count > 1)
+            {
+                workingprompt.RemoveAt(1);
+                total = GetTokenUsage(workingprompt);
+            }
+
+            var finalprompt = new List<Message>(workingprompt.ConvertAll(m => m.ToChatCompletion()));
             var cleanimages = !LLMEngine.SupportsVision || LLMEngine.Settings.MaxImageCount > 0;
             var maxallowed = LLMEngine.SupportsVision ? LLMEngine.Settings.MaxImageCount : 0;
 
@@ -213,123 +228,14 @@ namespace LetheAISharp
             return total;
         }
 
-        private int GetTokenCountMsg(Message msg)
-        {
-            var total = 0;
-            if (msg.Content is List<Content> lst)
-            {
-                foreach (var content in lst)
-                {
-                    if (content.Type == ContentType.ImageUrl)
-                    {
-                        if (LLMEngine.SupportsVision)
-                            total += LLMEngine.Settings.ImageEmbeddingSize;
-                    }
-                    else
-                        total += LLMEngine.GetTokenCount(content.ToString());
-                }
-            }
-            else
-            {
-                total += LLMEngine.GetTokenCount(msg.Content as string ?? string.Empty);
-            }
-            if (msg.ToolCalls?.Count > 0 && (msg.Role == Role.Assistant || msg.Role == Role.Tool))
-            {
-                foreach (var toolCall in msg.ToolCalls)
-                {
-                    var approxstring = $"[ToolCall: {toolCall.Name}-{toolCall.CallId}]\n[Param: {toolCall.Arguments.ToJsonString()}]\n";
-                    total += LLMEngine.GetTokenCount(approxstring);
-                }
-            }
-            return total + 8;
-        }
-
         public string PromptToText()
         {
             var sb = new StringBuilder();
             foreach (var message in _prompt)
             {
-                if (message.Role == OpenAI.Role.User)
-                    sb.AppendLine(LLMEngine.User.Name + ": " + message.Content.ToString());
-                else if (message.Role == OpenAI.Role.Assistant)
-                    sb.AppendLine(LLMEngine.Bot.Name + ": " + message.Content.ToString());
-                else
-                    sb.AppendLine("SYSTEM" + ": " + message.Content.ToString());
+                sb.Append(message.ToTextCompletion());
             }
             return sb.ToString();
-        }
-
-        private static Message FormatSingleMessage(SingleMessage message)
-        {
-            // Tool result messages: skip all name/image logic
-            if (message.Role == AuthorRole.Tool && message.ToolCalls.Count > 0)
-            {
-                return new Message(Role.Tool, message.Message);
-            }
-
-            // Assistant tool-call-only messages: skip all name/image logic
-            if (message.Role == AuthorRole.Assistant && message.ToolCalls?.Count > 0 && string.IsNullOrEmpty(message.Message))
-            {
-                var tc = new ToolCall(message.ToolCalls[0].CallId, message.ToolCalls[0].FunctionName, JsonNode.Parse(message.ToolCalls[0].ArgumentsJson));
-                return new Message(tc, message.ToolCallToString());
-            }
-
-            var realprompt = message.Message;
-            var addname = LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt;
-
-            // In group conversations, ALWAYS add names so the LLM knows which persona is speaking
-            if (message.Bot is GroupPersonaBase)
-                addname = true;
-
-            if (message.Role != AuthorRole.Assistant && message.Role != AuthorRole.User)
-                addname = false;
-            string? selname = null;
-            if (addname)
-            {
-                if (message.Role == AuthorRole.Assistant)
-                {
-                    selname = message.Bot.Name;
-                }
-                else if (message.Role == AuthorRole.User)
-                {
-                    selname = message.User.Name;
-                }
-            }
-
-            if (!LLMEngine.SupportsVision || string.IsNullOrEmpty(message.ImagePath) || !File.Exists(message.ImagePath))
-                return new Message(TokenTools.InternalRoleToChatRole(message.Role), message.Bot.ReplaceMacros(realprompt, message.User), selname);
-
-            var content = new List<Content>();
-
-            var extension = Path.GetExtension(message.ImagePath).ToLowerInvariant();
-            switch (extension)
-            {
-                case ".jpg":
-                case ".jpeg":
-                    content.Add(new(ContentType.ImageUrl, $"data:image/jpeg;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
-                    break;
-                case ".png":
-                    content.Add(new(ContentType.ImageUrl, $"data:image/png;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
-                    break;
-                case ".gif":
-                    content.Add(new(ContentType.ImageUrl, $"data:image/gif;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
-                    break;
-                case ".bmp":
-                    content.Add(new(ContentType.ImageUrl, $"data:image/bmp;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
-                    break;
-                case ".webp":
-                    content.Add(new(ContentType.ImageUrl, $"data:image/webp;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
-                    break;
-                case ".tiff ":
-                    content.Add(new(ContentType.ImageUrl, $"data:image/tiff;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
-                    break;
-                default:
-                    content.Add(new(ContentType.ImageUrl, $"data:image/gif;base64,{ImageUtils.ImageToBase64(message.ImagePath, 1024)!}"));
-                    break;
-            }
-            content.Add(message.Bot.ReplaceMacros(realprompt, message.User));
-
-            return new Message(TokenTools.InternalRoleToChatRole(message.Role), content);
         }
 
         public async Task SetStructuredOutput<ClassToConvert>()

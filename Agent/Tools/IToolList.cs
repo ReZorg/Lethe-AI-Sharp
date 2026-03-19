@@ -17,7 +17,9 @@ namespace LetheAISharp.Agent.Tools
         /// Estimated token cost of including this toolset in the prompt.
         /// Used to make budget-aware decisions when composing toolsets.
         /// </summary>
-        int EstimatedTokenCost => GetToolList().Sum(t => TokenTools.CountTokensApprox(t.Function?.Description ?? string.Empty) +
-                TokenTools.CountTokensApprox(t.Function?.Parameters?.ToString() ?? string.Empty));
+        int EstimatedTokenCost => GetToolList().Sum(t => 
+            TokenTools.CountTokensApprox(t.Function?.Name ?? "unknown") + 
+            TokenTools.CountTokensApprox(t.Function?.Description ?? string.Empty) +
+            TokenTools.CountTokensApprox(t.Function?.Parameters?.ToJsonString() ?? string.Empty));
     }
 }

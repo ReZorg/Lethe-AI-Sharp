@@ -88,7 +88,7 @@ namespace LetheAISharp.Agent.Tools
 
         public int EstimatedTokenCost()
         {
-            return _toolLists.Values.Sum(tl => tl.EstimatedTokenCost);
+            return _toolLists.Values.Sum(tl => tl.EstimatedTokenCost) * 2;
         }
     }
 }

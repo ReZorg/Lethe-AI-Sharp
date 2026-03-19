@@ -1,7 +1,9 @@
 ﻿using LetheAISharp.LLM;
 using Newtonsoft.Json;
+using OpenAI;
 using OpenAI.Chat;
 using System.Text;
+using System.Text.Json.Nodes;
 
 namespace LetheAISharp.Files
 {
@@ -68,27 +70,75 @@ namespace LetheAISharp.Files
 
         public Message ToChatCompletion()
         {
-            // Case 1: Assistant message with tool calls (the LLM requested tools)
-            if (Role == AuthorRole.Assistant && ToolCalls.Count > 0 && string.IsNullOrEmpty(Message))
-            {
-                return new Message(OpenAI.Role.Assistant, "");
-            }
-
-            // Case 2: Tool result message
+            // Tool result messages: skip all name/image logic
             if (Role == AuthorRole.Tool && ToolCalls.Count > 0)
             {
                 return new Message(OpenAI.Role.Tool, Message);
             }
 
-            var addname = LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt;
-            if (Role == AuthorRole.System || Role == AuthorRole.SysPrompt)
+            // Assistant tool-call-only messages: skip all name/image logic
+            if (Role == AuthorRole.Assistant && ToolCalls?.Count > 0 && string.IsNullOrEmpty(Message))
             {
-                addname = false;
+                var tc = new ToolCall(ToolCalls[0].CallId, ToolCalls[0].FunctionName, JsonNode.Parse(ToolCalls[0].ArgumentsJson));
+                return new Message(tc, ToolCallToString());
             }
 
-            var msg = (addname && Sender != null) ?  Sender.Name + ": " + Message : Message;
+            var realprompt = Message;
+            var addname = LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt;
 
-            return new Message(TokenTools.InternalRoleToChatRole(Role), msg, addname ? Sender?.Name : null);
+            // In group conversations, ALWAYS add names so the LLM knows which persona is speaking
+            if (Bot is GroupPersonaBase)
+                addname = true;
+
+            if (Role != AuthorRole.Assistant && Role != AuthorRole.User)
+                addname = false;
+            string? selname = null;
+            if (addname)
+            {
+                if (Role == AuthorRole.Assistant)
+                {
+                    selname = Bot.Name;
+                }
+                else if (Role == AuthorRole.User)
+                {
+                    selname = User.Name;
+                }
+            }
+
+            if (!LLMEngine.SupportsVision || string.IsNullOrEmpty(ImagePath) || !File.Exists(ImagePath))
+                return new Message(TokenTools.InternalRoleToChatRole(Role), Bot.ReplaceMacros(realprompt, User), selname);
+
+            var content = new List<Content>();
+
+            var extension = Path.GetExtension(ImagePath).ToLowerInvariant();
+            switch (extension)
+            {
+                case ".jpg":
+                case ".jpeg":
+                    content.Add(new(ContentType.ImageUrl, $"data:image/jpeg;base64,{ImageUtils.ImageToBase64(ImagePath, 1024)!}"));
+                    break;
+                case ".png":
+                    content.Add(new(ContentType.ImageUrl, $"data:image/png;base64,{ImageUtils.ImageToBase64(ImagePath, 1024)!}"));
+                    break;
+                case ".gif":
+                    content.Add(new(ContentType.ImageUrl, $"data:image/gif;base64,{ImageUtils.ImageToBase64(ImagePath, 1024)!}"));
+                    break;
+                case ".bmp":
+                    content.Add(new(ContentType.ImageUrl, $"data:image/bmp;base64,{ImageUtils.ImageToBase64(ImagePath, 1024)!}"));
+                    break;
+                case ".webp":
+                    content.Add(new(ContentType.ImageUrl, $"data:image/webp;base64,{ImageUtils.ImageToBase64(ImagePath, 1024)!}"));
+                    break;
+                case ".tiff ":
+                    content.Add(new(ContentType.ImageUrl, $"data:image/tiff;base64,{ImageUtils.ImageToBase64(ImagePath, 1024)!}"));
+                    break;
+                default:
+                    content.Add(new(ContentType.ImageUrl, $"data:image/gif;base64,{ImageUtils.ImageToBase64(ImagePath, 1024)!}"));
+                    break;
+            }
+            content.Add(Bot.ReplaceMacros(realprompt, User));
+
+            return new Message(TokenTools.InternalRoleToChatRole(Role), content);
         }
     }
 }
