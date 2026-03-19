@@ -17,7 +17,7 @@ Pure .NET 10 C# implementation. No Python runtime, no conda environments, no pip
 
 ### Self-Contained
 Built-in LlamaSharp backend means you can distribute a **single executable** 
-that runs LLMs locally. No external server required, but external servers are supported too.
+that runs LLMs locally. No external server required, but external servers are supported too (KoboldAPI, Llama.cpp, OpenAI Compatible, ...)
 
 ## 🎯 Use Cases
 - **Game NPCs** - Create dynamic, memory-enabled characters for NPC
@@ -51,32 +51,32 @@ await LLMEngine.SimpleQueryStreaming(query, cts.Token);
 ```
 
 ## 🧩 Compatible Backends
+- **Llama.cpp:** Gold standard for local inference. [Llama.cpp](https://github.com/ggml-org/llama.cpp) offers the most complete feature-set.
 - **Kobold API:** Powerful text completion API, used by [KoboldCpp](https://github.com/LostRuins/koboldcpp).
-- **OpenAI API:** Industry standard chat completion API, used by [llama.cpp](https://github.com/ggml-org/llama.cpp), [LM Studio](https://lmstudio.ai/), [Text Gen WebUI](https://github.com/oobabooga/text-generation-webui), and many more.
+- **OpenAI API:** Industry standard chat completion API, used by [LM Studio](https://lmstudio.ai/), [Text Gen WebUI](https://github.com/oobabooga/text-generation-webui), and many other backends.
 
 Remote endpoints should work but primary focus remains local / LAN latency. 
 
 Alternatively, if running an external backend is too much, **Lethe AI** also comes with its internal "backend" to load local models (in the GGUF format) directly from your application. It uses [LLamaSharp](https://github.com/SciSharp/LLamaSharp) as a base, a C# port of LLama.cpp.
 
 
-| Capability | Kobold API | OpenAI-Compatible | LlamaSharp (internal) |
-|------------|------------|-------------------|-----------------------|
-| Basic text generation | ✅ | ✅ | ✅ |
-| Streaming | ✅ | ✅ | ✅ |
-| Structured output | ✅ GBNF Grammar | ✅ JSON Schema | ✅ GBNF Grammar |
-| Chain of Thoughts | ✅ | ✅ | ✅ |
-| Personas & chat sessions | ✅ | ✅ | ✅ |
-| Memory integration | ✅ | ✅ | ✅ |
-| New arch. support | ✅ Backend dependent  | ✅ Backend dependent  | ⚠️ May lag behind |
-| Token Management | ✅ Exact | ⚠️ Estimated  | ✅ Exact |
-| Web search integration | ✅ | ✅ | ✅ |
-| Function Calling* | ❌ | ✅ (WIP) | ❌ |
-| Text To Speech | ✅ (if loaded) | ❌ | ❌ |
-| VLM (image input)** | ✅ (if loaded) | ✅ | ❌ |
+| Capability | Kobold API | Llama.cpp | OpenAI API | Internal |
+|------------|------------|-----------|------------|----------|
+| Text generation | ✅ Text | ✅ Chat | ✅ Chat | ✅ Text |
+| Streaming | ✅ | ✅ | ✅ | ✅ |
+| Structured output | ✅ GBNF | ✅ Schema | ✅ Schema | ✅ GBNF |
+| Chain of Thoughts | ✅ | ✅ | ✅ | ✅ |
+| Personas & chat sessions | ✅ | ✅ | ✅ | ✅ |
+| Memory integration | ✅ | ✅ | ✅ | ✅ |
+| Samplers | ✅ Advanced  | ✅ Advanced |  ✅ Basics  | ✅ Advanced |
+| Token Management | ✅ Exact | ✅ Exact | ⚠️ Estimated  | ✅ Exact |
+| Web search | ✅ | ✅ | ✅ | ✅ |
+| Function Calling *(1)* | ❌ | ✅ | ✅  | ❌ |
+| Text To Speech | ✅ (if loaded) | ❌ | ❌ | ❌ |
+| Image Input *(2)* | ⚠️ In theory | ✅ | ✅ | ❌ |
 
-\* Function calling depends on the model being used, not all LLM support the feature. Support is also experimental at the moment.
-
-\*\* VLM support depends entirely on underlying server and LLM capabilities. KoboldAPI has notoriously bad image input support.
+1) Function calling support depends largely on the LLM's capabilities.
+2) VLM support depends entirely on underlying server and LLM capabilities. KoboldCpp has notoriously bad image input support, so if you need image support, load it as a OpenAI-compatible backend instead and make sure it's in Jinja template mode, then it will behave properly.
 
 ## ⭐ Core Features
 
@@ -101,13 +101,13 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 - Fact-based discovery: the bot learns about the user over time, helping with the recall of other memory units.
 
 ## 🧠 Agentic System
+- Extensible tool calling abilities and mechanics with a set default example tools
 - Customizable tasks can run in the background (while the user is AFK for instance)
 - Includes 2 default tasks that run relevant web searches and mention results in following chat session
 - Write your own tasks easily to boost your bot's abilities
 
 ## 🛠️ Experimental Features (work in progress)
 - Sentiment analysis
-- Function calling (tool calling)
 
 ## 👀 See it in action
 
