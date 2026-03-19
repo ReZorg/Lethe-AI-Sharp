@@ -50,15 +50,14 @@ namespace LetheAISharp.API
             webSearchClient.SwitchProvider(LLMEngine.Settings.WebSearchAPI, LLMEngine.Settings.WebSearchBraveAPIKey);
         }
 
-
         public async Task<int> GetMaxContextLength()
         {
             // OpenAI doesn't have a direct endpoint for this
             // Use model info to determine context length
             // var modelInfo = await _client.GetModelInfo("default").ConfigureAwait(false);
             // Parse context length from model info or use a default
-            LLMEngine.Logger?.LogWarning("GetMaxContextLength is not implemented for OpenAIAdapter, returning default 65536");
-            return await Task.FromResult(65536).ConfigureAwait(false);
+            var res = await _client.GetServerStateAsync().ConfigureAwait(false);
+            return await Task.FromResult(res.default_generation_settings.n_ctx).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -73,7 +72,16 @@ namespace LetheAISharp.API
 
         public async Task<string> GetBackendInfo()
         {
-            return await _client.GetBackendInfo().ConfigureAwait(false);
+            var res = await _client.GetServerStateAsync().ConfigureAwait(false);
+
+            SupportsVision = res.modalities.vision;
+            SupportsToolCalls = res.chat_template_caps.supports_tool_calls;
+            SupportParallelToolCall = res.chat_template_caps.supports_parallel_tool_calls;
+
+            var isthink = res.chat_template.Contains("enable_think") || res.chat_template.Contains("<think>", StringComparison.InvariantCultureIgnoreCase) || res.chat_template.Contains("[THINK]", StringComparison.InvariantCultureIgnoreCase);
+            AllowPrefill = !isthink;
+
+            return $"Llama.cpp [{res.build_info}]";
         }
 
         public async Task<string> GenerateText(object parameters)
@@ -119,7 +127,6 @@ namespace LetheAISharp.API
         {
             return new ChatPromptBuilder();
         }
-
 
         public async Task<bool> AbortGeneration()
         {
@@ -213,11 +220,13 @@ namespace LetheAISharp.API
 
         public bool SupportsStreaming => true;
         public bool SupportsTTS => false;
-        public bool SupportsVision => true;
+        public bool SupportsVision { get; private set; } = false;
         public bool SupportsWebSearch => true;
-        public bool SupportsStateSave => false; // Not Available
-        public bool SupportsSchema => true;
+        public bool SupportsStateSave { get; private set; } = false;
+        public bool SupportsSchema { get; private set; } = true;
         public bool SupportsToolCalls { get; private set; } = true;
+        public bool SupportParallelToolCall { get; private set; } = false;
+        public bool AllowPrefill { get; private set; } = false;
         public BackendChatCompletionThinkTagBehavior ThinkTagBehavior => LLMEngine.Settings.BackendStartThinkTagBehavior ?? BackendChatCompletionThinkTagBehavior.Silent;
     }
 }

@@ -241,5 +241,9 @@ namespace LetheAISharp.API
         public bool SupportsToolCalls { get; private set; } = false;
 
         public BackendChatCompletionThinkTagBehavior ThinkTagBehavior => LLMEngine.Settings.BackendStartThinkTagBehavior ?? BackendChatCompletionThinkTagBehavior.Emitted;
+
+        public bool SupportParallelToolCall => false;
+
+        public bool AllowPrefill => true;
     }
 }

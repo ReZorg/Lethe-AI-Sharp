@@ -217,6 +217,8 @@ namespace LetheAISharp.API
 
         public BackendChatCompletionThinkTagBehavior ThinkTagBehavior => LLMEngine.Settings.BackendStartThinkTagBehavior ?? BackendChatCompletionThinkTagBehavior.Emitted;
 
+        public bool SupportParallelToolCall => LLMEngine.Settings.BackendParallelToolCalls ?? false;
 
+        public bool AllowPrefill => LLMEngine.Settings.BackendChatAllowPrefill ?? false;
     }
 }

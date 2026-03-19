@@ -53,6 +53,10 @@ namespace LetheAISharp.API
 
         public BackendChatCompletionThinkTagBehavior ThinkTagBehavior => LLMEngine.Settings.BackendStartThinkTagBehavior ?? BackendChatCompletionThinkTagBehavior.Emitted;
 
+        public bool SupportParallelToolCall => false;
+
+        public bool AllowPrefill => true;
+
         public event EventHandler<LLMTokenStreamingEventArgs>? TokenReceived;
 
         public LlamaSharpAdapter(string filepath)

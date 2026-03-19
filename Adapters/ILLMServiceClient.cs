@@ -101,8 +101,9 @@ namespace LetheAISharp.API
         bool SupportsStateSave { get; }
         bool SupportsSchema { get; }
         bool SupportsToolCalls { get; }
-
         BackendChatCompletionThinkTagBehavior ThinkTagBehavior { get; }
+        bool SupportParallelToolCall { get; }
+        bool AllowPrefill { get; }
 
     }
 }

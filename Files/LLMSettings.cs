@@ -50,6 +50,12 @@ namespace LetheAISharp.Files
         /// Depending on the backend and model you use, you might want to experiment with this setting to see if it improves performance or causes issues.
         /// </summary>
         public bool? BackendParallelToolCalls { get; set; } = null;
+        public bool? BackendChatAllowPrefill { get; set; } = null;
+        /// <summary>
+        /// Set to true only if llama-server was launched with the "--props" option and you want to allow all the extended samplers available in llama.cpp
+        /// If false, only the default OpenAI samplers can be used.
+        /// </summary>
+        public bool BackendLLamaCppAllowAllSamplers { get; set; } = false;
 
 
         /// <summary> API key for OpenAI (depends on the backend) </summary>

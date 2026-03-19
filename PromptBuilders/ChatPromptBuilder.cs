@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OpenAI;
-using LetheAISharp.Agent.Tools;
+using LetheAISharp.API;
 
 namespace LetheAISharp
 {
@@ -123,7 +123,10 @@ namespace LetheAISharp
         public object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null, bool forceAltRoles = false)
         {
             var finalprompt = new List<Message>(_prompt);
-            if (LLMEngine.Settings.MaxImageCount > 0)
+            var cleanimages = !LLMEngine.SupportsVision || LLMEngine.Settings.MaxImageCount > 0;
+            var maxallowed = LLMEngine.SupportsVision ? LLMEngine.Settings.MaxImageCount : 0;
+
+            if (cleanimages)
             {
                 // traverse the list and remove oldest images until we are within the limit
                 var count = 0;
@@ -154,6 +157,8 @@ namespace LetheAISharp
             }
 
             var prefill = overridePrefill ?? LLMEngine.Instruct.PrefillThinking;
+            if (LLMEngine.Client?.AllowPrefill == false)
+                prefill = false;
             // prefilling is not available when using tool calls in prompt or when a structured output schema is set,
             // as it would interfere with the format of the response
             if (prefill && (!LLMEngine.UseToolCallsInPrompt || !LLMEngine.ToolManager.HasTools()) && _currentSchema is null)
@@ -165,34 +170,43 @@ namespace LetheAISharp
                 }
             }
 
+            var dooverride = (LLMEngine.Client is LlamaCppAdapter) && LLMEngine.Settings.BackendLLamaCppAllowAllSamplers;
+            double? temp = tempoverride >= 0 ? tempoverride : (LLMEngine.ForceTemperature >= 0) ? LLMEngine.ForceTemperature : LLMEngine.Sampler.Temperature;
+            int? setseed = LLMEngine.Sampler.Sampler_seed != -1 ? LLMEngine.Sampler.Sampler_seed : null;
+            if (dooverride)
+            {
+                temp = null;
+                setseed = null;
+            }
+
             if (LLMEngine.UseToolCallsInPrompt && LLMEngine.ToolManager.HasTools() && _currentSchema is null)
             {
                 return new ChatRequest(finalprompt,
                     tools: LLMEngine.ToolManager.GetToolList(),
                     toolChoice: "auto",
-                    topP: LLMEngine.Sampler.Top_p,
-                    frequencyPenalty: LLMEngine.Sampler.Rep_pen - 1,
-                    seed: LLMEngine.Sampler.Sampler_seed != -1 ? LLMEngine.Sampler.Sampler_seed : null,
+                    topP: dooverride ? null : LLMEngine.Sampler.Top_p,
+                    frequencyPenalty: dooverride ? null : LLMEngine.Sampler.Rep_pen - 1,
+                    seed: setseed,
                     user: LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt ? LLMEngine.User.Name : null,
                     stops: [.. LLMEngine.Instruct.GetStoppingStrings(LLMEngine.User, LLMEngine.Bot)],
                     responseFormat: TextResponseFormat.Auto,
-                    parallelToolCalls: LLMEngine.Settings.BackendParallelToolCalls,
+                    parallelToolCalls: LLMEngine.Client?.SupportParallelToolCall ?? false,
                     maxTokens: responseoverride == -1 ? LLMEngine.Settings.MaxReplyLength : responseoverride,
-                    temperature: tempoverride >= 0 ? tempoverride : (LLMEngine.ForceTemperature >= 0) ? LLMEngine.ForceTemperature : LLMEngine.Sampler.Temperature);
+                    temperature: temp);
             }
             else
             {
                 return new ChatRequest(finalprompt,
-                    topP: LLMEngine.Sampler.Top_p,
-                    frequencyPenalty: LLMEngine.Sampler.Rep_pen - 1,
-                    seed: LLMEngine.Sampler.Sampler_seed != -1 ? LLMEngine.Sampler.Sampler_seed : null,
+                    topP: dooverride ? null : LLMEngine.Sampler.Top_p,
+                    frequencyPenalty: dooverride ? null : LLMEngine.Sampler.Rep_pen - 1,
+                    seed: setseed,
                     user: LLMEngine.NamesInPromptOverride ?? LLMEngine.Instruct.AddNamesToPrompt ? LLMEngine.User.Name : null,
                     stops: [.. LLMEngine.Instruct.GetStoppingStrings(LLMEngine.User, LLMEngine.Bot)],
-                    responseFormat: _currentSchema is not null ? OpenAI.TextResponseFormat.JsonSchema : OpenAI.TextResponseFormat.Auto,
+                    responseFormat: _currentSchema is not null ? TextResponseFormat.JsonSchema : TextResponseFormat.Auto,
                     jsonSchema: _currentSchema,
-                    parallelToolCalls: LLMEngine.Settings.BackendParallelToolCalls,
+                    parallelToolCalls: LLMEngine.Client?.SupportParallelToolCall ?? false,
                     maxTokens: responseoverride == -1 ? LLMEngine.Settings.MaxReplyLength : responseoverride,
-                    temperature: tempoverride >= 0 ? tempoverride : (LLMEngine.ForceTemperature >= 0) ? LLMEngine.ForceTemperature : LLMEngine.Sampler.Temperature);
+                    temperature: temp);
             }
 
         }
@@ -238,13 +252,13 @@ namespace LetheAISharp
             // Tool result messages: skip all name/image logic
             if (message.Role == AuthorRole.Tool && message.ToolCalls.Count > 0)
             {
-                return new Message(OpenAI.Role.Tool, message.Message);
+                return new Message(Role.Tool, message.Message);
             }
 
             // Assistant tool-call-only messages: skip all name/image logic
             if (message.Role == AuthorRole.Assistant && message.ToolCalls.Count > 0 && string.IsNullOrEmpty(message.Message))
             {
-                return new Message(OpenAI.Role.Assistant, "");
+                return new Message(Role.Assistant, "");
             }
 
             var realprompt = message.Message;
@@ -269,7 +283,7 @@ namespace LetheAISharp
                 }
             }
 
-            if (string.IsNullOrEmpty(message.ImagePath) || !File.Exists(message.ImagePath))
+            if (!LLMEngine.SupportsVision || string.IsNullOrEmpty(message.ImagePath) || !File.Exists(message.ImagePath))
                 return new Message(TokenTools.InternalRoleToChatRole(message.Role), message.Bot.ReplaceMacros(realprompt, message.User), selname);
 
             var content = new List<Content>();
