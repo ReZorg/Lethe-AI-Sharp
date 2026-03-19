@@ -20,8 +20,8 @@ Built-in LlamaSharp backend means you can distribute a **single executable**
 that runs LLMs locally. No external server required, but external servers are supported too (KoboldAPI, Llama.cpp, OpenAI Compatible, ...)
 
 ## 🎯 Use Cases
-- **Game NPCs** - Create dynamic, memory-enabled characters for NPC
-- **Chatbots** - Build context-aware assistants with RAG
+- **Chatbots** - Build context-aware assistants with long term memory and dynamic behaviors
+- **Agent** - Give tool access and tasks to personalized semi-autonomous agents
 - **Research Tools** - Combine web search with LLM analysis
 - **Content Generation** - Structured output for automation pipelines
 
