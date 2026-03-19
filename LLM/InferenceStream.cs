@@ -119,5 +119,10 @@ namespace LetheAISharp.LLM
 
         /// <summary> How long the tool execution took. </summary>
         public System.TimeSpan Duration { get; init; }
+
+        public override string ToString()
+        {
+            return $"[Function: {FunctionName} (CallId: {CallId})]\nArguments: {ArgumentsJson}";
+        }
     }
 }

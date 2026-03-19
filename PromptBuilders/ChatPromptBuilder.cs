@@ -1,14 +1,15 @@
-﻿using LetheAISharp.Files;
+﻿using LetheAISharp.Agent.Tools;
+using LetheAISharp.API;
+using LetheAISharp.Files;
 using LetheAISharp.LLM;
-using CommunityToolkit.HighPerformance;
+using OpenAI;
 using OpenAI.Chat;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using OpenAI;
-using LetheAISharp.API;
 
 namespace LetheAISharp
 {
@@ -17,7 +18,6 @@ namespace LetheAISharp
         private readonly List<Message> _prompt = [];
         private OpenAI.JsonSchema? _currentSchema = null;
         private List<string> imagefilepath = [];
-        private List<Tool> toolList = [];
 
         public int Count => _prompt.Count;
 
@@ -26,35 +26,15 @@ namespace LetheAISharp
             var single = new SingleMessage(role, message);
             var msg = FormatSingleMessage(single);
             _prompt.Add(msg);
-            return LLMEngine.GetTokenCount(single);
+            return GetTokenCount(single);
         }
 
         public int AddMessage(SingleMessage message)
         {
             var msg = FormatSingleMessage(message);
             _prompt.Add(msg);
-            var cost = LLMEngine.GetTokenCount(message);
-            if (message.ImagePath is not null && File.Exists(message.ImagePath))
-            {
-                cost += LLMEngine.Settings.ImageEmbeddingSize;
-            }
+            var cost = GetTokenCount(message);
             return cost;
-        }
-
-        private int GetTokenCountMsg(Message msg)
-        {
-            if (msg.Content is List<Content> lst)
-            {
-                var total = 0;
-                foreach (var content in lst)
-                {
-                    if (content.Type == ContentType.ImageUrl)
-                        total += LLMEngine.Settings.ImageEmbeddingSize;
-                    else
-                        total += LLMEngine.GetTokenCount(content.ToString());
-                }
-            }
-            return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
         }
 
         public object GetFullPrompt()
@@ -65,6 +45,8 @@ namespace LetheAISharp
         public int GetTokenUsage()
         {
             var total = 0;
+            if (LLMEngine.UseToolCallsInPrompt)
+                total += LLMEngine.ToolManager.EstimatedTokenCost();
             foreach (var message in _prompt)
             {
                 total += GetTokenCountMsg(message);
@@ -80,7 +62,7 @@ namespace LetheAISharp
             }
             var msg = FormatSingleMessage(new SingleMessage(role, message));
             _prompt.Insert(index, msg);
-            return LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
+            return GetTokenCountMsg(msg);
         }
 
         public int InsertMessage(int index, SingleMessage message)
@@ -91,14 +73,9 @@ namespace LetheAISharp
             }
             var msg = FormatSingleMessage(message);
             _prompt.Insert(index, msg);
-            var cost = LLMEngine.GetTokenCount(msg.Content.ToString()) + 4;
-            if (message.ImagePath is not null && File.Exists(message.ImagePath))
-            {
-                cost += LLMEngine.Settings.ImageEmbeddingSize;
-            }
+            var cost = GetTokenCount(message);
             return cost;
         }
-
 
         private string GetResponseStart(BasePersona talker, bool? overridePrefill = null)
         {
@@ -218,18 +195,53 @@ namespace LetheAISharp
 
         public int GetTokenCount(AuthorRole role, string message)
         {
-            var msg = FormatSingleMessage(new SingleMessage(role, message));
-            return LLMEngine.GetTokenCount(msg.Content.ToString());
+            return GetTokenCount(new SingleMessage(role, message));
         }
 
         public int GetTokenCount(SingleMessage message)
         {
-            var msg = FormatSingleMessage(message);
-            if (message.ImagePath is not null && File.Exists(message.ImagePath))
+            var total = LLMEngine.GetTokenCount(message.ToTextCompletion());
+
+            if (message.ImagePath is not null && File.Exists(message.ImagePath) && LLMEngine.SupportsVision)
             {
-                return LLMEngine.GetTokenCount(msg.Content.ToString()) + LLMEngine.Settings.ImageEmbeddingSize;
+                total += LLMEngine.Settings.ImageEmbeddingSize;
             }
-            return LLMEngine.GetTokenCount(msg.Content.ToString());
+            if (message.Role == AuthorRole.Assistant && message.ToolCalls.Count > 0)
+            {
+                total += LLMEngine.GetTokenCount(message.ToolCallToString());
+            }
+            return total;
+        }
+
+        private int GetTokenCountMsg(Message msg)
+        {
+            var total = 0;
+            if (msg.Content is List<Content> lst)
+            {
+                foreach (var content in lst)
+                {
+                    if (content.Type == ContentType.ImageUrl)
+                    {
+                        if (LLMEngine.SupportsVision)
+                            total += LLMEngine.Settings.ImageEmbeddingSize;
+                    }
+                    else
+                        total += LLMEngine.GetTokenCount(content.ToString());
+                }
+            }
+            else
+            {
+                total += LLMEngine.GetTokenCount(msg.Content as string ?? string.Empty);
+            }
+            if (msg.ToolCalls?.Count > 0 && (msg.Role == Role.Assistant || msg.Role == Role.Tool))
+            {
+                foreach (var toolCall in msg.ToolCalls)
+                {
+                    var approxstring = $"[ToolCall: {toolCall.Name}-{toolCall.CallId}]\n[Param: {toolCall.Arguments.ToJsonString()}]\n";
+                    total += LLMEngine.GetTokenCount(approxstring);
+                }
+            }
+            return total + 8;
         }
 
         public string PromptToText()
@@ -256,9 +268,10 @@ namespace LetheAISharp
             }
 
             // Assistant tool-call-only messages: skip all name/image logic
-            if (message.Role == AuthorRole.Assistant && message.ToolCalls.Count > 0 && string.IsNullOrEmpty(message.Message))
+            if (message.Role == AuthorRole.Assistant && message.ToolCalls?.Count > 0 && string.IsNullOrEmpty(message.Message))
             {
-                return new Message(Role.Assistant, "");
+                var tc = new ToolCall(message.ToolCalls[0].CallId, message.ToolCalls[0].FunctionName, JsonNode.Parse(message.ToolCalls[0].ArgumentsJson));
+                return new Message(tc, message.ToolCallToString());
             }
 
             var realprompt = message.Message;

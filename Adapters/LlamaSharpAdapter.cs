@@ -1,4 +1,5 @@
-﻿using LetheAISharp.LLM;
+﻿using LetheAISharp.Files;
+using LetheAISharp.LLM;
 using LetheAISharp.SearchAPI;
 using LLama;
 using LLama.Common;
@@ -265,5 +266,15 @@ namespace LetheAISharp.API
             // Convert results to a common format
             return JsonConvert.SerializeObject(res);
         }
+
+        public int CountMessageTokens(List<SingleMessage> messages)
+        {
+            var totalstring = new StringBuilder();
+            foreach (var message in messages)
+                totalstring.Append(message.ToTextCompletion());
+            var full = totalstring.ToString();
+            return string.IsNullOrEmpty(full) ? 0 : CountTokensSync(full);
+        }
+
     }
 }

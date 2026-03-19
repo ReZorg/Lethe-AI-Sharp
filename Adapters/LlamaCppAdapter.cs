@@ -1,8 +1,10 @@
-﻿using LetheAISharp.LLM;
+﻿using LetheAISharp.Files;
+using LetheAISharp.LLM;
 using LetheAISharp.SearchAPI;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OpenAI.Chat;
+using System.Text;
 
 namespace LetheAISharp.API
 {
@@ -217,6 +219,36 @@ namespace LetheAISharp.API
             cts?.Dispose();
             GC.SuppressFinalize(this);
         }
+
+        public int CountMessageTokens(List<SingleMessage> messages)
+        {
+            var request = new MessageListQuery();
+            foreach (var message in messages)
+            {
+                var role = message.Role switch
+                {
+                    AuthorRole.User => "user",
+                    AuthorRole.Assistant => "assistant",
+                    AuthorRole.System => "system",
+                    AuthorRole.SysPrompt => "system",
+                    AuthorRole.Tool => "tool",
+                    _ => "delete"
+                };
+                if (role == "delete")
+                    continue;
+                var msg = message.Message;
+                if (message.ToolCalls?.Count > 0 && message.Role == AuthorRole.Assistant)
+                {
+                    msg = message.ToolCallToString();   
+                }
+                request.messages.Add(new MessageQuery(role, msg));
+            }
+            if (request.messages.Count == 0)
+                return 0;
+            var token = _client.GetTokenCountSync(request);
+            return token.input_tokens;
+        }
+
 
         public bool SupportsStreaming => true;
         public bool SupportsTTS => false;

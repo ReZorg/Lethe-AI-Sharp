@@ -1,4 +1,5 @@
-﻿using LetheAISharp.LLM;
+﻿using LetheAISharp.Files;
+using LetheAISharp.LLM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -76,6 +77,8 @@ namespace LetheAISharp.API
         Task GenerateTextStreaming(object parameters);
         Task<bool> AbortGeneration();
         bool AbortGenerationSync();
+
+        int CountMessageTokens(List<SingleMessage> messages);
 
         // Token counting
         Task<int> CountTokens(string text);

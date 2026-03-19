@@ -2,6 +2,7 @@
 using LetheAISharp.API;
 using LetheAISharp.Files;
 using LetheAISharp.LLM;
+using Microsoft.Extensions.Logging;
 using OpenAI;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using static LetheAISharp.Files.Tests.GbnfConverterTest;
 
 namespace LetheAISharp
 {
@@ -213,8 +215,20 @@ namespace LetheAISharp
 
         public int GetTokenCount(SingleMessage message)
         {
-            var msg = LLMEngine.Instruct.FormatSinglePrompt(message.Role, message.User, message.Bot, message.Message);
-            return LLMEngine.GetTokenCount(msg);
+            var realmessage = message.ToTextCompletion();
+            if (string.IsNullOrEmpty(realmessage))
+                return 0;
+            else if (LLMEngine.Client == null || LLMEngine.Status != SystemStatus.Ready || realmessage.Length > LLMEngine.MaxContextLength * 8)
+                return TokenTools.CountTokens(realmessage);
+            try
+            {
+                return LLMEngine.Client.CountMessageTokens([message]);
+            }
+            catch (Exception ex)
+            {
+                LLMEngine.Logger?.LogError(ex, "Failed to count tokens. Falling back to failsafe");
+                return TokenTools.CountTokens(realmessage);
+            }
         }
 
         public string PromptToText()

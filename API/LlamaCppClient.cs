@@ -269,7 +269,6 @@ namespace LetheAISharp.API
             // CA2254 fix: Use a constant message template and pass cumulativeDelta as an argument
             LLMEngine.Logger?.LogInformation("[OpenAI API] Final response: {CumulativeDelta}", cumulativeDelta);
         }
-
     }
 
     public class TokenCountResponse

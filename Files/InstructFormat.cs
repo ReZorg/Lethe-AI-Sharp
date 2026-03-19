@@ -278,7 +278,12 @@ namespace LetheAISharp.Files
 
         public string FormatSingleMessage(SingleMessage message)
         {
-            return FormatSinglePrompt(message.Role, message.User, message.Bot, message.Message);
+            var msg = message.Message;
+            if (message.Role == AuthorRole.Assistant && message.ToolCalls?.Count > 0 && string.IsNullOrEmpty(message.Message))
+            {
+                msg = message.ToolCallToString();
+            }
+            return FormatSinglePrompt(message.Role, message.User, message.Bot, msg);
         }
 
         public List<string> GetStoppingStrings(BasePersona user, BasePersona bot)

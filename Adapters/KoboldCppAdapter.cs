@@ -1,10 +1,12 @@
-﻿using LetheAISharp.LLM;
+﻿using LetheAISharp.Files;
+using LetheAISharp.LLM;
 using LetheAISharp.SearchAPI;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema.Generation;
 using System;
+using System.Text;
 
 namespace LetheAISharp.API
 {
@@ -230,6 +232,15 @@ namespace LetheAISharp.API
             {
                 throw new Exception($"Failed to convert schema to grammar");
             }
+        }
+
+        public int CountMessageTokens(List<SingleMessage> messages)
+        {
+            var totalstring = new StringBuilder();
+            foreach (var message in messages)
+                totalstring.Append(message.ToTextCompletion());
+            var full = totalstring.ToString();
+            return string.IsNullOrEmpty(full) ? 0 : CountTokensSync(full);
         }
 
         public bool SupportsStreaming => true;

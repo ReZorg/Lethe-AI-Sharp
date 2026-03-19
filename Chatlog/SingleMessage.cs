@@ -1,6 +1,7 @@
 ﻿using LetheAISharp.LLM;
 using Newtonsoft.Json;
 using OpenAI.Chat;
+using System.Text;
 
 namespace LetheAISharp.Files
 {
@@ -29,6 +30,7 @@ namespace LetheAISharp.Files
         public string ImagePath = imagePath;
         public bool Hidden = hidden;
         public string Note = string.Empty;
+        public Message? OriginalMessage { get; set; } = null;
         public List<ToolCallRecord> ToolCalls { get; set; } = toolCalls ?? [];
         [JsonIgnore] public BasePersona User => 
             !string.IsNullOrEmpty(UserID) && LLMEngine.LoadedPersonas.TryGetValue(UserID, out var u) ? u : LLMEngine.User;
@@ -48,6 +50,20 @@ namespace LetheAISharp.Files
         public string ToTextCompletion()
         {
             return LLMEngine.Instruct.FormatSingleMessage(this);
+        }
+
+        public string ToolCallToString()
+        {
+            if (ToolCalls.Count == 0) 
+                return string.Empty;
+
+            var tmsg = new StringBuilder("[Function Call History]");
+            tmsg.AppendLinuxLine();
+            foreach (var call in ToolCalls)
+            {
+                tmsg.AppendLinuxLine(call.ToString());
+            }
+            return tmsg.ToString();
         }
 
         public Message ToChatCompletion()

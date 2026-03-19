@@ -1,8 +1,10 @@
-﻿using LetheAISharp.LLM;
+﻿using LetheAISharp.Files;
+using LetheAISharp.LLM;
 using LetheAISharp.SearchAPI;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OpenAI.Chat;
+using System.Text;
 
 namespace LetheAISharp.API
 {
@@ -49,7 +51,6 @@ namespace LetheAISharp.API
         {
             webSearchClient.SwitchProvider(LLMEngine.Settings.WebSearchAPI, LLMEngine.Settings.WebSearchBraveAPIKey);
         }
-
 
         public async Task<int> GetMaxContextLength()
         {
@@ -120,7 +121,6 @@ namespace LetheAISharp.API
             return new ChatPromptBuilder();
         }
 
-
         public async Task<bool> AbortGeneration()
         {
             return await Task.FromResult(AbortGenerationSync());
@@ -148,6 +148,16 @@ namespace LetheAISharp.API
         {
             return _client.CountTokens(text);
         }
+
+        public int CountMessageTokens(List<SingleMessage> messages)
+        {
+            var totalstring = new StringBuilder();
+            foreach (var message in messages)
+                totalstring.Append(message.ToTextCompletion());
+            var full = totalstring.ToString();
+            return string.IsNullOrEmpty(full) ? 0 : CountTokensSync(full) + (messages.Count * 8);
+        }
+
 
         public async Task<byte[]> TextToSpeech(string text, string voice)
         {
