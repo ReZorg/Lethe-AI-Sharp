@@ -89,7 +89,7 @@ namespace LetheAISharp
         /// <returns>The total number of tokens in the message.</returns>
         int GetTokenCount(AuthorRole role, string message);
 
-        int GetTokenCount(SingleMessage message);
+        int GetTokenCount(SingleMessage message, bool countImages = true);
 
         /// <summary>
         /// Only relevant to text completion. Calculates the token overread for the responsse start block / prefill.

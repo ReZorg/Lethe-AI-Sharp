@@ -47,15 +47,28 @@ namespace LetheAISharp
 
         private int GetTokenUsage(List<SingleMessage> messages)
         {
+
             var total = 0;
             if (LLMEngine.UseToolCallsInPrompt)
                 total += LLMEngine.ToolManager.EstimatedTokenCost();
+
+            if (LLMEngine.SupportsVision)
+            {
+                var imgcnt = 0;
+                var imgmsg = messages.Where(m => m.ImagePath is not null && File.Exists(m.ImagePath)).ToList().Count;
+                if (LLMEngine.Settings.MaxImageCount > 0 && imgcnt > LLMEngine.Settings.MaxImageCount)
+                    imgcnt = LLMEngine.Settings.MaxImageCount;
+                total += imgcnt * (LLMEngine.Settings.ImageEmbeddingSize + 4);
+            }
+
             if (LLMEngine.Client is not null)
+            {
                 return total + LLMEngine.Client.CountMessageTokens(messages);
+            }
 
             foreach (var message in messages)
             {
-                total += GetTokenCount(message) + 2;
+                total += GetTokenCount(message, false) + 2;
             }
             return total;
         }
@@ -213,11 +226,11 @@ namespace LetheAISharp
             return GetTokenCount(new SingleMessage(role, message));
         }
 
-        public int GetTokenCount(SingleMessage message)
+        public int GetTokenCount(SingleMessage message, bool countImages = true)
         {
             var total = LLMEngine.GetTokenCount(message.ToTextCompletion());
 
-            if (message.ImagePath is not null && File.Exists(message.ImagePath) && LLMEngine.SupportsVision)
+            if (LLMEngine.SupportsVision && message.ImagePath is not null && countImages)
             {
                 total += LLMEngine.Settings.ImageEmbeddingSize;
             }
@@ -225,7 +238,7 @@ namespace LetheAISharp
             {
                 total += LLMEngine.GetTokenCount(message.ToolCallToString());
             }
-            return total;
+            return total;   
         }
 
         public string PromptToText()

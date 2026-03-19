@@ -213,16 +213,18 @@ namespace LetheAISharp
             return LLMEngine.GetTokenCount(msg);
         }
 
-        public int GetTokenCount(SingleMessage message)
+        public int GetTokenCount(SingleMessage message, bool countImages = true)
         {
             var realmessage = message.ToTextCompletion();
+
             if (string.IsNullOrEmpty(realmessage))
                 return 0;
             else if (LLMEngine.Client == null || LLMEngine.Status != SystemStatus.Ready || realmessage.Length > LLMEngine.MaxContextLength * 8)
                 return TokenTools.CountTokens(realmessage);
+
             try
             {
-                return LLMEngine.Client.CountMessageTokens([message]);
+                return LLMEngine.GetTokenCount(realmessage);
             }
             catch (Exception ex)
             {
