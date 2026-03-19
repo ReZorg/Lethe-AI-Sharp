@@ -68,7 +68,7 @@ Alternatively, if running an external backend is too much, **Lethe AI** also com
 | Chain of Thoughts | ✅ | ✅ | ✅ | ✅ |
 | Personas & chat sessions | ✅ | ✅ | ✅ | ✅ |
 | Memory integration | ✅ | ✅ | ✅ | ✅ |
-| Samplers | ✅ Advanced  | ✅ Basics |  ✅ Basics  | ✅ Advanced |
+| Samplers | ✅ Advanced  | ✅ Advanced |  ✅ Basics  | ✅ Advanced |
 | Token Management | ✅ Exact | ✅ Exact | ⚠️ Estimated  | ✅ Exact |
 | Web search | ✅ | ✅ | ✅ | ✅ |
 | Function Calling *(1)* | ❌ | ✅ | ✅  | ❌ |
