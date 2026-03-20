@@ -30,7 +30,7 @@ namespace LetheAISharp.Agent.Actions
             {
                 if (!LLMEngine.BannedSearchWords.IsAllowed(query))
                 { 
-                    LLMEngine.Logger?.LogWarning($"Search Query Cancelled: {query}");
+                    LLMEngine.Logger?.LogWarning("Search Query Cancelled: {query}", query);
                     continue;
                 }
                 if (ct.IsCancellationRequested)

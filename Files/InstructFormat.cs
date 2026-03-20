@@ -148,7 +148,6 @@ namespace LetheAISharp.Files
         // <|start|>assistant<|channel|>final<|message|>{actual message}<|end|>
         public string BotStartOverride { get; set; } = string.Empty;
 
-
         /// <summary>
         /// Overrides the entirety of the generated bot footer with this post generation. This is useful for some modern CoT systems with multi channel formatting.
         /// This will only impact the older messages, not the one being currently generated. 

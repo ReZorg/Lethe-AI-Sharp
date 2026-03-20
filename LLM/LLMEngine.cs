@@ -284,49 +284,10 @@ namespace LetheAISharp.LLM
 
             PromptBuilder = GetPromptBuilder();
             AgentRuntime.LoadDefaultActions();
-
             if (LoadedPersonas.Count == 0)
-            {
-                // Check Settings.DataPath for json files and load them as personas
-                var personaFiles = Directory.GetFiles(Settings.DataPath, "*.json");
-                foreach (var file in personaFiles)
-                {
-                    try
-                    {
-                        var json = File.ReadAllText(file);
-                        var persona = JsonConvert.DeserializeObject<BasePersona>(json);
-                        if (persona != null)
-                        {
-                            // set UniqueName as filename without extention
-                            persona.UniqueName = Path.GetFileNameWithoutExtension(file);
-                            if (!string.IsNullOrEmpty(persona.UniqueName) && !LoadedPersonas.ContainsKey(persona.UniqueName))
-                            {
-                                LoadedPersonas.Add(persona.UniqueName, persona);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        logger?.LogError(ex, "Failed to load persona from file {File}: {Message}", file, ex.Message);
-                    }
-                }
-            }
-
+                LoadPersonas();
             Status = SystemStatus.Ready;
         }
-
-        /// <summary>
-        /// Preload personas available in the application, so the system can interpret chatlogs from personas that aren't the currently loaded ones.
-        /// </summary>
-        /// <param name="toload"></param>
-        public static void LoadPersonas(List<BasePersona> toload)
-        {
-            LoadedPersonas = [];
-            foreach (var item in toload)
-                LoadedPersonas.Add(item.UniqueName, item);
-        }
-
-        public static bool HasPersona(string uniqueName) => LoadedPersonas.ContainsKey(uniqueName);
 
         /// <summary>
         /// Sets up the backend connection settings and initializes the system.
@@ -385,6 +346,76 @@ namespace LetheAISharp.LLM
                 LLMEngine.Logger?.LogError(ex, "Failed to connect to LLM server: {Message}", ex.Message);
             }
         }
+
+        #endregion
+
+        #region *** Persona Management ***
+
+        /// <summary>
+        /// Preload personas available in the application, so the system can interpret chatlogs from personas that aren't the currently loaded ones.
+        /// </summary>
+        /// <param name="toload"> List of personas to load. If null, it'll try to load from the DataPath folder. </param>
+        public static void LoadPersonas(List<BasePersona>? toload = null)
+        {
+            LoadedPersonas = [];
+            if (toload is not null)
+            {
+                foreach (var item in toload)
+                    LoadedPersonas.Add(item.UniqueName, item);
+            }
+            else
+            {
+                // Check Settings.DataPath for json files and load them as personas
+                var personaFiles = Directory.GetFiles(Settings.DataPath, "*.json");
+                foreach (var file in personaFiles)
+                {
+                    try
+                    {
+                        var json = File.ReadAllText(file);
+                        var persona = JsonConvert.DeserializeObject<BasePersona>(json);
+                        if (persona != null)
+                        {
+                            // set UniqueName as filename without extention
+                            persona.UniqueName = Path.GetFileNameWithoutExtension(file);
+                            if (!string.IsNullOrEmpty(persona.UniqueName) && !LoadedPersonas.ContainsKey(persona.UniqueName))
+                            {
+                                LoadedPersonas.Add(persona.UniqueName, persona);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger?.LogError(ex, "Failed to load persona from file {File}: {Message}", file, ex.Message);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Determines whether a persona with the specified unique name is currently loaded.
+        /// </summary>
+        /// <param name="uniqueName">The unique name of the persona to check for existence. Cannot be null.</param>
+        /// <returns>true if a persona with the specified unique name is loaded; otherwise, false.</returns>
+        public static bool HasPersona(string uniqueName) => LoadedPersonas.ContainsKey(uniqueName);
+
+        /// <summary>
+        /// Retrieves the loaded persona associated with the specified unique name, if it exists.
+        /// </summary>
+        /// <param name="uniqueName">The unique identifier of the persona to retrieve. Cannot be null.</param>
+        /// <returns>The persona associated with the specified unique name, or null if no such persona is loaded.</returns>
+        public static BasePersona? GetPersona(string uniqueName) => LoadedPersonas.ContainsKey(uniqueName) ? LoadedPersonas[uniqueName] : null;
+
+        /// <summary>
+        /// Checks if the current bot is a group persona.
+        /// </summary>
+        /// <returns>True if the current bot is a GroupPersona, false otherwise.</returns>
+        public static bool IsGroupConversation => Bot is GroupPersonaBase;
+
+        /// <summary>
+        /// Gets the current GroupPersona if the bot is a group, null otherwise.
+        /// </summary>
+        /// <returns>The GroupPersona or null if not in group mode.</returns>
+        public static GroupPersonaBase? GetGroupPersona() => Bot as GroupPersonaBase;
 
         #endregion
 
@@ -681,22 +712,6 @@ namespace LetheAISharp.LLM
             if (File.Exists(imagepath))
                 PromptBuilder?.VLM_AddImage(imagepath, size);
         }
-
-        #endregion
-
-        #region *** Group Chat Management ***
-
-        /// <summary>
-        /// Checks if the current bot is a group persona.
-        /// </summary>
-        /// <returns>True if the current bot is a GroupPersona, false otherwise.</returns>
-        public static bool IsGroupConversation => Bot is GroupPersonaBase;
-
-        /// <summary>
-        /// Gets the current GroupPersona if the bot is a group, null otherwise.
-        /// </summary>
-        /// <returns>The GroupPersona or null if not in group mode.</returns>
-        public static GroupPersonaBase? GetGroupPersona() => Bot as GroupPersonaBase;
 
         #endregion
 
@@ -1054,7 +1069,6 @@ namespace LetheAISharp.LLM
                 message.Message;
 
             var pluginmessage = await BuildPluginSystemInsertAsync(lastuserinput).ConfigureAwait(false);
-
 
             // call the brain if there's no plugin interfering
             if (!string.IsNullOrEmpty(message.Message) && string.IsNullOrEmpty(pluginmessage))

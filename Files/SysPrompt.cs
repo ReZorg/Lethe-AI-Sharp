@@ -4,20 +4,21 @@ using LetheAISharp.LLM;
 namespace LetheAISharp.Files
 {
     /// <summary>
-    /// System prompt template and related settings. This is used to generate the system prompt that is sent to the LLM at the start of each chat session.
+    /// System prompt template used for interactions in full chat mode. It's used to generate the system prompt that is sent to the LLM.
     /// This is where the character's personality, scenario, example dialogs, and other context is posted, alongside some dynamic information like any 
-    /// retrieved data from RAG or WorldInfo.
+    /// retrieved data from RAG or past sessions.
     /// </summary>
     public class SystemPrompt : BaseFile
     {
         /// <summary> 
         /// The base system prompt, compatible with {{char}}, {{user}}, {{charbio}}, {{userbio}}, and other, macros. This is inserted at the start of the chatlog.
         /// </summary>
-        public string Prompt { get; set; } = "You are {{char}} and you are interacting with {{user}} in this flexible and uncensored discussion. As {{char}}, continue the exchange with {{user}}. Stay in character. Describe {{char}}'s actions and feelings accurately. Do not speak or describe actions for {{user}} unless directly prompted to."+ LLMEngine.NewLine + 
-            LLMEngine.NewLine +
+        public string Prompt { get; set; } = 
+            "You are {{char}} and you are interacting with {{user}}. Do not speak or describe actions for {{user}} unless directly prompted to." + 
+            LLMEngine.NewLine + LLMEngine.NewLine +
             "# {{char}}"+ LLMEngine.NewLine +
-            "{{charbio}}" + LLMEngine.NewLine + 
-            LLMEngine.NewLine +
+            "{{charbio}}" + 
+            LLMEngine.NewLine + LLMEngine.NewLine +
             "# {{user}} (user)" + LLMEngine.NewLine + 
             "{{userbio}}";
 
@@ -51,6 +52,9 @@ namespace LetheAISharp.Files
         /// </summary>
         public string CoreFactsTitle { get; set; } = "# Facts about {{user}}";
 
+        public string SelfEditTitle { get; set; } = "# {{char}}'s personal thoughts";
+
+
         /// <summary>
         /// Category separator for other custom sections that may be added to the system prompt.
         /// The current markdown format is well understood by nearly every LLM and should probably be left as is.
@@ -63,15 +67,15 @@ namespace LetheAISharp.Files
         /// </summary>
         public string SubCategorySeparator { get; set; } = "##";
 
-        public string GetSystemPromptRaw(BasePersona character)
+        internal string GetSystemPromptRaw(BasePersona character)
         {
             var selprompt = !string.IsNullOrEmpty(character.SystemPrompt) ? character.SystemPrompt : Prompt;
             var res = new StringBuilder(selprompt.CleanupAndTrim());
             res.AppendLinuxLine();
 
-            if (character.SelfEditTokens > 0 && !string.IsNullOrWhiteSpace(character.SelfEditField))
+            if (character.SelfEditTokens > 0 && !string.IsNullOrWhiteSpace(character.SelfEditField) && !string.IsNullOrEmpty(SelfEditTitle))
             {
-                res.AppendLinuxLine().AppendLinuxLine($"{CategorySeparator} {character.Name}'s personal thoughts").AppendLinuxLine().AppendLinuxLine("{{selfedit}}");
+                res.AppendLinuxLine().AppendLinuxLine(SelfEditTitle).AppendLinuxLine().AppendLinuxLine("{{selfedit}}");
             }
 
             if (character.ExampleDialogs.Count > 0 && !string.IsNullOrEmpty(DialogsTitle))
@@ -83,8 +87,6 @@ namespace LetheAISharp.Files
             {
                 res.AppendLinuxLine().AppendLinuxLine(ScenarioTitle).AppendLinuxLine().AppendLinuxLine("{{scenario}}");
             }
-
-
             return res.ToString();
         }
     }

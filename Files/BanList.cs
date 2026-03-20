@@ -14,12 +14,7 @@ namespace LetheAISharp.Files
 
         public bool IsAllowed(string query)
         {
-            foreach (var word in BannedWords)
-            {
-                if (query.Contains(word, StringComparison.OrdinalIgnoreCase))
-                    return false;
-            }
-            return true;
+            return BannedWords.Find(e => !string.IsNullOrWhiteSpace(e) && query.Contains(e, StringComparison.OrdinalIgnoreCase)) == null;
         }
     }
 

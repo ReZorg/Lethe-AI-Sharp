@@ -7,6 +7,13 @@ using LetheAISharp.API;
 
 namespace LetheAISharp.Files
 {
+    /// <summary>
+    /// Represents a set of sampling options for controlling the LLM's behavior.
+    /// </summary>
+    /// <remarks>Use this class to specify parameters that influence how text is generated, such as
+    /// temperature, top-k, and other advanced sampling strategies. The settings are intended to be compatible with a
+    /// variety of language models and can be customized for different generation scenarios. The class provides default
+    /// values suitable for most use cases, but these can be adjusted as needed for specific requirements.</remarks>
     public class SamplerSettings : GenerationInput, IFile
     {
         public string Description { get; set; } = string.Empty;
@@ -35,7 +42,6 @@ namespace LetheAISharp.Files
             Dry_allowed_length = 2;
             Dry_base = 1.75;
             Dry_multiplier = 0.8;
-            Dry_allowed_length = 2;
             Dry_sequence_breakers = ["\n", ":", "\"", "*", "<|im_end|>", "<|im_start|>" ];
             Sampler_order = [6, 0, 1, 3, 4, 2, 5];
             Mirostat = 0;

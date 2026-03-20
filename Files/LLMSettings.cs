@@ -18,6 +18,9 @@ namespace LetheAISharp.Files
         All,
     }
 
+    /// <summary>
+    /// The main settings for LLMEngine, the backends, and the various modules.
+    /// </summary>
     public class LLMSettings : BaseFile
     {
 
