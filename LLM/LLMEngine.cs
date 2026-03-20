@@ -347,6 +347,33 @@ namespace LetheAISharp.LLM
             }
         }
 
+        /// <summary>
+        /// Disconnects from the LLM server and releases associated resources.
+        /// </summary>
+        /// <remarks>This method unsubscribes from server events, clears cached prompts, and resets the
+        /// client state. It is safe to call this method multiple times; if no connection exists, the method has no
+        /// effect. You don't need to use this function before reconnecting or leaving the app. It's more like a "reset" of the library's state.</remarks>
+        public static void Disconnect()
+        {
+            if (Client == null)
+                return;
+            try
+            {
+                Client.TokenReceived -= Client_StreamingMessageReceived;
+            }
+            catch (Exception ex)
+            {
+                LLMEngine.Logger?.LogError(ex, "Failed to disconnect from LLM server: {Message}", ex.Message);
+            }
+            finally
+            {
+                InvalidatePromptCache();
+                Client = null;
+                PromptBuilder = null;
+                Status = SystemStatus.NotInit;
+            }
+        }
+
         #endregion
 
         #region *** Persona Management ***
