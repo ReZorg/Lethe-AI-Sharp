@@ -10,8 +10,9 @@ using System.Threading.Tasks;
 namespace LetheAISharp
 {
     /// <summary>
-    /// Backend-agnostic prompt builder interface.
-    /// This is the main way to build prompts for LLM queries.
+    /// Backend-agnostic prompt builder interface. This is the main way to build prompts for LLM queries in LetheAISharp. 
+    /// It abstracts away the differences between text completion and chat completion models, allowing you to build prompts 
+    /// in a consistent way regardless of the underlying LLM backend.
     /// </summary>
     public interface IPromptBuilder
     {
@@ -26,7 +27,7 @@ namespace LetheAISharp
         void Clear();
 
         /// <summary>
-        /// Adds a message to the system with the specified author role.
+        /// Adds a message to the prompt with the specified author role.
         /// </summary>
         /// <remarks> Macros like {{time}}, {{user}} and so on, are automatically converted to text </remarks>
         /// <param name="role">The role of the author, indicating the context of the message sender.</param>
@@ -34,6 +35,12 @@ namespace LetheAISharp
         /// <returns>tokens used by this message</returns>
         int AddMessage(AuthorRole role, string message);
 
+        /// <summary>
+        /// Adds a preformatted message to the prompt
+        /// </summary>
+        /// <remarks> Macros like {{time}}, {{user}} and so on, are automatically converted to text </remarks>
+        /// <param name="message">The message to add. Cannot be null.</param>
+        /// <returns>tokens used by this message</returns>
         int AddMessage(SingleMessage message);
 
         /// <summary>
@@ -45,6 +52,12 @@ namespace LetheAISharp
         /// <returns>tokens used by this message</returns>
         int InsertMessage(int index, AuthorRole role, string message);
 
+        /// <summary>
+        /// Inserts a message at the specified index in the prompt with the given author role.
+        /// </summary>
+        /// <param name="index">index to insert the message to</param>
+        /// <param name="message">The message to add. Cannot be null.</param>
+        /// <returns>tokens used by this message</returns>
         int InsertMessage(int index, SingleMessage message);
 
         /// <summary>
@@ -55,12 +68,14 @@ namespace LetheAISharp
 
         /// <summary>
         /// Converts the current prompt to a query object suitable for sending to the LLM backend.
+        /// pass the result to LLMEngine.SimpleQuery or LLMEngine.SimpleQueryStreaming.
         /// </summary>
         /// <param name="responserole">Expected role for the response (should be Assistant normally)</param>
         /// <param name="tempoverride">Override the temperature set in LLMEngine.Sampler</param>
         /// <param name="responseoverride">Override the maximum response size</param>
         /// <param name="overridePrefill">Override the prefill setting for CoT models (null = keep as is, otherwise use this as setting)</param>
-        /// <returns></returns>
+        /// <param name="forceAltRoles">Forces the use of alternate roles (e.g. "user" and "assistant". Mostly used for group chat functionalities.</param>
+        /// <returns>The exact format of the returned object depends on the backend</returns>
         object PromptToQuery(AuthorRole responserole = AuthorRole.Assistant, double tempoverride = -1, int responseoverride = -1, bool? overridePrefill = null, bool forceAltRoles = false);
 
         /// <summary>

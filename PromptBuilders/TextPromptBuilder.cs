@@ -24,18 +24,13 @@ namespace LetheAISharp
 
         public int AddMessage(AuthorRole role, string message)
         {
-            var msg = LLMEngine.Instruct.FormatSinglePrompt(role, LLMEngine.User, LLMEngine.Bot, message);
-            var res = LLMEngine.GetTokenCount(msg);
-            _prompt.Add(new SingleMessage(role, message));
-            return res;
+            return AddMessage(new SingleMessage(role, message));
         }
 
         public int AddMessage(SingleMessage message)
         {
-            var msg = LLMEngine.Instruct.FormatSinglePrompt(message.Role, message.User, message.Bot, message.Message);
-            var res = LLMEngine.GetTokenCount(msg);
             _prompt.Add(message);
-            return res;
+            return LLMEngine.GetTokenCount(message.ToTextCompletion());
         }
 
         public object GetFullPrompt()
@@ -43,7 +38,7 @@ namespace LetheAISharp
             var fullprompt = new StringBuilder();
             foreach (var prompt in _prompt) 
             {
-                fullprompt.Append(LLMEngine.Instruct.FormatSingleMessage(prompt));
+                fullprompt.Append(prompt.ToTextCompletion());
             }
             return fullprompt.ToString();
         }
@@ -115,7 +110,7 @@ namespace LetheAISharp
                     // System prompts are always added as-is
                     if (prompt.Role == AuthorRole.System || prompt.Role == AuthorRole.SysPrompt)
                     {
-                        fullprompt.Insert(0, LLMEngine.Instruct.FormatSingleMessage(prompt));
+                        fullprompt.Insert(0, prompt.ToTextCompletion());
                         continue;
                     }
                     var roleToUse = currentrole;
@@ -134,7 +129,7 @@ namespace LetheAISharp
                         userID = prompt.CharID;
                         charID = prompt.UserID;
                     }
-                    fullprompt.Insert(0, LLMEngine.Instruct.FormatSingleMessage(new SingleMessage(roleToUse, DateTime.Now, prompt.Message, charID, userID)));
+                    fullprompt.Insert(0, new SingleMessage(roleToUse, DateTime.Now, prompt.Message, charID, userID).ToTextCompletion());
                     // flip role for next message
                     currentrole = currentrole == AuthorRole.User ? AuthorRole.Assistant : AuthorRole.User;
                 }
@@ -169,17 +164,7 @@ namespace LetheAISharp
 
         public int InsertMessage(int index, AuthorRole role, string message)
         {
-            if (index == _prompt.Count)
-            {
-                return AddMessage(role, message);
-            }
-            if (index > _prompt.Count)
-                return -1;
-
-            var msg = LLMEngine.Instruct.FormatSinglePrompt(role, LLMEngine.User, LLMEngine.Bot, message);
-            var res = LLMEngine.GetTokenCount(msg);
-            _prompt.Insert(index, new SingleMessage(role, message));
-            return res;
+            return InsertMessage(index, new SingleMessage(role, message));
         }
 
         public int InsertMessage(int index, SingleMessage message)
@@ -190,11 +175,8 @@ namespace LetheAISharp
             }
             if (index > _prompt.Count)
                 return -1;
-
-            var msg = LLMEngine.Instruct.FormatSinglePrompt(message.Role, message.User, message.Bot, message.Message);
-            var res = LLMEngine.GetTokenCount(msg);
             _prompt.Insert(index, message);
-            return res;
+            return LLMEngine.GetTokenCount(message.ToTextCompletion());
         }
 
         public void Clear()
@@ -207,11 +189,7 @@ namespace LetheAISharp
             return LLMEngine.GetTokenCount((string)GetFullPrompt()) + vlm_pictures.Count * LLMEngine.Settings.ImageEmbeddingSize;
         }
 
-        public int GetTokenCount(AuthorRole role, string message)
-        {
-            var msg = LLMEngine.Instruct.FormatSinglePrompt(role, LLMEngine.User, LLMEngine.Bot, message);
-            return LLMEngine.GetTokenCount(msg);
-        }
+        public int GetTokenCount(AuthorRole role, string message) => GetTokenCount(new SingleMessage(role, message), false);
 
         public int GetTokenCount(SingleMessage message, bool countImages = true)
         {

@@ -49,12 +49,12 @@ namespace LetheAISharp.Agent.Actions
             availtokens -= promptbuild.GetTokenCount(AuthorRole.User, requestedTask);
 
             var docs = ChatSession.GetRawDialogsMiddleCut(param.Messages, availtokens, false, true, false);
-            promptbuild.AddMessage(AuthorRole.SysPrompt, sysprompt + docs);
+            promptbuild.AddMessage(new SingleMessage(AuthorRole.SysPrompt, sysprompt + docs));
 
             var q = string.IsNullOrWhiteSpace(param.CustomRequest) ? "Review the conversation log above. Identify the topic or concept that requires a web search for additional (or up to date) information. Inform your choices based on the information presented in the prompt. Avoid any topic that could be considered illegal, terrorist, or CSAM." : param.CustomRequest;
 
 
-            promptbuild.AddMessage(AuthorRole.User, q + LLMEngine.NewLine + searchlookup.GetQuery());
+            promptbuild.AddMessage(new SingleMessage(AuthorRole.User, q + LLMEngine.NewLine + searchlookup.GetQuery()));
             await promptbuild.SetStructuredOutput(searchlookup);
             var query = promptbuild.PromptToQuery(AuthorRole.Assistant, (LLMEngine.Sampler.Temperature > 0.75) ? 0.75 : LLMEngine.Sampler.Temperature, replyln);
             var finalstr = await LLMEngine.SimpleQuery(query, ct).ConfigureAwait(false);

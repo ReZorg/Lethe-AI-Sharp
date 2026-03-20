@@ -61,27 +61,12 @@ namespace LetheAISharp.LLM
         /// Override the Instruct Format setting deciding if character names should be inserted into the prompts (null to disable) 
         /// </summary>
         public static bool? NamesInPromptOverride { get; set; } = null;
-        public static bool? NamesInPromptBotOnlyOverride { get; set; } = null;
 
-        private static bool useToolCallsInPrompt { get => Settings.ToolCallsAllowed; set => Settings.ToolCallsAllowed = value; }
-        public static bool UseToolCallsInPrompt
-        {
-            get
-            {
-                if (Client == null || !Client.SupportsToolCalls)
-                    return false;
-                return useToolCallsInPrompt;
-            }
-            set
-            {
-                if (Client == null || !Client.SupportsToolCalls)
-                {
-                    logger?.LogError("Tool calls are not supported by the current backend. Cannot enable tool call streaming in prompt.");
-                    return;
-                }
-                useToolCallsInPrompt = value;
-            }
-        }
+        /// <summary>
+        /// Only prefill the character names when generating the prompt. This is useful for models interacting as a chatroom bot, 
+        /// where the model needs to know its character name while the users' names are handled at the app's level.
+        /// </summary>
+        public static bool? NamesInPromptBotOnlyOverride { get; set; } = null;
 
         /// <summary>
         /// This is a list of words that are banned during search queries. It's on the application to load and maintain this list.
@@ -104,7 +89,6 @@ namespace LetheAISharp.LLM
         public static event EventHandler<SystemStatus>? OnStatusChanged;
         /// <summary> Called when the bot persona is changed, returns the new bot (sender is always null) </summary>
         public static event EventHandler<BasePersona>? OnBotChanged;
-
         /// <summary> Called during inference with typed, channel-tagged segments. Provides richer information than OnInferenceStreamed. </summary>
         public static event EventHandler<InferenceSegment>? OnInferenceSegment;
         /// <summary> Called when a complete inference cycle finishes. Provides structured results including thinking content and tool call records. </summary>
@@ -125,7 +109,14 @@ namespace LetheAISharp.LLM
         /// <summary> Set to true if the backend supports tool calls (like function calling in OpenAI) </summary>
         public static bool SupportsToolCalls => Client?.SupportsToolCalls ?? false;
 
+        /// <summary> Gets the type of completion API currently in use by the client. </summary>
         public static CompletionType CompletionAPIType => Client?.CompletionType ?? CompletionType.Text;
+
+        /// <summary>
+        /// Gets a value indicating whether tool calls are currently available 
+        /// (the backend supports tool calls, tool calls are allowed by settings, and at least one tool is registered).
+        /// </summary>
+        public static bool ToolCallsLoaded => SupportsToolCalls && Settings.ToolCallsAllowed && ToolManager.HasTools();
 
         private static void RaiseOnFullPromptReady(string fullprompt) => OnFullPromptReady?.Invoke(Bot, fullprompt);
         private static void RaiseOnStatusChange(SystemStatus newStatus) => OnStatusChanged?.Invoke(Bot, newStatus);
@@ -135,7 +126,7 @@ namespace LetheAISharp.LLM
         private static void RaiseInferenceSegment(InferenceSegment segment) => OnInferenceSegment?.Invoke(Bot, segment);
         private static void RaiseInferenceCompleted(InferenceResult result) => OnInferenceCompleted?.Invoke(Bot, result);
 
-        /// <summary> List of loaded plugins </summary>
+        /// <summary> List of loaded context plugins. IContextPlugins must be registered in this list before connecting to a persona</summary>
         public static List<IContextPlugin> ContextPlugins { get; set; } = [];
 
         /// <summary>
@@ -159,15 +150,20 @@ namespace LetheAISharp.LLM
         /// <seealso cref="BasePersona"/>"
         public static BasePersona User { get => user; set => user = value; }
 
-        /// <summary> Basic logging system to hook into </summary>
+        /// <summary>
+        /// Gets or sets the logger used for recording log messages throughout the application.
+        /// </summary>
+        /// <remarks>Assigning a custom logger allows integration with different logging frameworks or custom log handling. Given that LetheAI will only run exception on catastrophic errors, this is also the main way to monitor backend activity</remarks>
         public static ILogger? Logger
         {
             get => logger;
             set => logger = value;
         }
 
-
-        /// <summary> Instruction format (important for KoboldAPI as it determines how to format the text in a way the model understands) </summary>
+        /// <summary> 
+        /// Instruction format: crucial for text completion backends, and still important for accurate token estimation on chat completetion backends.
+        /// It's on the application to customize this format to match the loaded model.
+        /// </summary>
         /// <seealso cref="InstructFormat"/>"
         public static InstructFormat Instruct { 
             get => instruct; 
@@ -178,21 +174,26 @@ namespace LetheAISharp.LLM
             } 
         }
 
-        /// <summary> Inference settings (The Kobold API handles more settings than OpenAI one).</summary>
+        /// <summary> 
+        /// Inference settings (Not all backends support all the settings). 
+        /// Defaults are conservative to ensure a good out-of-the-box experience, but they can be tweaked to get better results with specific models.
+        /// </summary>
         /// <seealso cref="SamplerSettings"/>
         public static SamplerSettings Sampler { get; set; } = new();
 
         /// <summary> 
-        /// System prompt to be used when communicating with the LLM.
+        /// System prompt to be used when communicating with the LLM in full-chat mode. 
+        /// It's on the application to customize this prompt to fit its needs.
         /// </summary>
         /// <seealso cref="Files.SystemPrompt"/>"
         public static SystemPrompt SystemPrompt { get; set; } = new();
-
 
         /// <summary> 
         /// Delegate to be called before executing a tool call, with the tool name and arguments. If it returns false, the tool call will be cancelled. 
         /// If left null, all tool calls will be executed without confirmation.
         /// </summary>
+        /// <remarks>The application can use this to implement a confirmation step before executing potentially dangerous tool calls, 
+        /// or to filter tool calls based on their arguments.</remarks>
         public static Func<string, string, Task<bool>>? ToolCallConfirmation { get; set; }
 
         /// <summary>
@@ -447,7 +448,7 @@ namespace LetheAISharp.LLM
                     return;
                 Status = SystemStatus.Busy;
                 ResetStreamingState();
-                if (CompletionAPIType == CompletionType.Text || !UseToolCallsInPrompt || !ToolManager.HasTools())
+                if (!ToolCallsLoaded)
                     StreamingTextProgress = Instruct.GetThinkPrefill();
                 if (Instruct.PrefillThinking && !string.IsNullOrEmpty(Instruct.ThinkingStart))
                 {
@@ -958,7 +959,7 @@ namespace LetheAISharp.LLM
                 availtokens -= PromptBuilder.GetTokenCount(AuthorRole.System, pluginMessage);
             }
 
-            if (UseToolCallsInPrompt)
+            if (ToolCallsLoaded)
                 availtokens -= ToolManager.EstimatedTokenCost();
 
             var searchstring = string.IsNullOrEmpty(message.Message) ? History.GetLastFromInSession(AuthorRole.User)?.Message : message.Message;
@@ -1069,7 +1070,7 @@ namespace LetheAISharp.LLM
             var genparams = await GenerateFullPrompt(message, pluginmessage).ConfigureAwait(false);
 
             ResetStreamingState();
-            if (CompletionAPIType == CompletionType.Text || !UseToolCallsInPrompt || !ToolManager.HasTools())
+            if (!ToolCallsLoaded)
                 StreamingTextProgress = Instruct.GetThinkPrefill();
             if (Instruct.PrefillThinking && !string.IsNullOrEmpty(Instruct.ThinkingStart))
             {

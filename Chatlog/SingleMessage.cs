@@ -50,12 +50,12 @@ namespace LetheAISharp.Files
         {
         }
 
-        public string ToTextCompletion()
+        internal string ToTextCompletion()
         {
             return LLMEngine.Instruct.FormatSingleMessage(this);
         }
 
-        public string ToolCallToString()
+        internal string ToolCallToString()
         {
             if (ToolCalls.Count == 0) 
                 return string.Empty;
@@ -69,7 +69,7 @@ namespace LetheAISharp.Files
             return tmsg.ToString();
         }
 
-        public Message ToChatCompletion()
+        internal Message ToChatCompletion()
         {
             // Tool result messages: skip all name/image logic
             if (Role == AuthorRole.Tool && ToolCalls.Count > 0)

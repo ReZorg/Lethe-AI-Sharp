@@ -62,8 +62,8 @@ namespace LetheAISharp.Agent.Actions
             var transcript = param.GetRawDialogs(tokenleft, true, false, false, true);
             str.Append(transcript);
 
-            promptbuild.AddMessage(AuthorRole.SysPrompt, str.ToString());
-            promptbuild.AddMessage(AuthorRole.User, request);
+            promptbuild.AddMessage(new SingleMessage(AuthorRole.SysPrompt, str.ToString()));
+            promptbuild.AddMessage(new SingleMessage(AuthorRole.User, request));
 
             return promptbuild;
         }

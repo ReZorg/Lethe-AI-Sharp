@@ -79,8 +79,8 @@ namespace LetheAISharp.Agent.Actions
             var transcript = LLMEngine.History.GetRawDialogs(tokenleft - 2000, false, true, false, TimeSpan.FromDays(7));
             str.Append(transcript);
 
-            promptbuild.AddMessage(AuthorRole.SysPrompt, str.ToString());
-            promptbuild.AddMessage(AuthorRole.User, req.ToString());
+            promptbuild.AddMessage(new SingleMessage(AuthorRole.SysPrompt, str.ToString()));
+            promptbuild.AddMessage(new SingleMessage(AuthorRole.User, req.ToString()));
 
             return promptbuild;
         }

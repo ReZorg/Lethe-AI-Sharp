@@ -1,8 +1,10 @@
 ﻿using CommunityToolkit.HighPerformance;
 using LetheAISharp.LLM;
 using Newtonsoft.Json;
+using OpenAI;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,12 +13,14 @@ namespace LetheAISharp.Files
 {
     /// <summary>
     /// Represents a configurable instruction formatting system for constructing prompts and messages used in
-    /// conversational AI models. This class is relevant for Text Completion backends (KoboldAPI) models, while 
-    /// Chat Completetion backends (OpenAI) handles the formatting internally.
+    /// conversational AI models. This class is mostly relevant for Text Completion backends (KoboldAPI). While 
+    /// Chat completion backends (OpenAI, llama.cpp) handle the formatting internally, using the correct format
+    /// will ensure better token counting accuracy and better compatibility with the model.
     /// </summary>
-    /// <remarks>This class provides properties and methods to define the structure of prompts for instruction models (all models, nowadays), 
-    /// and messages exchanged between users, assistants, and the system. It supports customization of message delimiters, 
-    /// thinking prompts, and stopping sequences, among other features.
+    /// <remarks>
+    /// Functions in this class are set as public for testing and experimentation purpose.
+    /// However the end user should rely on the <see cref="IPromptBuilder"/> to generate correct prompts.
+    /// use: LLMEngine.GetPromptBuilder() to get a backend agnostic prompt builder.
     /// </remarks>
     public class InstructFormat : BaseFile
     {
@@ -160,10 +164,6 @@ namespace LetheAISharp.Files
         [JsonIgnore] internal bool RealAddNameToPrompt => LLMEngine.NamesInPromptOverride ?? AddNamesToPrompt;
         [JsonIgnore] public bool IsThinkFormat => !string.IsNullOrEmpty(ThinkingEnd);
 
-        // Functions in this class are set as public for testing and experimentation purpose.
-        // However the end user should rely on the <see cref="IPromptBuilder"/> to generate correct prompts.
-        // use: LLMEngine.GetPromptBuilder() to get a backend agnostic prompt builder.
-
         public string GetThinkPrefill()
         {
             var res = string.Empty;
@@ -235,38 +235,38 @@ namespace LetheAISharp.Files
             return res;
         }
 
-        public string FormatSinglePrompt(AuthorRole role, BasePersona user, BasePersona bot, string prompt)
+        public string FormatSingleMessage(SingleMessage message)
         {
-            var realprompt = prompt;
-
-            // In group conversations, ALWAYS add names so the LLM knows which persona is speaking
-            var addname = (bot is GroupPersonaBase) || RealAddNameToPrompt;
-
-            if (addname)
+            var realprompt = message.Message;
+            if (message.Role == AuthorRole.Assistant && message.ToolCalls?.Count > 0 && string.IsNullOrEmpty(message.Message))
             {
-                if (role == AuthorRole.Assistant)
-                    realprompt = string.Format("{0}: {1}", bot.Name, prompt);
-                else if (role == AuthorRole.User)
-                    realprompt = string.Format("{0}: {1}", user.Name, prompt);
+                realprompt = message.ToolCallToString();
             }
-            switch (role)
+            else if ((LLMEngine.Bot is GroupPersonaBase) || RealAddNameToPrompt)
+            {
+                if (message.Role == AuthorRole.Assistant)
+                    realprompt = string.Format("{0}: {1}", message.Bot.Name, message.Message);
+                else if (message.Role == AuthorRole.User)
+                    realprompt = string.Format("{0}: {1}", message.User.Name, message.Message);
+            }
+            switch (message.Role)
             {
                 case AuthorRole.Unknown:
-                    realprompt = "[" + bot.ReplaceMacros(realprompt, user) + "]";
+                    realprompt = "[" + message.Bot.ReplaceMacros(realprompt, message.User) + "]";
                     break;
                 case AuthorRole.System:
-                    realprompt = bot.ReplaceMacros(SystemStart + realprompt + SystemEnd, user);
+                    realprompt = message.Bot.ReplaceMacros(SystemStart + realprompt + SystemEnd, message.User);
                     break;
                 case AuthorRole.User:
-                    realprompt = bot.ReplaceMacros(UserStart + realprompt + UserEnd, user);
+                    realprompt = message.Bot.ReplaceMacros(UserStart + realprompt + UserEnd, message.User);
                     break;
                 case AuthorRole.Assistant:
                     var start = string.IsNullOrEmpty(BotStartOverride) ? BotStart : BotStartOverride;
                     var end = string.IsNullOrEmpty(BotEndOverride) ? BotEnd : BotEndOverride;
-                    realprompt = bot.ReplaceMacros(start + realprompt + end, user);
+                    realprompt = message.Bot.ReplaceMacros(start + realprompt + end, message.User);
                     break;
                 case AuthorRole.SysPrompt:
-                    realprompt = bot.ReplaceMacros(SysPromptStart + realprompt + SysPromptEnd, user);
+                    realprompt = message.Bot.ReplaceMacros(SysPromptStart + realprompt + SysPromptEnd, message.User);
                     break;
                 default:
                     break;
@@ -274,16 +274,6 @@ namespace LetheAISharp.Files
             if (NewLinesBetweenMessages)
                 realprompt += LLMEngine.NewLine;
             return realprompt;
-        }
-
-        public string FormatSingleMessage(SingleMessage message)
-        {
-            var msg = message.Message;
-            if (message.Role == AuthorRole.Assistant && message.ToolCalls?.Count > 0 && string.IsNullOrEmpty(message.Message))
-            {
-                msg = message.ToolCallToString();
-            }
-            return FormatSinglePrompt(message.Role, message.User, message.Bot, msg);
         }
 
         public List<string> GetStoppingStrings(BasePersona user, BasePersona bot)

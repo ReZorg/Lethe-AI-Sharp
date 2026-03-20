@@ -49,7 +49,7 @@ namespace LetheAISharp
         {
 
             var total = 0;
-            if (LLMEngine.UseToolCallsInPrompt)
+            if (LLMEngine.ToolCallsLoaded)
                 total += LLMEngine.ToolManager.EstimatedTokenCost();
 
             if (LLMEngine.SupportsVision)
@@ -165,7 +165,7 @@ namespace LetheAISharp
                 prefill = false;
             // prefilling is not available when using tool calls in prompt or when a structured output schema is set,
             // as it would interfere with the format of the response
-            if (prefill && (!LLMEngine.UseToolCallsInPrompt || !LLMEngine.ToolManager.HasTools()) && _currentSchema is null)
+            if (prefill && !LLMEngine.ToolCallsLoaded && _currentSchema is null)
             {
                 var info = GetResponseStart(LLMEngine.Bot);
                 if (!string.IsNullOrWhiteSpace(info))
@@ -183,7 +183,7 @@ namespace LetheAISharp
                 setseed = null;
             }
 
-            if (LLMEngine.UseToolCallsInPrompt && LLMEngine.ToolManager.HasTools() && _currentSchema is null)
+            if (LLMEngine.ToolCallsLoaded && _currentSchema is null)
             {
                 return new ChatRequest(finalprompt,
                     tools: LLMEngine.ToolManager.GetToolList(),
