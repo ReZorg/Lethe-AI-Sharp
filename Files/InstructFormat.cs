@@ -172,7 +172,7 @@ namespace LetheAISharp.Files
             // if (LLMEngine.Client?.CompletionType == API.CompletionType.Chat)
             //     return res;
             // --
-            if (PrefillThinking && !string.IsNullOrEmpty(ThinkingStart))
+            if (PrefillThinking && !string.IsNullOrEmpty(ThinkingStart) && LLMEngine.Client?.AllowPrefill == true)
             {
                 res = ThinkingStart;
                 if (!string.IsNullOrWhiteSpace(ThinkingForcedThought))

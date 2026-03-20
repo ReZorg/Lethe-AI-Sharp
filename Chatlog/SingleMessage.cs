@@ -1,4 +1,5 @@
-﻿using LetheAISharp.LLM;
+﻿using CommunityToolkit.HighPerformance;
+using LetheAISharp.LLM;
 using Newtonsoft.Json;
 using OpenAI;
 using OpenAI.Chat;
@@ -98,10 +99,12 @@ namespace LetheAISharp.Files
                 if (Role == AuthorRole.Assistant)
                 {
                     selname = Bot.Name;
+                    realprompt = string.Format("{0}: {1}", Bot.Name, Message);
                 }
                 else if (Role == AuthorRole.User)
                 {
                     selname = User.Name;
+                    realprompt = string.Format("{0}: {1}", User.Name, Message);
                 }
             }
 

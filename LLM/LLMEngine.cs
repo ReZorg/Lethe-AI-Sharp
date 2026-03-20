@@ -447,7 +447,8 @@ namespace LetheAISharp.LLM
                     return;
                 Status = SystemStatus.Busy;
                 ResetStreamingState();
-                StreamingTextProgress = Instruct.GetThinkPrefill();
+                if (CompletionAPIType == CompletionType.Text || !UseToolCallsInPrompt || !ToolManager.HasTools())
+                    StreamingTextProgress = Instruct.GetThinkPrefill();
                 if (Instruct.PrefillThinking && !string.IsNullOrEmpty(Instruct.ThinkingStart))
                 {
                     RaiseOnInferenceStreamed(StreamingTextProgress);
@@ -832,7 +833,7 @@ namespace LetheAISharp.LLM
                 StreamingTextProgress += e.Token;
                 _currentChannel = textStreamReceiver.FeedToken(token);
                 RaiseInferenceSegment(new InferenceSegment { Channel = _currentChannel, Text = token, IsComplete = false });
-                RaiseOnInferenceStreamed(e.Token);
+                RaiseOnInferenceStreamed(token);
             }
         }
 

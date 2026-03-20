@@ -40,7 +40,8 @@ namespace LetheAISharp.Files
         /// On chat completion backends with thinking models (and on some jinja templates only), the initial "think" tag may not be streamed at all, 
         /// it's just silent and assumed (as it's prefilled internally). 
         /// This setting is used to recognize the behavior so LetheAI's output stays consistant.
-        /// Set null to auto-detect based on the backend and template used.
+        /// Set null to auto-detect based on the backend and template used. Toggle true/false if you notice issues with the think tags' behavior 
+        /// (for example, if the thinking block is not properly recognized or if the "think" tag appears in the output when it shouldn't).
         /// </summary>
         public BackendChatCompletionThinkTagBehavior? BackendStartThinkTagBehavior { get; set; } = null;
 
@@ -48,9 +49,18 @@ namespace LetheAISharp.Files
         /// When set to true, if the backend supports it, tool calls will be made in parallel instead of sequentially. 
         /// This can speed up the generation when multiple tool calls are made, but can cause issues with some backends. 
         /// Depending on the backend and model you use, you might want to experiment with this setting to see if it improves performance or causes issues.
+        /// null = auto (will auto detect on llama.cpp), true = force parallel, false = force sequential.
         /// </summary>
         public bool? BackendParallelToolCalls { get; set; } = null;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether chat message prefill is allowed in the backend. 
+        /// Prefill is mostly used to tell the LLM who is supposed to talk in group mode, or to make sure that the "think" tag is properly 
+        /// used by smaller models. Set to false if your backend/model generates an error when writing a message.
+        /// null = auto-detect based on the backend and template used, true = allow prefill, false = disallow prefill.
+        /// </summary>
         public bool? BackendChatAllowPrefill { get; set; } = null;
+
         /// <summary>
         /// Set to true only if llama-server was launched with the "--props" option and you want to allow all the extended samplers available in llama.cpp
         /// If false, only the default OpenAI samplers can be used.
@@ -71,17 +81,9 @@ namespace LetheAISharp.Files
         public bool LlamaSharpNoKVoffload { get; set; } = false;
 
         /// <summary>
-        /// OpenAI only: When chatting with a model that supports image inputs, if you set this to true, all the images in the prompt 
-        /// will be sent to OpenAI for processing. If set to false, only the image in the last user message will be. Depending on the amount of images
-        /// in the prompt, setting this to true may waste A LOT of tokens.
-        /// </summary>
-        public bool OpenAIProcessAllImages { get; set; } = false;
-
-        /// <summary>
         /// Force the use of internal grammar rule generator, even if backend supports it.
         /// </summary>
         public bool ForceInternalGrammar { get; set; } = false;
-
 
         #endregion
 
@@ -100,6 +102,8 @@ namespace LetheAISharp.Files
         /// This is a safeguard to prevent infinite loops with tool calling. Depending on the complexity of the task and the tools available, you might want to adjust this number.
         /// </summary>
         public int ToolCallLimit { get; set; } = 10;
+
+        public int ToolCallMemoryLimit { get; set; } = 15;
 
         #endregion
 
@@ -300,6 +304,7 @@ namespace LetheAISharp.Files
         public int WebSearchDetailedMaxLength { get; set; } = 5000;
 
         #endregion
+
 
         #region *** Group Chat Settings ***
 

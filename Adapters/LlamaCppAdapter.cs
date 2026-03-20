@@ -81,7 +81,7 @@ namespace LetheAISharp.API
             SupportParallelToolCall = res.chat_template_caps.supports_parallel_tool_calls;
 
             var isthink = res.chat_template.Contains("enable_think") || res.chat_template.Contains("<think>", StringComparison.InvariantCultureIgnoreCase) || res.chat_template.Contains("[THINK]", StringComparison.InvariantCultureIgnoreCase);
-            AllowPrefill = !isthink;
+            AllowPrefill = LLMEngine.Settings.BackendChatAllowPrefill ?? !isthink;
 
             return $"Llama.cpp [{res.build_info}]";
         }
@@ -258,7 +258,7 @@ namespace LetheAISharp.API
         public bool SupportsSchema { get; private set; } = true;
         public bool SupportsToolCalls { get; private set; } = true;
         public bool SupportParallelToolCall { get; private set; } = false;
-        public bool AllowPrefill { get; private set; } = false;
+        public bool AllowPrefill { get; private set; } = LLMEngine.Settings.BackendChatAllowPrefill ?? false;
         public BackendChatCompletionThinkTagBehavior ThinkTagBehavior => LLMEngine.Settings.BackendStartThinkTagBehavior ?? BackendChatCompletionThinkTagBehavior.Silent;
     }
 }

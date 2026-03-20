@@ -80,6 +80,7 @@ namespace LetheAISharp.API
             var toolRound = 0;
             int maxToolRounds = LLMEngine.Settings.ToolCallLimit;
             var currentRequest = request;
+            var ChatMessageLog = new List<OpenAI.Chat.Message>();
 
             if (LLMEngine.Settings.BackendLLamaCppAllowAllSamplers)
             {
@@ -102,6 +103,7 @@ namespace LetheAISharp.API
                         // Handle tool_calls
                         if (partialResponse.FirstChoice.FinishReason == "tool_calls" && partialResponse.FirstChoice.Message?.ToolCalls != null)
                         {
+                            ChatMessageLog.Add(partialResponse.FirstChoice.Message);
                             var toolmsgs = new List<OpenAI.Chat.Message>();
                             foreach (var toolcall in partialResponse.FirstChoice.Message.ToolCalls)
                             {
@@ -149,7 +151,10 @@ namespace LetheAISharp.API
                                     Success = success,
                                     Duration = sw.Elapsed
                                 });
-                                toolmsgs.Add(new OpenAI.Chat.Message(toolcall, functionResult));
+                                var tc = new OpenAI.Chat.Message(toolcall, functionResult);
+                                toolmsgs.Add(tc);
+                                ChatMessageLog.Add(tc);
+
                             }
 
                             // Build updated message list: original messages + assistant tool-call message + tool results.
@@ -216,12 +221,18 @@ namespace LetheAISharp.API
                                 ToolCallRecords = hasFinishReason && toolCallRecords?.Count > 0 ? toolCallRecords : null
                             });
                             if (hasFinishReason && (partialResponse.FirstChoice.FinishReason == "stop" || partialResponse.FirstChoice.FinishReason == "length"))
+                            {
+                                if (partialResponse.FirstChoice.Message != null)
+                                    ChatMessageLog.Add(partialResponse.FirstChoice.Message);
                                 break;
+                            }
                         }
                         else if (!string.IsNullOrEmpty(partialResponse.FirstChoice.FinishReason) && partialResponse.FirstChoice.FinishReason != "null")
                         {
                             if (partialResponse.FirstChoice.FinishReason != "tool_calls" || toolCallRecords?.Count > 0)
                             {
+                                if (partialResponse.FirstChoice.Message != null)
+                                    ChatMessageLog.Add(partialResponse.FirstChoice.Message);
                                 RaiseOnStreamingResponse(new OpenTokenResponse
                                 {
                                     Token = "",
@@ -238,6 +249,7 @@ namespace LetheAISharp.API
                         }
                     }
                 }
+                var x = ChatMessageLog.Count;
             }
             catch (System.Text.Json.JsonException ex)
             {
