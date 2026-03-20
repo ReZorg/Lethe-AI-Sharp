@@ -481,7 +481,7 @@ namespace LetheAISharp.LLM
         }
 
         /// <summary>
-        /// Allows derived classes (e.g., GroupCharacter in WaifuAI) to select which bot should respond next.
+        /// Allows derived classes (e.g., GroupCharacter in Lethe AI Chat) to select which bot should respond next.
         /// Default implementation returns the current bot.
         /// </summary>
         /// <param name="userMessage">The user's message to analyze.</param>
